@@ -32,15 +32,28 @@ class _NewPatientInfoPageState extends State<NewPatientInfoPage> {
     super.dispose();
   }
 
-  InputDecoration _fieldDecoration(String hint) => InputDecoration(
-        hintText: hint,
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.25))),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.25))),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).colorScheme.primary)),
-      );
+  InputDecoration _fieldDecoration(String hint, {Widget? prefix}) {
+    final scheme = Theme.of(context).colorScheme;
+    return InputDecoration(
+      hintText: hint,
+      prefixIcon: prefix,
+      filled: true,
+      fillColor: scheme.surface,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: scheme.outline.withOpacity(0.25)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: scheme.outline.withOpacity(0.25)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: scheme.primary, width: 1.2),
+      ),
+    );
+  }
 
   Future<void> _handleSubmit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;

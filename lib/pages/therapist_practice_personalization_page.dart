@@ -297,39 +297,47 @@ class _TherapistPracticePersonalizationPageState extends State<TherapistPractice
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       // Header row with logo and logout
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Therapii',
-                            style: textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: colorScheme.primary,
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                          OutlinedButton.icon(
-                            onPressed: () async {
-                              await firebase_auth.FirebaseAuth.instance.signOut();
-                              if (mounted) {
-                                Navigator.of(context).popUntil((route) => route.isFirst);
-                              }
-                            },
-                            icon: Icon(Icons.logout, size: 18, color: isDark ? Colors.grey[400] : Colors.grey[600]),
-                            label: Text(
-                              'Logout',
-                              style: textTheme.bodyMedium?.copyWith(
-                                color: isDark ? Colors.grey[400] : Colors.grey[600],
-                                fontWeight: FontWeight.w500,
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final isCompactHeader = constraints.maxWidth < 520;
+                          return Flex(
+                            direction: isCompactHeader ? Axis.vertical : Axis.horizontal,
+                            mainAxisAlignment: isCompactHeader ? MainAxisAlignment.start : MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: isCompactHeader ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Therapii',
+                                style: textTheme.headlineSmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: colorScheme.primary,
+                                  letterSpacing: -0.5,
+                                ),
                               ),
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(color: isDark ? Colors.grey[700]! : const Color(0xFFE2E8F0)),
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            ),
-                          ),
-                        ],
+                              if (isCompactHeader) const SizedBox(height: 12),
+                              OutlinedButton.icon(
+                                onPressed: () async {
+                                  await firebase_auth.FirebaseAuth.instance.signOut();
+                                  if (mounted) {
+                                    Navigator.of(context).popUntil((route) => route.isFirst);
+                                  }
+                                },
+                                icon: Icon(Icons.logout, size: 18, color: isDark ? Colors.grey[400] : Colors.grey[600]),
+                                label: Text(
+                                  'Logout',
+                                  style: textTheme.bodyMedium?.copyWith(
+                                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  side: BorderSide(color: isDark ? Colors.grey[700]! : const Color(0xFFE2E8F0)),
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
                       ),
                       const SizedBox(height: 32),
 

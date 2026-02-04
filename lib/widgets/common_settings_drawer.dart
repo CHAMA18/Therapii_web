@@ -122,45 +122,35 @@ class _SettingsPopupContentState extends State<_SettingsPopupContent> {
               constraints: const BoxConstraints(maxWidth: 420, maxHeight: 680),
               child: Material(
                 color: Colors.transparent,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(32),
-                    gradient: LinearGradient(
-                      colors: [
-                        scheme.surface.withValues(alpha: 0.97),
-                        scheme.surfaceContainerHighest.withValues(alpha: 0.95),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: scheme.primary.withValues(alpha: 0.18),
-                        blurRadius: 48,
-                        offset: const Offset(0, 24),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(28),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: scheme.surface.withValues(alpha: 0.92),
+                        borderRadius: BorderRadius.circular(28),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.12),
+                            blurRadius: 40,
+                            offset: const Offset(0, 22),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(32),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // Header section with gradient
                           _PopupHeader(name: name, initials: initials, onClose: () => Navigator.pop(context)),
-                          // Content
                           Flexible(
                             child: SingleChildScrollView(
-                              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                              padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  // Subscription Card
                                   _SettingsCard(
-                                    icon: _isPaidUser ? Icons.workspace_premium_rounded : Icons.star_outline_rounded,
-                                    iconColor: _isPaidUser ? scheme.primary : scheme.tertiary,
+                                    icon: _isPaidUser ? Icons.workspace_premium_rounded : Icons.star_border_rounded,
+                                    iconColor: _isPaidUser ? scheme.primary : const Color(0xFF38BDF8),
                                     title: _isLoadingSubscription ? 'Loading...' : _planName,
                                     subtitle: _isLoadingSubscription
                                         ? 'Checking subscription'
@@ -173,8 +163,7 @@ class _SettingsPopupContentState extends State<_SettingsPopupContent> {
                                       );
                                     },
                                   ),
-                                  const SizedBox(height: 14),
-                                  // Admin section
+                                  const SizedBox(height: 12),
                                   if (isAdmin) ...[
                                     _SettingsCard(
                                       icon: Icons.space_dashboard_outlined,
@@ -201,9 +190,8 @@ class _SettingsPopupContentState extends State<_SettingsPopupContent> {
                                         );
                                       },
                                     ),
-                                    const SizedBox(height: 14),
+                                    const SizedBox(height: 12),
                                   ],
-                                  // Profile Card
                                   _SettingsCard(
                                     icon: Icons.manage_accounts_rounded,
                                     iconColor: scheme.primary,
@@ -216,17 +204,16 @@ class _SettingsPopupContentState extends State<_SettingsPopupContent> {
                                       );
                                     },
                                   ),
-                                  const SizedBox(height: 14),
-                                  // Legal Section
+                                  const SizedBox(height: 18),
                                   Text(
                                     'LEGAL',
                                     style: theme.textTheme.labelSmall?.copyWith(
-                                      color: scheme.onSurface.withValues(alpha: 0.5),
+                                      color: scheme.onSurface.withValues(alpha: 0.6),
                                       fontWeight: FontWeight.w700,
-                                      letterSpacing: 1.2,
+                                      letterSpacing: 1.1,
                                     ),
                                   ),
-                                  const SizedBox(height: 10),
+                                  const SizedBox(height: 8),
                                   Row(
                                     children: [
                                       Expanded(
@@ -249,7 +236,7 @@ class _SettingsPopupContentState extends State<_SettingsPopupContent> {
                                       const SizedBox(width: 12),
                                       Expanded(
                                         child: _MiniActionCard(
-                                          icon: Icons.article_outlined,
+                                          icon: Icons.description_outlined,
                                           label: 'Terms',
                                           onTap: () {
                                             Navigator.pop(context);
@@ -267,19 +254,17 @@ class _SettingsPopupContentState extends State<_SettingsPopupContent> {
                                     ],
                                   ),
                                   const SizedBox(height: 18),
-                                  // Appearance Section
                                   Text(
                                     'APPEARANCE',
                                     style: theme.textTheme.labelSmall?.copyWith(
-                                      color: scheme.onSurface.withValues(alpha: 0.5),
+                                      color: scheme.onSurface.withValues(alpha: 0.6),
                                       fontWeight: FontWeight.w700,
-                                      letterSpacing: 1.2,
+                                      letterSpacing: 1.1,
                                     ),
                                   ),
-                                  const SizedBox(height: 10),
+                                  const SizedBox(height: 8),
                                   _DarkModeToggleCard(isDark: isDark),
-                                  const SizedBox(height: 18),
-                                  // Logout Button
+                                  const SizedBox(height: 16),
                                   _LogoutButton(
                                     onTap: () async {
                                       Navigator.pop(context);

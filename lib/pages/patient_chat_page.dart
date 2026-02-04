@@ -24,6 +24,7 @@ class _PatientChatPageState extends State<PatientChatPage> {
   bool _loading = true;
   bool _sending = false;
   String? _error;
+  bool _contextOptIn = false;
 
   @override
   void initState() {
@@ -153,126 +154,155 @@ class _PatientChatPageState extends State<PatientChatPage> {
 
   @override
   Widget build(BuildContext context) {
-    const bubbleColor = Color(0xFF456BCB);
+    final scheme = Theme.of(context).colorScheme;
+    final bubbleColor = scheme.primary;
     final therapistId = _therapistId;
     final patientId = _patientId;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: scheme.surface,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: scheme.surface,
         elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: true,
-        foregroundColor: Colors.black,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
+          icon: Icon(Icons.arrow_back_rounded, color: scheme.onSurface),
           tooltip: 'Back',
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
           _displayName,
-          style: const TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.w600,
-          ),
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: scheme.onSurface,
+              ),
         ),
+        actions: [
+          IconButton(
+            tooltip: _contextOptIn ? 'Remove chat from AI context' : 'Add chat as AI context',
+            icon: Icon(
+              _contextOptIn ? Icons.bookmark_added_rounded : Icons.bookmark_add_outlined,
+              color: _contextOptIn ? scheme.primary : scheme.onSurface.withOpacity(0.7),
+            ),
+            onPressed: () {
+              setState(() => _contextOptIn = !_contextOptIn);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(_contextOptIn
+                      ? 'Chat pinned as context for the AI model.'
+                      : 'Chat removed from AI context.'),
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: SafeArea(
-        child: _loading
-            ? const Center(child: CircularProgressIndicator())
-            : _error != null
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Text(
-                        _error!,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(color: Colors.redAccent),
-                      ),
-                    ),
-                  )
-                : (therapistId == null || patientId == null)
-                    ? const Center(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1100),
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : _error != null
+                    ? Center(
                         child: Padding(
-                          padding: EdgeInsets.all(24),
+                          padding: const EdgeInsets.all(24),
                           child: Text(
-                            'Unable to determine conversation participants.',
+                            _error!,
                             textAlign: TextAlign.center,
+                            style: TextStyle(color: scheme.error),
                           ),
                         ),
                       )
-                    : Column(
-                        children: [
-                          Expanded(
-                            child: StreamBuilder<List<ChatMessage>>(
-                              stream: _chatService.streamMessages(
-                                therapistId: therapistId,
-                                patientId: patientId,
+                    : (therapistId == null || patientId == null)
+                        ? const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(24),
+                              child: Text(
+                                'Unable to determine conversation participants.',
+                                textAlign: TextAlign.center,
                               ),
-                              builder: (context, snapshot) {
-                                if (snapshot.connectionState == ConnectionState.waiting) {
-                                  return const Center(child: CircularProgressIndicator());
-                                }
+                            ),
+                          )
+                        : Column(
+                            children: [
+                              Expanded(
+                                child: StreamBuilder<List<ChatMessage>>(
+                                  stream: _chatService.streamMessages(
+                                    therapistId: therapistId,
+                                    patientId: patientId,
+                                  ),
+                                  builder: (context, snapshot) {
+                                    if (snapshot.connectionState == ConnectionState.waiting) {
+                                      return const Center(child: CircularProgressIndicator());
+                                    }
 
-                                final messages = snapshot.data ?? [];
-                                WidgetsBinding.instance.addPostFrameCallback((_) {
-                                  _markConversationRead();
-                                  _scrollToBottom();
-                                });
+                                    final messages = snapshot.data ?? [];
+                                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                                      _markConversationRead();
+                                      _scrollToBottom();
+                                    });
 
-                                if (messages.isEmpty) {
-                                  return Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                                    child: Align(
-                                      alignment: Alignment.bottomCenter,
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: const [
-                                          SizedBox(height: 40),
-                                          Text(
-                                            'Start the conversation by sending a message.',
-                                            textAlign: TextAlign.center,
-                                            style: TextStyle(color: Colors.black54),
+                                    if (messages.isEmpty) {
+                                      return Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                                        child: Align(
+                                          alignment: Alignment.bottomCenter,
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const SizedBox(height: 40),
+                                              Text(
+                                                'Start the conversation by sending a message.',
+                                                textAlign: TextAlign.center,
+                                                style: TextStyle(color: scheme.onSurface.withValues(alpha: 0.6)),
+                                              ),
+                                              const SizedBox(height: 40),
+                                            ],
                                           ),
-                                          SizedBox(height: 40),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                }
+                                        ),
+                                      );
+                                    }
 
-                                return ListView.builder(
-                                  controller: _scrollController,
-                                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
-                                  itemCount: messages.length,
-                                  itemBuilder: (context, index) {
-                                    final message = messages[index];
-                                    final viewer = _viewer;
-                                    final isMe = viewer != null && message.senderId == viewer.id;
-                                    final previous = index > 0 ? messages[index - 1] : null;
-                                    final showAvatar = !isMe && (previous == null || previous.senderId == viewer?.id);
+                                    return ListView.builder(
+                                      controller: _scrollController,
+                                      padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
+                                      itemCount: messages.length,
+                                      itemBuilder: (context, index) {
+                                        final message = messages[index];
+                                        final viewer = _viewer;
+                                        final isMe = viewer != null && message.senderId == viewer.id;
+                                        final previous = index > 0 ? messages[index - 1] : null;
+                                        final showAvatar = !isMe && (previous == null || previous.senderId == viewer?.id);
 
-                                    return Padding(
-                                      padding: EdgeInsets.only(bottom: index == messages.length - 1 ? 0 : 16),
-                                      child: _ChatBubble(
-                                        text: message.text,
-                                        isMe: isMe,
-                                        color: bubbleColor,
-                                        showAvatar: showAvatar,
-                                      ),
+                                        return Padding(
+                                          padding: EdgeInsets.only(bottom: index == messages.length - 1 ? 0 : 14),
+                                          child: _ChatBubble(
+                                            text: message.text,
+                                            isMe: isMe,
+                                            color: bubbleColor,
+                                            showAvatar: showAvatar,
+                                            avatarInitial: widget.otherUser.firstName.isNotEmpty
+                                                ? widget.otherUser.firstName[0].toUpperCase()
+                                                : '•',
+                                          ),
+                                        );
+                                      },
                                     );
                                   },
-                                );
-                              },
-                            ),
+                                ),
+                              ),
+                              _ChatComposer(
+                                controller: _messageController,
+                                onSend: _handleSend,
+                                sending: _sending,
+                              ),
+                            ],
                           ),
-                          _ChatComposer(
-                            controller: _messageController,
-                            onSend: _handleSend,
-                            sending: _sending,
-                          ),
-                        ],
-                      ),
+          ),
+        ),
       ),
     );
   }
@@ -283,16 +313,18 @@ class _ChatBubble extends StatelessWidget {
   final bool isMe;
   final Color color;
   final bool showAvatar;
+  final String avatarInitial;
   const _ChatBubble({
     required this.text,
     required this.isMe,
     required this.color,
     this.showAvatar = false,
+    this.avatarInitial = '?',
   });
 
   BorderRadius _bubbleRadius() {
     const radius = Radius.circular(18);
-    const flat = Radius.circular(6);
+    const flat = Radius.circular(8);
     if (isMe) {
       return const BorderRadius.only(
         topLeft: radius,
@@ -311,7 +343,7 @@ class _ChatBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textStyle = const TextStyle(color: Colors.white, fontSize: 16);
+    final textStyle = const TextStyle(color: Colors.white, fontSize: 15, height: 1.4);
     if (isMe) {
       return Row(
         mainAxisAlignment: MainAxisAlignment.end,
@@ -334,11 +366,21 @@ class _ChatBubble extends StatelessWidget {
       children: [
         if (showAvatar) ...[
           Container(
-            width: 36,
-            height: 36,
-            decoration: const BoxDecoration(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Color(0xFFEEF2FC),
+              color: const Color(0xFFEEF2FC),
+              border: Border.all(color: color.withValues(alpha: 0.08)),
+            ),
+            child: Center(
+              child: Text(
+                avatarInitial,
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 10),
@@ -397,56 +439,61 @@ class _ChatComposerState extends State<_ChatComposer> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: widget.controller,
-              textInputAction: TextInputAction.send,
-              onSubmitted: (_) {
-                if (widget.onSend != null) widget.onSend!();
-              },
-              decoration: InputDecoration(
-                hintText: 'Type your response',
-                hintStyle: TextStyle(color: Colors.grey.shade500),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: const BorderSide(color: Color(0xFFE1E5EC)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: const BorderSide(color: Color(0xFF456BCB)),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: scheme.surfaceVariant.withValues(alpha: Theme.of(context).brightness == Brightness.dark ? 0.4 : 0.6),
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: widget.controller,
+                minLines: 1,
+                maxLines: 4,
+                textInputAction: TextInputAction.send,
+                onSubmitted: (_) {
+                  if (widget.onSend != null) widget.onSend!();
+                },
+                decoration: InputDecoration(
+                  hintText: 'Type your response',
+                  border: InputBorder.none,
+                  isDense: true,
+                  hintStyle: TextStyle(color: scheme.onSurface.withValues(alpha: 0.45)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 ),
               ),
             ),
-          ),
-          const SizedBox(width: 12),
-          SizedBox(
-            height: 48,
-            child: ElevatedButton(
-              onPressed: widget.sending || !_hasText ? null : widget.onSend,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF456BCB),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                elevation: 0,
+            const SizedBox(width: 8),
+            SizedBox(
+              height: 44,
+              child: ElevatedButton(
+                onPressed: widget.sending || !_hasText ? null : widget.onSend,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: scheme.primary,
+                  foregroundColor: scheme.onPrimary,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                  padding: const EdgeInsets.symmetric(horizontal: 18),
+                  elevation: 0,
+                ),
+                child: widget.sending
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+                      )
+                    : const Text(
+                        'Send',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
               ),
-              child: widget.sending
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
-                    )
-                  : const Text(
-                      'Send',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-                    ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

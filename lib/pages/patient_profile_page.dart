@@ -5,6 +5,7 @@ import 'package:therapii/models/user.dart' as app_user;
 import 'package:therapii/models/voice_checkin.dart';
 import 'package:therapii/pages/ai_summary_detail_page.dart';
 import 'package:therapii/pages/patient_chat_page.dart';
+import 'package:therapii/pages/patient_profile_details_page.dart';
 import 'package:therapii/services/ai_conversation_service.dart';
 import 'package:therapii/services/chat_service.dart';
 import 'package:therapii/services/voice_checkin_service.dart';
@@ -199,7 +200,7 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
     final displayName = patient.fullName.trim().isNotEmpty ? patient.fullName : patient.email;
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+      backgroundColor: const Color(0xFFF5F6FB),
       body: SafeArea(
         child: SingleChildScrollView(
           controller: _scrollController,
@@ -208,17 +209,17 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
             children: [
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(24, 24, 24, 48),
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      scheme.primaryContainer,
-                      scheme.primary,
-                    ],
-                  ),
-                  borderRadius: const BorderRadius.vertical(bottom: Radius.circular(36)),
+                  color: Colors.white,
+                  borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.06),
+                      blurRadius: 22,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -229,37 +230,42 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
                         IconButton(
                           onPressed: () => Navigator.of(context).pop(),
                           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
-                          color: scheme.onPrimaryContainer,
+                          color: scheme.onSurface,
                           style: IconButton.styleFrom(
-                            backgroundColor: scheme.onPrimary.withOpacity(0.1),
+                            backgroundColor: scheme.primary.withOpacity(0.08),
                             padding: const EdgeInsets.all(10),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
                         ),
-                        Chip(
-                          backgroundColor: scheme.onPrimary.withOpacity(0.18),
-                          label: Text(
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: scheme.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: scheme.primary.withOpacity(0.15)),
+                          ),
+                          child: Text(
                             'Patient Profile',
                             style: theme.textTheme.labelLarge?.copyWith(
-                              color: scheme.onPrimary,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.6,
+                              color: scheme.primary,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.4,
                             ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 22),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         CircleAvatar(
-                          radius: 40,
-                          backgroundColor: scheme.surface.withOpacity(0.2),
+                          radius: 42,
+                          backgroundColor: scheme.primary.withOpacity(0.12),
                           backgroundImage: (patient.avatarUrl ?? '').isNotEmpty ? NetworkImage(patient.avatarUrl!) : null,
                           child: (patient.avatarUrl ?? '').isNotEmpty
                               ? null
-                              : Icon(Icons.person, size: 40, color: scheme.onPrimary.withOpacity(0.8)),
+                              : Icon(Icons.person, size: 42, color: scheme.primary),
                         ),
                         const SizedBox(width: 18),
                         Expanded(
@@ -269,24 +275,24 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
                               Text(
                                 displayName,
                                 style: theme.textTheme.headlineSmall?.copyWith(
-                                  color: scheme.onPrimary,
+                                  color: scheme.onSurface,
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
-                              const SizedBox(height: 6),
+                              const SizedBox(height: 4),
                               Text(
                                 patient.email,
                                 style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: scheme.onPrimary.withOpacity(0.8),
+                                  color: scheme.onSurface.withOpacity(0.7),
                                   letterSpacing: 0.2,
                                 ),
                               ),
                               if ((patient.phoneNumber ?? '').isNotEmpty) ...[
-                                const SizedBox(height: 6),
+                                const SizedBox(height: 4),
                                 Text(
                                   patient.phoneNumber!,
                                   style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: scheme.onPrimary.withOpacity(0.8),
+                                    color: scheme.onSurface.withOpacity(0.7),
                                   ),
                                 ),
                               ],
@@ -299,210 +305,36 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 28),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Wrap(
-                      spacing: 12,
-                      runSpacing: 12,
-                      children: [
-                        _QuickLinkButton(
-                          label: 'Active AI Conversations',
-                          icon: Icons.chat_bubble_rounded,
-                          onTap: () => _scrollTo(_activeConversationsKey),
-                        ),
-                        _QuickLinkButton(
-                          label: 'Recent AI Conversations',
-                          icon: Icons.forum_outlined,
-                          onTap: () => _scrollTo(_recentConversationsKey),
-                        ),
-                        _QuickLinkButton(
-                          label: 'AI Summaries',
-                          icon: Icons.summarize_rounded,
-                          onTap: () => _scrollTo(_summariesKey),
-                        ),
-                        _QuickLinkButton(
-                          label: 'Voice Check-ins',
-                          icon: Icons.mic_rounded,
-                          onTap: () => _scrollTo(_voiceCheckinsKey),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 32),
-                    Container(
-                      key: _activeConversationsKey,
-                      child: _SectionCard(
-                        title: 'Active AI Conversations',
-                        subtitle: 'Ongoing AI therapy conversations with this patient.',
-                        color: scheme.primary,
-                        child: StreamBuilder<List<AiConversationSummary>>(
-                          stream: _aiConversationService.streamPatientSummaries(patientId: patient.id, limit: 5),
-                          builder: (context, snapshot) {
-                            if (snapshot.connectionState == ConnectionState.waiting) {
-                              return const _LoadingInfo(text: 'Loading active conversations…');
-                            }
-                            final conversations = snapshot.data ?? [];
-                            if (conversations.isEmpty) {
-                              return Text(
-                                'No active AI conversations at the moment.',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: scheme.onSurface.withOpacity(0.7),
-                                ),
-                              );
-                            }
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                for (final conv in conversations.take(5)) ...[
-                                  _ConversationCard(
-                                    summary: conv,
-                                    onTap: () => Navigator.of(context).push(
-                                      MaterialPageRoute(builder: (_) => AiSummaryDetailPage(summary: conv)),
-                                    ),
-                                    onFeedback: _showFeedbackBottomSheet,
-                                  ),
-                                  const SizedBox(height: 12),
-                                ],
-                              ],
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    Container(
-                      key: _recentConversationsKey,
-                      child: _SectionCard(
-                        title: 'Recent AI Conversations',
-                        subtitle: 'Latest messages between you and this patient.',
-                        color: scheme.secondary,
-                        child: StreamBuilder<List<ChatMessage>>(
-                          stream: _chatService.streamMessages(
-                            therapistId: widget.therapistId,
-                            patientId: patient.id,
-                            limit: 120,
-                          ),
-                          builder: (context, snapshot) {
-                            if (snapshot.connectionState == ConnectionState.waiting) {
-                              return const _LoadingInfo(text: 'Fetching recent messages…');
-                            }
-                            final messages = snapshot.data ?? [];
-                            if (messages.isEmpty) {
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'No messages yet. Start the conversation any time.',
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      color: scheme.onSurface.withOpacity(0.7),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  PrimaryButton(
-                                    label: 'Compose Message',
-                                    onPressed: _openChat,
-                                    leadingIcon: Icons.edit_rounded,
-                                  ),
-                                ],
-                              );
-                            }
-                            final preview = messages.length <= 3
-                                ? messages
-                                : messages.sublist(messages.length - 3, messages.length);
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                for (final m in preview.reversed) ...[
-                                  _MessagePreview(message: m, therapistId: widget.therapistId),
-                                  const SizedBox(height: 12),
-                                ],
-                                const SizedBox(height: 4),
-                                PrimaryButton(
-                                  label: 'View Message History',
-                                  onPressed: _openChat,
-                                  leadingIcon: Icons.forum_outlined,
-                                ),
-                              ],
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    Container(
-                      key: _summariesKey,
-                      child: _SectionCard(
-                        title: 'Recent AI Summaries',
-                        subtitle: 'Latest AI-generated therapy session summaries.',
-                        color: scheme.tertiary,
-                        child: StreamBuilder<List<AiConversationSummary>>(
-                          stream: _aiConversationService.streamPatientSummaries(patientId: patient.id, limit: 5),
-                          builder: (context, snapshot) {
-                            if (snapshot.connectionState == ConnectionState.waiting) {
-                              return const _LoadingInfo(text: 'Loading summaries…');
-                            }
-                            final summaries = snapshot.data ?? [];
-                            if (summaries.isEmpty) {
-                              return Text(
-                                'No AI summaries available yet.',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: scheme.onSurface.withOpacity(0.7),
-                                ),
-                              );
-                            }
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                for (final sum in summaries.take(5)) ...[
-                                  _ConversationCard(
-                                    summary: sum,
-                                    onTap: () => Navigator.of(context).push(
-                                      MaterialPageRoute(builder: (_) => AiSummaryDetailPage(summary: sum)),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                ],
-                              ],
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    Container(
-                      key: _voiceCheckinsKey,
-                      child: _SectionCard(
-                        title: 'Recent Voice Check-ins',
-                        subtitle: 'Audio recordings submitted by the patient.',
-                        color: scheme.error,
-                        child: StreamBuilder<List<VoiceCheckin>>(
-                          stream: _voiceCheckinService.streamPatientCheckins(therapistId: widget.therapistId, patientId: patient.id, limit: 5),
-                          builder: (context, snapshot) {
-                            if (snapshot.connectionState == ConnectionState.waiting) {
-                              return const _LoadingInfo(text: 'Loading voice check-ins…');
-                            }
-                            final checkins = snapshot.data ?? [];
-                            if (checkins.isEmpty) {
-                              return Text(
-                                'No voice check-ins recorded yet.',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: scheme.onSurface.withOpacity(0.7),
-                                ),
-                              );
-                            }
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                for (final checkin in checkins.take(5)) ...[
-                                  _VoiceCheckinCard(checkin: checkin),
-                                  const SizedBox(height: 12),
-                                ],
-                              ],
-                            );
-                          },
-                        ),
-                      ),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final twoCols = constraints.maxWidth > 900;
+                        final cards = [
+                          _quickLink('Active AI Conversations', Icons.chat_bubble_rounded, _openDetails, SectionTarget.active),
+                          _quickLink('Recent AI Conversations', Icons.forum_outlined, _openDetails, SectionTarget.recent),
+                          _quickLink('AI Summaries', Icons.summarize_rounded, _openDetails, SectionTarget.summaries),
+                          _quickLink('Voice Check-ins', Icons.mic_rounded, _openDetails, SectionTarget.voice),
+                        ];
+                        if (twoCols) {
+                          return GridView.count(
+                            crossAxisCount: 2,
+                            childAspectRatio: 3.8,
+                            mainAxisSpacing: 12,
+                            crossAxisSpacing: 12,
+                            physics: const NeverScrollableScrollPhysics(),
+                            shrinkWrap: true,
+                            children: cards,
+                          );
+                        }
+                        return Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: cards,
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -513,20 +345,69 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
       ),
     );
   }
+
+  Widget _quickLink(String label, IconData icon, void Function(SectionTarget) onNavigate, SectionTarget target) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return GestureDetector(
+      onTap: () => onNavigate(target),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: scheme.outline.withOpacity(0.08)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: scheme.primary, size: 20),
+            const SizedBox(width: 10),
+            Text(
+              label,
+              style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700, color: scheme.onSurface),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _openDetails(SectionTarget target) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => PatientProfileDetailsPage(
+          patient: widget.patient,
+          therapistId: widget.therapistId,
+          initialTarget: target,
+        ),
+      ),
+    );
+  }
 }
 
-class _SectionCard extends StatelessWidget {
+enum SectionTarget { active, recent, summaries, voice }
+
+class SectionCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final Widget child;
   final Color color;
 
-  const _SectionCard({
+  const SectionCard({
+    Key? key,
     required this.title,
     required this.subtitle,
     required this.child,
     required this.color,
-  });
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -534,16 +415,16 @@ class _SectionCard extends StatelessWidget {
     final scheme = theme.colorScheme;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: scheme.surface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: scheme.outline.withOpacity(0.12)),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: scheme.outline.withOpacity(0.08)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 10),
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 12,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -589,9 +470,9 @@ class _SectionCard extends StatelessWidget {
   }
 }
 
-class _LoadingInfo extends StatelessWidget {
+class LoadingInfo extends StatelessWidget {
   final String text;
-  const _LoadingInfo({required this.text});
+  const LoadingInfo({required this.text});
 
   @override
   Widget build(BuildContext context) {
@@ -639,10 +520,10 @@ class _QuickLinkButton extends StatelessWidget {
   }
 }
 
-class _MessagePreview extends StatelessWidget {
+class MessagePreview extends StatelessWidget {
   final ChatMessage message;
   final String therapistId;
-  const _MessagePreview({required this.message, required this.therapistId});
+  const MessagePreview({required this.message, required this.therapistId});
 
   @override
   Widget build(BuildContext context) {
@@ -658,8 +539,16 @@ class _MessagePreview extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isTherapist ? scheme.primary.withOpacity(0.08) : scheme.surfaceVariant.withOpacity(0.6),
-        borderRadius: BorderRadius.circular(18),
+        color: isTherapist ? scheme.primary.withOpacity(0.12) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: scheme.outline.withOpacity(isTherapist ? 0.0 : 0.08)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -691,11 +580,11 @@ class _MessagePreview extends StatelessWidget {
   }
 }
 
-class _ConversationCard extends StatelessWidget {
+class ConversationCard extends StatelessWidget {
   final AiConversationSummary summary;
   final VoidCallback onTap;
   final void Function(AiConversationSummary)? onFeedback;
-  const _ConversationCard({required this.summary, required this.onTap, this.onFeedback});
+  const ConversationCard({required this.summary, required this.onTap, this.onFeedback});
 
   @override
   Widget build(BuildContext context) {
@@ -797,9 +686,9 @@ class _ConversationCard extends StatelessWidget {
   }
 }
 
-class _VoiceCheckinCard extends StatelessWidget {
+class VoiceCheckinCard extends StatelessWidget {
   final VoiceCheckin checkin;
-  const _VoiceCheckinCard({required this.checkin});
+  const VoiceCheckinCard({required this.checkin});
 
   @override
   Widget build(BuildContext context) {
@@ -856,4 +745,3 @@ class _VoiceCheckinCard extends StatelessWidget {
     );
   }
 }
-

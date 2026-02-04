@@ -118,7 +118,12 @@ class _NavBar extends StatelessWidget {
                     border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
                     color: Colors.white.withValues(alpha: 0.05),
                   ),
-                  child: const Icon(Icons.psychology_alt, color: Colors.white, size: 20),
+                  child: ClipOval(
+                    child: Image.asset(
+                      'assets/images/Therapii_image.png',
+                      fit: BoxFit.cover,
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Text(
@@ -1334,7 +1339,15 @@ class _FooterSection extends StatelessWidget {
                 // Logo
                 Row(
                   children: [
-                    Icon(Icons.psychology_alt, color: Colors.white.withValues(alpha: 0.5), size: 20),
+                    Opacity(
+                      opacity: 0.5,
+                      child: Image.asset(
+                        'assets/images/Therapii_image.png',
+                        width: 20,
+                        height: 20,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       'Therapii',
@@ -1370,7 +1383,15 @@ class _FooterSection extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.psychology_alt, color: Colors.white.withValues(alpha: 0.5), size: 20),
+                    Opacity(
+                      opacity: 0.5,
+                      child: Image.asset(
+                        'assets/images/Therapii_image.png',
+                        width: 20,
+                        height: 20,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       'Therapii',

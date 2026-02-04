@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class LightModeColors {
   static const primary = Color(0xFF0066FF); // Vibrant bright blue
@@ -87,8 +86,26 @@ class FontSizes {
   static const double bodySmall = 12.0;
 }
 
+TextStyle _satoshi(
+  double size, {
+  FontWeight weight = FontWeight.w400,
+  FontStyle style = FontStyle.normal,
+  Color? color,
+}) {
+  return TextStyle(
+    fontFamily: 'Satoshi',
+    fontSize: size,
+    fontWeight: weight,
+    fontStyle: style,
+    color: color,
+    height: 1.15,
+    letterSpacing: 0,
+  );
+}
+
 ThemeData get lightTheme => ThemeData(
   useMaterial3: true,
+  fontFamily: 'Satoshi',
   colorScheme: ColorScheme.light(
     primary: LightModeColors.primary,
     onPrimary: LightModeColors.onPrimary,
@@ -129,7 +146,7 @@ ThemeData get lightTheme => ThemeData(
   inputDecorationTheme: InputDecorationTheme(
     fillColor: LightModeColors.surfaceDim,
     filled: true,
-    hintStyle: GoogleFonts.inter(color: LightModeColors.onSurface),
+    hintStyle: _satoshi(FontSizes.bodyMedium, color: LightModeColors.onSurface.withValues(alpha: 0.7)),
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
       borderSide: const BorderSide(color: Color(0x22000000)),
@@ -158,7 +175,7 @@ ThemeData get lightTheme => ThemeData(
         RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       textStyle: WidgetStatePropertyAll(
-        GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: FontSizes.labelLarge),
+        _satoshi(FontSizes.labelLarge, weight: FontWeight.w700),
       ),
       foregroundColor: const WidgetStatePropertyAll(LightModeColors.onPrimary),
       backgroundColor: const WidgetStatePropertyAll(LightModeColors.primary),
@@ -174,14 +191,14 @@ ThemeData get lightTheme => ThemeData(
       ),
       foregroundColor: const WidgetStatePropertyAll(LightModeColors.onSurface),
       textStyle: WidgetStatePropertyAll(
-        GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: FontSizes.labelLarge),
+        _satoshi(FontSizes.labelLarge, weight: FontWeight.w700),
       ),
     ),
   ),
   textButtonTheme: TextButtonThemeData(
     style: ButtonStyle(
       foregroundColor: const WidgetStatePropertyAll(LightModeColors.primary),
-      textStyle: WidgetStatePropertyAll(GoogleFonts.inter(fontWeight: FontWeight.w600)),
+      textStyle: WidgetStatePropertyAll(_satoshi(FontSizes.labelMedium, weight: FontWeight.w600)),
     ),
   ),
   listTileTheme: ListTileThemeData(
@@ -192,26 +209,27 @@ ThemeData get lightTheme => ThemeData(
     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
   ),
   textTheme: TextTheme(
-    displayLarge: GoogleFonts.inter(fontSize: FontSizes.displayLarge),
-    displayMedium: GoogleFonts.inter(fontSize: FontSizes.displayMedium),
-    displaySmall: GoogleFonts.inter(fontSize: FontSizes.displaySmall, fontWeight: FontWeight.w600),
-    headlineLarge: GoogleFonts.inter(fontSize: FontSizes.headlineLarge),
-    headlineMedium: GoogleFonts.inter(fontSize: FontSizes.headlineMedium, fontWeight: FontWeight.w600),
-    headlineSmall: GoogleFonts.inter(fontSize: FontSizes.headlineSmall, fontWeight: FontWeight.w700),
-    titleLarge: GoogleFonts.inter(fontSize: FontSizes.titleLarge, fontWeight: FontWeight.w600),
-    titleMedium: GoogleFonts.inter(fontSize: FontSizes.titleMedium, fontWeight: FontWeight.w600),
-    titleSmall: GoogleFonts.inter(fontSize: FontSizes.titleSmall, fontWeight: FontWeight.w600),
-    labelLarge: GoogleFonts.inter(fontSize: FontSizes.labelLarge, fontWeight: FontWeight.w700),
-    labelMedium: GoogleFonts.inter(fontSize: FontSizes.labelMedium, fontWeight: FontWeight.w600),
-    labelSmall: GoogleFonts.inter(fontSize: FontSizes.labelSmall, fontWeight: FontWeight.w600),
-    bodyLarge: GoogleFonts.inter(fontSize: FontSizes.bodyLarge),
-    bodyMedium: GoogleFonts.inter(fontSize: FontSizes.bodyMedium),
-    bodySmall: GoogleFonts.inter(fontSize: FontSizes.bodySmall),
+    displayLarge: _satoshi(FontSizes.displayLarge, weight: FontWeight.w400),
+    displayMedium: _satoshi(FontSizes.displayMedium, weight: FontWeight.w400),
+    displaySmall: _satoshi(FontSizes.displaySmall, weight: FontWeight.w600),
+    headlineLarge: _satoshi(FontSizes.headlineLarge, weight: FontWeight.w500),
+    headlineMedium: _satoshi(FontSizes.headlineMedium, weight: FontWeight.w600),
+    headlineSmall: _satoshi(FontSizes.headlineSmall, weight: FontWeight.w700),
+    titleLarge: _satoshi(FontSizes.titleLarge, weight: FontWeight.w600),
+    titleMedium: _satoshi(FontSizes.titleMedium, weight: FontWeight.w600),
+    titleSmall: _satoshi(FontSizes.titleSmall, weight: FontWeight.w600),
+    labelLarge: _satoshi(FontSizes.labelLarge, weight: FontWeight.w700),
+    labelMedium: _satoshi(FontSizes.labelMedium, weight: FontWeight.w600),
+    labelSmall: _satoshi(FontSizes.labelSmall, weight: FontWeight.w600),
+    bodyLarge: _satoshi(FontSizes.bodyLarge, weight: FontWeight.w400),
+    bodyMedium: _satoshi(FontSizes.bodyMedium, weight: FontWeight.w400),
+    bodySmall: _satoshi(FontSizes.bodySmall, weight: FontWeight.w400),
   ),
 );
 
 ThemeData get darkTheme => ThemeData(
   useMaterial3: true,
+  fontFamily: 'Satoshi',
   colorScheme: ColorScheme.dark(
     primary: DarkModeColors.primary,
     onPrimary: DarkModeColors.onPrimary,
@@ -252,7 +270,7 @@ ThemeData get darkTheme => ThemeData(
   inputDecorationTheme: InputDecorationTheme(
     fillColor: DarkModeColors.surfaceDim,
     filled: true,
-    hintStyle: GoogleFonts.inter(color: DarkModeColors.onSurface),
+    hintStyle: _satoshi(FontSizes.bodyMedium, color: DarkModeColors.onSurface.withValues(alpha: 0.7)),
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
       borderSide: const BorderSide(color: Color(0x22FFFFFF)),
@@ -281,7 +299,7 @@ ThemeData get darkTheme => ThemeData(
         RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       textStyle: WidgetStatePropertyAll(
-        GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: FontSizes.labelLarge),
+        _satoshi(FontSizes.labelLarge, weight: FontWeight.w700),
       ),
       foregroundColor: const WidgetStatePropertyAll(DarkModeColors.onPrimary),
       backgroundColor: const WidgetStatePropertyAll(DarkModeColors.primary),
@@ -297,14 +315,14 @@ ThemeData get darkTheme => ThemeData(
       ),
       foregroundColor: const WidgetStatePropertyAll(DarkModeColors.onSurface),
       textStyle: WidgetStatePropertyAll(
-        GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: FontSizes.labelLarge),
+        _satoshi(FontSizes.labelLarge, weight: FontWeight.w700),
       ),
     ),
   ),
   textButtonTheme: TextButtonThemeData(
     style: ButtonStyle(
       foregroundColor: const WidgetStatePropertyAll(DarkModeColors.primary),
-      textStyle: WidgetStatePropertyAll(GoogleFonts.inter(fontWeight: FontWeight.w600)),
+      textStyle: WidgetStatePropertyAll(_satoshi(FontSizes.labelMedium, weight: FontWeight.w600)),
     ),
   ),
   listTileTheme: ListTileThemeData(
@@ -315,20 +333,20 @@ ThemeData get darkTheme => ThemeData(
     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
   ),
   textTheme: TextTheme(
-    displayLarge: GoogleFonts.inter(fontSize: FontSizes.displayLarge),
-    displayMedium: GoogleFonts.inter(fontSize: FontSizes.displayMedium),
-    displaySmall: GoogleFonts.inter(fontSize: FontSizes.displaySmall, fontWeight: FontWeight.w600),
-    headlineLarge: GoogleFonts.inter(fontSize: FontSizes.headlineLarge),
-    headlineMedium: GoogleFonts.inter(fontSize: FontSizes.headlineMedium, fontWeight: FontWeight.w600),
-    headlineSmall: GoogleFonts.inter(fontSize: FontSizes.headlineSmall, fontWeight: FontWeight.w700),
-    titleLarge: GoogleFonts.inter(fontSize: FontSizes.titleLarge, fontWeight: FontWeight.w600),
-    titleMedium: GoogleFonts.inter(fontSize: FontSizes.titleMedium, fontWeight: FontWeight.w600),
-    titleSmall: GoogleFonts.inter(fontSize: FontSizes.titleSmall, fontWeight: FontWeight.w600),
-    labelLarge: GoogleFonts.inter(fontSize: FontSizes.labelLarge, fontWeight: FontWeight.w700),
-    labelMedium: GoogleFonts.inter(fontSize: FontSizes.labelMedium, fontWeight: FontWeight.w600),
-    labelSmall: GoogleFonts.inter(fontSize: FontSizes.labelSmall, fontWeight: FontWeight.w600),
-    bodyLarge: GoogleFonts.inter(fontSize: FontSizes.bodyLarge),
-    bodyMedium: GoogleFonts.inter(fontSize: FontSizes.bodyMedium),
-    bodySmall: GoogleFonts.inter(fontSize: FontSizes.bodySmall),
+    displayLarge: _satoshi(FontSizes.displayLarge, weight: FontWeight.w400),
+    displayMedium: _satoshi(FontSizes.displayMedium, weight: FontWeight.w400),
+    displaySmall: _satoshi(FontSizes.displaySmall, weight: FontWeight.w600),
+    headlineLarge: _satoshi(FontSizes.headlineLarge, weight: FontWeight.w500),
+    headlineMedium: _satoshi(FontSizes.headlineMedium, weight: FontWeight.w600),
+    headlineSmall: _satoshi(FontSizes.headlineSmall, weight: FontWeight.w700),
+    titleLarge: _satoshi(FontSizes.titleLarge, weight: FontWeight.w600),
+    titleMedium: _satoshi(FontSizes.titleMedium, weight: FontWeight.w600),
+    titleSmall: _satoshi(FontSizes.titleSmall, weight: FontWeight.w600),
+    labelLarge: _satoshi(FontSizes.labelLarge, weight: FontWeight.w700),
+    labelMedium: _satoshi(FontSizes.labelMedium, weight: FontWeight.w600),
+    labelSmall: _satoshi(FontSizes.labelSmall, weight: FontWeight.w600),
+    bodyLarge: _satoshi(FontSizes.bodyLarge, weight: FontWeight.w400),
+    bodyMedium: _satoshi(FontSizes.bodyMedium, weight: FontWeight.w400),
+    bodySmall: _satoshi(FontSizes.bodySmall, weight: FontWeight.w400),
   ),
 );

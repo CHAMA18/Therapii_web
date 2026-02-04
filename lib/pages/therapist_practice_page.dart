@@ -195,6 +195,14 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
   }
 
   Future<void> _saveAndContinue() async {
+    await _saveForm(navigateNext: true);
+  }
+
+  Future<void> _saveDraft() async {
+    await _saveForm(navigateNext: false);
+  }
+
+  Future<void> _saveForm({required bool navigateNext}) async {
     if (!_formKey.currentState!.validate()) return;
 
     final user = firebase_auth.FirebaseAuth.instance.currentUser;
@@ -230,9 +238,15 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
           );
 
       if (!mounted) return;
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const TherapistTherapeuticModelsPage()),
-      );
+      if (navigateNext) {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const TherapistTherapeuticModelsPage()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Draft saved.')),
+        );
+      }
     } on FirebaseException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -258,7 +272,7 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
     }
 
     return Scaffold(
-      backgroundColor: isDark ? scheme.surface : const Color(0xFFF9FAFB),
+      backgroundColor: isDark ? scheme.surface : const Color(0xFFF8FAFC),
       body: Column(
         children: [
           _buildHeader(context, scheme, isDark),
@@ -266,26 +280,34 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
             child: SingleChildScrollView(
               child: Center(
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 900),
+                  constraints: const BoxConstraints(maxWidth: 960),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
                     child: Form(
                       key: _formKey,
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           _buildTitleSection(context, scheme),
-                          const SizedBox(height: 40),
-                          _buildContactSection(context, scheme, isDark),
-                          const SizedBox(height: 48),
-                          _buildVerificationSection(context, scheme, isDark),
-                          const SizedBox(height: 48),
+                          const SizedBox(height: 32),
+                          _buildSectionCard(
+                            isDark: isDark,
+                            scheme: scheme,
+                            child: _buildContactSection(context, scheme, isDark),
+                          ),
+                          const SizedBox(height: 24),
+                          _buildSectionCard(
+                            isDark: isDark,
+                            scheme: scheme,
+                            child: _buildVerificationSection(context, scheme, isDark),
+                          ),
+                          const SizedBox(height: 24),
                           _buildLicensureSection(context, scheme, isDark),
                           const SizedBox(height: 24),
                           _buildEducationSection(context, scheme, isDark),
-                          const SizedBox(height: 48),
+                          const SizedBox(height: 32),
                           _buildFooter(context, scheme),
-                          const SizedBox(height: 80),
+                          const SizedBox(height: 64),
                         ],
                       ),
                     ),
@@ -312,16 +334,28 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
       ),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 900),
+          constraints: const BoxConstraints(maxWidth: 960),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Image.asset(
-                  'assets/images/Therapii_image.png',
-                  height: 32,
-                  fit: BoxFit.contain,
+                Row(
+                  children: [
+                    Image.asset(
+                      'assets/images/Therapii_image.png',
+                      height: 28,
+                      fit: BoxFit.contain,
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Therapii',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: scheme.primary,
+                          ),
+                    ),
+                  ],
                 ),
                 OutlinedButton.icon(
                   onPressed: _logout,
@@ -346,29 +380,61 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
 
   Widget _buildTitleSection(BuildContext context, ColorScheme scheme) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: () => Navigator.of(context).maybePop(),
+            icon: const Icon(Icons.arrow_back, size: 18),
+            label: const Text('Back to Setup Overview'),
+            style: TextButton.styleFrom(
+              foregroundColor: scheme.primary,
+              textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
         Text(
-          'PRACTICE SETUP',
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: scheme.primary,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 1.2,
+          'Contact and Licensure Information',
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: scheme.onSurface,
               ),
         ),
         const SizedBox(height: 8),
         Text(
-          'Contact and Licensure Information',
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        Text(
           'Complete your professional profile to begin practicing on the platform.',
+          textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 color: scheme.onSurface.withValues(alpha: 0.6),
               ),
         ),
       ],
+    );
+  }
+
+  Widget _buildSectionCard({
+    required Widget child,
+    required bool isDark,
+    required ColorScheme scheme,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: isDark ? scheme.surface : Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: isDark ? scheme.outline.withValues(alpha: 0.3) : const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: child,
     );
   }
 
@@ -378,7 +444,13 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
         final isWide = constraints.maxWidth > 600;
 
         return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text(
+              'Contact details',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 20),
             _buildTextField(
               controller: _fullNameController,
               label: 'Full Name',
@@ -514,7 +586,7 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
           label,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w500,
-                color: isDark ? scheme.onSurface.withValues(alpha: 0.8) : const Color(0xFF475569),
+                color: isDark ? scheme.onSurface.withValues(alpha: 0.85) : const Color(0xFF475569),
               ),
         ),
         const SizedBox(height: 6),
@@ -525,18 +597,18 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
             hintText: placeholder,
             hintStyle: TextStyle(color: scheme.onSurface.withValues(alpha: 0.4)),
             filled: true,
-            fillColor: isDark ? scheme.surface : Colors.white,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            fillColor: isDark ? scheme.surface : const Color(0xFFF8FAFC),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(20),
               borderSide: BorderSide(color: isDark ? scheme.outline.withValues(alpha: 0.3) : const Color(0xFFE2E8F0)),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(20),
               borderSide: BorderSide(color: isDark ? scheme.outline.withValues(alpha: 0.3) : const Color(0xFFE2E8F0)),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(20),
               borderSide: BorderSide(color: scheme.primary, width: 2),
             ),
           ),
@@ -569,18 +641,18 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
           hint: Text('Select State', style: TextStyle(color: scheme.onSurface.withValues(alpha: 0.4))),
           decoration: InputDecoration(
             filled: true,
-            fillColor: isDark ? scheme.surface : Colors.white,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            fillColor: isDark ? scheme.surface : const Color(0xFFF8FAFC),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(20),
               borderSide: BorderSide(color: isDark ? scheme.outline.withValues(alpha: 0.3) : const Color(0xFFE2E8F0)),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(20),
               borderSide: BorderSide(color: isDark ? scheme.outline.withValues(alpha: 0.3) : const Color(0xFFE2E8F0)),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(20),
               borderSide: BorderSide(color: scheme.primary, width: 2),
             ),
           ),
@@ -695,13 +767,13 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(20),
         hoverColor: scheme.primary.withValues(alpha: 0.04),
         child: CustomPaint(
           painter: _DashedBorderPainter(
             color: borderColor,
             strokeWidth: hasFile ? 2 : 2,
-            radius: 12,
+            radius: 20,
             dashWidth: 6,
             dashSpace: 4,
           ),
@@ -709,7 +781,7 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
               color: isDark ? scheme.surface : Colors.white,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(20),
             ),
             child: Column(
               children: [
@@ -779,13 +851,13 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
     return Container(
       decoration: BoxDecoration(
         color: isDark ? scheme.surface : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(color: isDark ? scheme.outline.withValues(alpha: 0.3) : const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -855,13 +927,13 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
     return Container(
       decoration: BoxDecoration(
         color: isDark ? scheme.surface : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(color: isDark ? scheme.outline.withValues(alpha: 0.3) : const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -932,31 +1004,35 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
       children: [
         Divider(color: scheme.outline.withValues(alpha: 0.2)),
         const SizedBox(height: 24),
-        Wrap(
-          alignment: WrapAlignment.center,
-          spacing: 16,
-          runSpacing: 12,
-          children: [
-            SizedBox(
-              width: 200,
-              child: PrimaryButton(
-                label: 'Continue',
-                onPressed: _saving ? null : _saveAndContinue,
-                isLoading: _saving,
-                uppercase: false,
-              ),
-            ),
-            TextButton(
-              onPressed: _saving ? null : () => Navigator.of(context).maybePop(),
-              child: Text(
-                'Go Back',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: scheme.onSurface.withValues(alpha: 0.5),
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-            ),
-          ],
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final isWide = constraints.maxWidth > 520;
+            return Flex(
+              direction: isWide ? Axis.horizontal : Axis.vertical,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: isWide ? CrossAxisAlignment.center : CrossAxisAlignment.stretch,
+              children: [
+                TextButton(
+                  onPressed: _saving ? null : _saveDraft,
+                  style: TextButton.styleFrom(
+                    foregroundColor: scheme.onSurface.withValues(alpha: 0.6),
+                    textStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  child: const Text('Save as Draft'),
+                ),
+                const SizedBox(height: 12, width: 12),
+                SizedBox(
+                  width: isWide ? 240 : double.infinity,
+                  child: PrimaryButton(
+                    label: 'Continue to Next Step',
+                    onPressed: _saving ? null : _saveAndContinue,
+                    isLoading: _saving,
+                    uppercase: false,
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ],
     );
