@@ -9,9 +9,9 @@ import 'package:therapii/models/user.dart' as app_user;
 import 'package:therapii/pages/admin_dashboard_page.dart';
 import 'package:therapii/pages/auth_welcome_page.dart';
 import 'package:therapii/pages/landing_page.dart';
+import 'package:therapii/pages/my_patients_page.dart';
 import 'package:therapii/pages/patient_dashboard_page.dart';
 import 'package:therapii/pages/patient_onboarding_flow_page.dart';
-import 'package:therapii/pages/therapist_dashboard_page.dart';
 import 'package:therapii/pages/verify_email_page.dart';
 import 'package:therapii/utils/admin_access.dart';
 import 'package:therapii/services/user_service.dart';
@@ -179,7 +179,7 @@ class _RootRouter extends StatelessWidget {
             }
 
             if (isTherapist) {
-              return const TherapistDashboardPage();
+              return const MyPatientsPage();
             }
 
             return onboardingDone

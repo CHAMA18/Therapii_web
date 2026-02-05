@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:therapii/auth/firebase_auth_manager.dart';
 import 'package:therapii/pages/admin_settings_page.dart';
 import 'package:therapii/pages/auth_welcome_page.dart';
+import 'package:therapii/pages/landing_page.dart';
 import 'package:therapii/pages/therapist_approvals_page.dart';
 import 'package:therapii/theme_mode_controller.dart';
 import 'package:therapii/utils/admin_access.dart';
@@ -30,6 +31,24 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   late final FirebaseAuth _auth;
   StreamSubscription? _authSubscription;
 
+  // Landing text content
+  final _headlineController = TextEditingController();
+  final _subheadlineController = TextEditingController();
+  final _heroKickerController = TextEditingController();
+  final _heroTitleController = TextEditingController();
+  final _heroSubtitleController = TextEditingController();
+  final _ctaPrimaryController = TextEditingController();
+  final _ctaSecondaryController = TextEditingController();
+  final _nav1Controller = TextEditingController();
+  final _nav2Controller = TextEditingController();
+  final _nav3Controller = TextEditingController();
+  String? _landingUpdatedBy;
+  DateTime? _landingUpdatedAt;
+  bool _landingLoading = true;
+  bool _landingSaving = false;
+  final _landingSectionKey = GlobalKey();
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
@@ -42,10 +61,22 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       }
     });
     _loadCounts();
+    _loadLandingContent();
   }
 
   @override
   void dispose() {
+    _headlineController.dispose();
+    _subheadlineController.dispose();
+    _heroKickerController.dispose();
+    _heroTitleController.dispose();
+    _heroSubtitleController.dispose();
+    _ctaPrimaryController.dispose();
+    _ctaSecondaryController.dispose();
+    _nav1Controller.dispose();
+    _nav2Controller.dispose();
+    _nav3Controller.dispose();
+    _scrollController.dispose();
     _authSubscription?.cancel();
     super.dispose();
   }
@@ -77,6 +108,163 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         _loadingCounts = false;
       });
     }
+  }
+
+  Future<void> _loadLandingContent() async {
+    setState(() {
+      _landingLoading = true;
+    });
+    try {
+      final doc = await _firestore.collection('admin_settings').doc('landing_content').get();
+      final data = doc.data();
+      final headline = (data?['headline'] as String?)?.trim();
+      final subheadline = (data?['subheadline'] as String?)?.trim();
+      final kicker = (data?['hero_kicker'] as String?)?.trim();
+      final heroTitle = (data?['hero_title'] as String?)?.trim();
+      final heroSubtitle = (data?['hero_subtitle'] as String?)?.trim();
+      final ctaPrimary = (data?['cta_primary'] as String?)?.trim();
+      final ctaSecondary = (data?['cta_secondary'] as String?)?.trim();
+      final nav1 = (data?['nav_1'] as String?)?.trim();
+      final nav2 = (data?['nav_2'] as String?)?.trim();
+      final nav3 = (data?['nav_3'] as String?)?.trim();
+      _landingUpdatedBy = data?['updated_by'] as String?;
+      final ts = data?['updated_at'] as Timestamp?;
+      _landingUpdatedAt = ts?.toDate();
+      _headlineController.text = headline?.isNotEmpty == true ? headline! : 'Good afternoon,';
+      _subheadlineController.text = subheadline?.isNotEmpty == true
+          ? subheadline!
+          : 'Manage approvals, monitor activity, and configure the platform settings for your therapy network.';
+      _heroKickerController.text = kicker?.isNotEmpty == true ? kicker! : 'The Future of';
+      _heroTitleController.text = heroTitle?.isNotEmpty == true ? heroTitle! : 'Emotional Care';
+      _heroSubtitleController.text = heroSubtitle?.isNotEmpty == true
+          ? heroSubtitle!
+          : 'An immersive AI companion designed to extend the therapeutic relationship beyond the session.';
+      _ctaPrimaryController.text = ctaPrimary?.isNotEmpty == true ? ctaPrimary! : 'Begin Experience';
+      _ctaSecondaryController.text = ctaSecondary?.isNotEmpty == true ? ctaSecondary! : 'Sign In';
+      _nav1Controller.text = nav1?.isNotEmpty == true ? nav1! : 'Journal';
+      _nav2Controller.text = nav2?.isNotEmpty == true ? nav2! : 'Methodology';
+      _nav3Controller.text = nav3?.isNotEmpty == true ? nav3! : 'Access';
+    } catch (e) {
+      _showSnack('Failed to load landing content: $e', isError: true);
+    } finally {
+      if (mounted) {
+        setState(() => _landingLoading = false);
+      }
+    }
+  }
+
+  Future<void> _saveLandingContent() async {
+    final headline = _headlineController.text.trim();
+    final sub = _subheadlineController.text.trim();
+    final kicker = _heroKickerController.text.trim();
+    final heroTitle = _heroTitleController.text.trim();
+    final heroSubtitle = _heroSubtitleController.text.trim();
+    final ctaPrimary = _ctaPrimaryController.text.trim();
+    final ctaSecondary = _ctaSecondaryController.text.trim();
+    final nav1 = _nav1Controller.text.trim();
+    final nav2 = _nav2Controller.text.trim();
+    final nav3 = _nav3Controller.text.trim();
+    if (headline.isEmpty) {
+      _showSnack('Headline cannot be empty.', isError: true);
+      return;
+    }
+    setState(() => _landingSaving = true);
+    try {
+      final user = _auth.currentUser;
+      await _firestore.collection('admin_settings').doc('landing_content').set({
+        'headline': headline,
+        'subheadline': sub,
+        'hero_kicker': kicker,
+        'hero_title': heroTitle,
+        'hero_subtitle': heroSubtitle,
+        'cta_primary': ctaPrimary,
+        'cta_secondary': ctaSecondary,
+        'nav_1': nav1,
+        'nav_2': nav2,
+        'nav_3': nav3,
+        'updated_by': user?.email ?? user?.uid ?? 'admin',
+        'updated_at': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+      await _loadLandingContent();
+      _showSnack('Landing content saved.');
+    } catch (e) {
+      _showSnack('Failed to save landing content: $e', isError: true);
+    } finally {
+      if (mounted) setState(() => _landingSaving = false);
+    }
+  }
+
+  void _clearLandingContent() {
+    _headlineController.clear();
+    _subheadlineController.clear();
+    _heroKickerController.clear();
+    _heroTitleController.clear();
+    _heroSubtitleController.clear();
+    _ctaPrimaryController.clear();
+    _ctaSecondaryController.clear();
+    _nav1Controller.clear();
+    _nav2Controller.clear();
+    _nav3Controller.clear();
+  }
+
+  Future<void> _scrollToLandingEditor() async {
+    final ctx = _landingSectionKey.currentContext;
+    if (ctx != null) {
+      await Scrollable.ensureVisible(
+        ctx,
+        alignment: 0.05,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  void _showSnack(String msg, {bool isError = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: isError ? Colors.red : Colors.green,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  InputDecoration _textFieldDecoration(bool isDark, Color primaryColor, {required String label, required String hint}) {
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+      filled: true,
+      fillColor: isDark ? const Color(0xFF1f2a3d) : const Color(0xFFf8fafc),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFe2e8f0)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFe2e8f0)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: primaryColor),
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final diff = now.difference(date);
+    if (diff.inDays == 0) {
+      if (diff.inHours == 0) {
+        if (diff.inMinutes == 0) return 'just now';
+        return '${diff.inMinutes} min ago';
+      }
+      return '${diff.inHours} hr${diff.inHours == 1 ? '' : 's'} ago';
+    }
+    if (diff.inDays < 7) {
+      return '${diff.inDays} day${diff.inDays == 1 ? '' : 's'} ago';
+    }
+    return '${date.month}/${date.day}/${date.year}';
   }
 
   Future<void> _approveTherapist(String therapistId) async {
@@ -303,36 +491,36 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           // Main Content
           Expanded(
             child: RefreshIndicator(
-              onRefresh: _loadCounts,
+              onRefresh: () async {
+                await _loadCounts();
+                await _loadLandingContent();
+              },
               child: SingleChildScrollView(
+                controller: _scrollController,
                 physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
                 child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 1280),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Header Section
-                          _buildHeader(theme, isDark, primaryColor),
-                          const SizedBox(height: 40),
-                          // Action Cards Grid
-                          _buildActionCardsGrid(theme, isDark, primaryColor),
-                          const SizedBox(height: 48),
-                          // Pending Approvals Table
-                          _buildPendingApprovalsTable(theme, isDark, primaryColor),
-                          const SizedBox(height: 48),
-                          // Analytics & Activity Row
-                          _buildAnalyticsActivityRow(theme, isDark, primaryColor),
-                          const SizedBox(height: 48),
-                          // System Status Section
-                          _buildSystemStatusSection(theme, isDark, primaryColor),
-                          const SizedBox(height: 48),
-                          // Footer
-                          _buildFooter(theme, isDark),
-                        ],
-                      ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Header Section
+                        _buildHeader(theme, isDark, primaryColor),
+                        // Action Cards Grid
+                        _buildActionCardsGrid(theme, isDark, primaryColor),
+                        const SizedBox(height: 48),
+                        // Pending Approvals Table
+                        _buildPendingApprovalsTable(theme, isDark, primaryColor),
+                        const SizedBox(height: 48),
+                        // Analytics & Activity Row
+                        _buildAnalyticsActivityRow(theme, isDark, primaryColor),
+                        const SizedBox(height: 48),
+                        // System Status Section
+                        _buildSystemStatusSection(theme, isDark, primaryColor),
+                        const SizedBox(height: 48),
+                        // Footer
+                        _buildFooter(theme, isDark),
+                      ],
                     ),
                   ),
                 ),
@@ -347,92 +535,78 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   Widget _buildNavBar(ThemeData theme, bool isDark, Color primaryColor) {
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0f172a).withValues(alpha: 0.8) : Colors.white.withValues(alpha: 0.8),
+        color: isDark ? const Color(0xFF0f172a) : Colors.white,
         border: Border(
           bottom: BorderSide(
             color: isDark ? const Color(0xFF1e293b) : const Color(0xFFe2e8f0),
           ),
         ),
+        boxShadow: const [
+          BoxShadow(color: Color(0x12000000), blurRadius: 12, offset: Offset(0, 4)),
+        ],
       ),
-      child: ClipRect(
-        child: BackdropFilter(
-          filter: ColorFilter.mode(Colors.transparent, BlendMode.srcOver),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1280),
-                child: Row(
-                  children: [
-                    // Logo
-                    Row(
-                      children: [
-                        Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            color: primaryColor,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(Icons.admin_panel_settings, color: Colors.white, size: 20),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'AdminPanel',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white : const Color(0xFF0f172a),
-                          ),
-                        ),
-                      ],
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1280),
+          child: Row(
+            children: [
+              Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.asset(
+                      'assets/images/Therapii_image.png',
+                      height: 32,
+                      width: 32,
+                      fit: BoxFit.cover,
                     ),
-                    const Spacer(),
-                    // Navigation Links (Desktop)
-                    if (MediaQuery.of(context).size.width > 768) ...[
-                      _NavLink(label: 'Home', isActive: true, primaryColor: primaryColor, isDark: isDark),
-                      _NavLink(
-                        label: 'Approvals',
-                        isActive: false,
-                        primaryColor: primaryColor,
-                        isDark: isDark,
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const TherapistApprovalsPage()),
-                        ),
-                      ),
-                      _NavLink(
-                        label: 'Settings',
-                        isActive: false,
-                        primaryColor: primaryColor,
-                        isDark: isDark,
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const AdminSettingsPage()),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Container(
-                        width: 1,
-                        height: 24,
-                        color: isDark ? const Color(0xFF334155) : const Color(0xFFe2e8f0),
-                      ),
-                      const SizedBox(width: 16),
-                    ],
-                    // Dark Mode Toggle
-                    IconButton(
-                      icon: Icon(
-                        isDark ? Icons.light_mode : Icons.dark_mode,
-                        color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF64748b),
-                      ),
-                      onPressed: () {
-                        themeModeController.toggleLightDark();
-                      },
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'AdminPanel',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : const Color(0xFF0f172a),
                     ),
-                    const SizedBox(width: 8),
-                    // User Profile
-                    _buildUserProfile(theme, isDark, primaryColor),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ),
+              const Spacer(),
+              if (MediaQuery.of(context).size.width > 768) ...[
+                _NavLink(label: 'Home', isActive: true, primaryColor: primaryColor, isDark: isDark),
+                _NavLink(
+                  label: 'Approvals',
+                  isActive: false,
+                  primaryColor: primaryColor,
+                  isDark: isDark,
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const TherapistApprovalsPage()),
+                  ),
+                ),
+                _NavLink(
+                  label: 'Settings',
+                  isActive: false,
+                  primaryColor: primaryColor,
+                  isDark: isDark,
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const AdminSettingsPage()),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Container(width: 1, height: 24, color: isDark ? const Color(0xFF334155) : const Color(0xFFe2e8f0)),
+                const SizedBox(width: 16),
+              ],
+              IconButton(
+                icon: Icon(
+                  isDark ? Icons.light_mode : Icons.dark_mode,
+                  color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF64748b),
+                ),
+                onPressed: () => themeModeController.toggleLightDark(),
+              ),
+              const SizedBox(width: 8),
+              _buildUserProfile(theme, isDark, primaryColor),
+            ],
           ),
         ),
       ),
@@ -605,13 +779,235 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     );
   }
 
+  Widget _buildLandingEditor(ThemeData theme, bool isDark, Color primaryColor) {
+    return Container(
+      key: _landingSectionKey,
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1e293b).withValues(alpha: 0.4) : Colors.white,
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(
+          color: isDark ? const Color(0xFF334155) : const Color(0xFFe2e8f0),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1e293b) : const Color(0xFFdbeafe),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.edit_note_rounded, color: primaryColor),
+              ),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Landing Page Text Content',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: isDark ? Colors.white : const Color(0xFF0f172a),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Update the headline and supporting text shown on the landing page.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF64748b),
+                    ),
+                  ),
+                ],
+              ),
+              const Spacer(),
+              if (_landingUpdatedAt != null || _landingUpdatedBy != null)
+                Text(
+                  'Last updated${_landingUpdatedBy != null ? " by $_landingUpdatedBy" : ""}${_landingUpdatedAt != null ? " • ${_formatDate(_landingUpdatedAt!)}" : ""}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF64748b),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          TextField(
+            controller: _headlineController,
+            enabled: !_landingLoading && !_landingSaving,
+            decoration: InputDecoration(
+              labelText: 'Headline',
+              hintText: 'Good afternoon,',
+              filled: true,
+              fillColor: isDark ? const Color(0xFF1f2a3d) : const Color(0xFFf8fafc),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFe2e8f0)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFe2e8f0)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: primaryColor),
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: _subheadlineController,
+            enabled: !_landingLoading && !_landingSaving,
+            maxLines: 3,
+            decoration: _textFieldDecoration(isDark, primaryColor,
+                label: 'Subheadline',
+                hint: 'Manage approvals, monitor activity...'),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _heroKickerController,
+            enabled: !_landingLoading && !_landingSaving,
+            decoration: _textFieldDecoration(isDark, primaryColor,
+                label: 'Hero kicker', hint: 'The Future of'),
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: _heroTitleController,
+            enabled: !_landingLoading && !_landingSaving,
+            decoration: _textFieldDecoration(isDark, primaryColor,
+                label: 'Hero title', hint: 'Emotional Care'),
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: _heroSubtitleController,
+            enabled: !_landingLoading && !_landingSaving,
+            maxLines: 3,
+            decoration: _textFieldDecoration(
+              isDark,
+              primaryColor,
+              label: 'Hero subtitle',
+              hint: 'An immersive AI companion designed to extend the therapeutic relationship beyond the session.',
+            ),
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: _ctaPrimaryController,
+            enabled: !_landingLoading && !_landingSaving,
+            decoration: _textFieldDecoration(isDark, primaryColor,
+                label: 'Primary CTA', hint: 'Begin Experience'),
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: _ctaSecondaryController,
+            enabled: !_landingLoading && !_landingSaving,
+            decoration: _textFieldDecoration(isDark, primaryColor,
+                label: 'Secondary CTA', hint: 'Sign In'),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            'Nav links',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: isDark ? Colors.white : const Color(0xFF0f172a),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _nav1Controller,
+                  enabled: !_landingLoading && !_landingSaving,
+                  decoration: _textFieldDecoration(isDark, primaryColor,
+                      label: 'Nav 1', hint: 'Journal'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: _nav2Controller,
+                  enabled: !_landingLoading && !_landingSaving,
+                  decoration: _textFieldDecoration(isDark, primaryColor,
+                      label: 'Nav 2', hint: 'Methodology'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: _nav3Controller,
+                  enabled: !_landingLoading && !_landingSaving,
+                  decoration: _textFieldDecoration(isDark, primaryColor,
+                      label: 'Nav 3', hint: 'Access'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            children: [
+              ElevatedButton.icon(
+                onPressed: _landingSaving ? null : _saveLandingContent,
+                icon: _landingSaving
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Icon(Icons.save_rounded),
+                label: Text(_landingSaving ? 'Saving...' : 'Save'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryColor,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+              ),
+              OutlinedButton.icon(
+                onPressed: _landingLoading || _landingSaving ? null : _loadLandingContent,
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Reset'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+              ),
+              TextButton.icon(
+                onPressed: _landingSaving ? null : _clearLandingContent,
+                icon: const Icon(Icons.clear_rounded),
+                label: const Text('Clear'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildActionCardsGrid(ThemeData theme, bool isDark, Color primaryColor) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        int crossAxisCount = 4;
-        if (width < 1024) crossAxisCount = 2;
-        if (width < 600) crossAxisCount = 1;
+        int crossAxisCount;
+        if (width >= 1440) {
+          crossAxisCount = 5;
+        } else if (width >= 1024) {
+          crossAxisCount = 4;
+        } else if (width >= 640) {
+          crossAxisCount = 2;
+        } else {
+          crossAxisCount = 1;
+        }
 
         final cards = [
           _ActionCard(
@@ -654,6 +1050,17 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             isDark: isDark,
             onTap: _loadCounts,
           ),
+          _ActionCard(
+            title: 'Edit Text Content',
+            subtitle: 'Update landing page copy',
+            icon: Icons.edit_note_rounded,
+            isPrimary: false,
+            primaryColor: primaryColor,
+            isDark: isDark,
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const LandingPage(editable: true)),
+            ),
+          ),
         ];
 
         if (crossAxisCount == 1) {
@@ -671,7 +1078,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           mainAxisSpacing: 24,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          childAspectRatio: crossAxisCount == 4 ? 1.1 : 1.5,
+          childAspectRatio: crossAxisCount >= 4 ? 1.1 : (crossAxisCount == 2 ? 1.2 : 1.1),
           children: cards,
         );
       },

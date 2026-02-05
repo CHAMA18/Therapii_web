@@ -303,9 +303,10 @@ class _TherapistApprovalsPageState extends State<TherapistApprovalsPage> with Si
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    const double maxContentWidth = 1100;
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
         child: Column(
           children: [
@@ -348,14 +349,19 @@ class _TherapistApprovalsPageState extends State<TherapistApprovalsPage> with Si
 
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    children: [
-                      Expanded(child: _StatCard(count: pending, label: 'Pending', color: const Color(0xFFF59E0B), icon: Icons.schedule)),
-                      const SizedBox(width: 12),
-                      Expanded(child: _StatCard(count: approved, label: 'Approved', color: const Color(0xFF22C55E), icon: Icons.check_circle_outline)),
-                      const SizedBox(width: 12),
-                      Expanded(child: _StatCard(count: rejected, label: 'Rejected', color: const Color(0xFFEF4444), icon: Icons.cancel_outlined)),
-                    ],
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: maxContentWidth),
+                      child: Row(
+                        children: [
+                          Expanded(child: _StatCard(count: pending, label: 'Pending', color: const Color(0xFFF59E0B), icon: Icons.schedule)),
+                          const SizedBox(width: 12),
+                          Expanded(child: _StatCard(count: approved, label: 'Approved', color: const Color(0xFF22C55E), icon: Icons.check_circle_outline)),
+                          const SizedBox(width: 12),
+                          Expanded(child: _StatCard(count: rejected, label: 'Rejected', color: const Color(0xFFEF4444), icon: Icons.cancel_outlined)),
+                        ],
+                      ),
+                    ),
                   ),
                 );
               },
@@ -366,38 +372,38 @@ class _TherapistApprovalsPageState extends State<TherapistApprovalsPage> with Si
             // Premium Tab Bar
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Container(
-                height: 48,
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: TabBar(
-                  controller: _tabController,
-                  indicator: BoxDecoration(
-                    color: colorScheme.surface,
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.06),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: maxContentWidth),
+                  child: Container(
+                    height: 52,
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      boxShadow: const [BoxShadow(color: Color(0x12000000), blurRadius: 14, offset: Offset(0, 6))],
+                    ),
+                    child: TabBar(
+                      controller: _tabController,
+                      indicator: BoxDecoration(
+                        color: const Color(0xFF0F172A),
+                        borderRadius: BorderRadius.circular(14),
                       ),
-                    ],
+                      indicatorSize: TabBarIndicatorSize.tab,
+                      dividerColor: Colors.transparent,
+                      labelColor: Colors.white,
+                      unselectedLabelColor: const Color(0xFF64748B),
+                      labelStyle: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700, letterSpacing: 0.2),
+                      unselectedLabelStyle: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
+                      tabs: const [
+                        Tab(text: 'All'),
+                        Tab(text: 'Pending'),
+                        Tab(text: 'Approved'),
+                        Tab(text: 'Rejected'),
+                      ],
+                    ),
                   ),
-                  indicatorSize: TabBarIndicatorSize.tab,
-                  dividerColor: Colors.transparent,
-                  labelColor: colorScheme.onSurface,
-                  unselectedLabelColor: colorScheme.onSurface.withValues(alpha: 0.5),
-                  labelStyle: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
-                  unselectedLabelStyle: theme.textTheme.labelMedium,
-                  tabs: const [
-                    Tab(text: 'All'),
-                    Tab(text: 'Pending'),
-                    Tab(text: 'Approved'),
-                    Tab(text: 'Rejected'),
-                  ],
                 ),
               ),
             ),
@@ -416,6 +422,7 @@ class _TherapistApprovalsPageState extends State<TherapistApprovalsPage> with Si
                     return _errorState(theme, 'Unable to load therapist submissions');
                   }
 
+                  const double maxContentWidth = 1100;
                   final docs = snapshot.data?.docs ?? [];
                   final filtered = docs.where((doc) {
                     final status = (doc.data()['approval_status'] as String?)?.toLowerCase();
@@ -438,9 +445,14 @@ class _TherapistApprovalsPageState extends State<TherapistApprovalsPage> with Si
                       onRefresh: _refreshData,
                       child: SingleChildScrollView(
                         physics: const AlwaysScrollableScrollPhysics(),
-                        child: SizedBox(
-                          height: MediaQuery.of(context).size.height * 0.5,
-                          child: _emptyState(theme),
+                        child: Center(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: maxContentWidth),
+                            child: SizedBox(
+                              height: MediaQuery.of(context).size.height * 0.5,
+                              child: _emptyState(theme),
+                            ),
+                          ),
                         ),
                       ),
                     );
@@ -448,44 +460,50 @@ class _TherapistApprovalsPageState extends State<TherapistApprovalsPage> with Si
 
                   return RefreshIndicator(
                     onRefresh: _refreshData,
-                    child: ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-                      itemCount: filtered.length,
-                      itemBuilder: (context, index) {
-                        final doc = filtered[index];
-                        final data = doc.data();
-                        final status = (data['approval_status'] as String?)?.toLowerCase();
-                        final isPending = status == null || status == 'pending' || status == 'resubmitted' || status == 'needs_review';
-                        return TweenAnimationBuilder<double>(
-                          duration: Duration(milliseconds: 300 + (index * 50)),
-                          tween: Tween(begin: 0.0, end: 1.0),
-                          builder: (context, value, child) => Opacity(
-                            opacity: value,
-                            child: Transform.translate(
-                              offset: Offset(0, 20 * (1 - value)),
-                              child: child,
-                            ),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.only(bottom: 16),
-                            child: isPending
-                                ? _PendingApprovalCard(
-                                    data: data,
-                                    status: status,
-                                    onApprove: () => _approveTherapist(doc.id),
-                                    onReject: () => _rejectTherapist(doc.id),
-                                    onViewDetails: () => _showTherapistDetails(data, status),
-                                  )
-                                : _TherapistCard(
-                                    data: data,
-                                    status: status,
-                                    onApprove: status == 'approved' ? null : () => _approveTherapist(doc.id),
-                                    onReject: status == 'rejected' ? null : () => _rejectTherapist(doc.id),
-                                    onViewDetails: () => _showTherapistDetails(data, status),
-                                  ),
-                          ),
-                        );
-                      },
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: maxContentWidth),
+                        child: ListView.builder(
+                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                          itemCount: filtered.length,
+                          itemBuilder: (context, index) {
+                            final doc = filtered[index];
+                            final data = doc.data();
+                            final status = (data['approval_status'] as String?)?.toLowerCase();
+                            final isPending = status == null || status == 'pending' || status == 'resubmitted' || status == 'needs_review';
+                            return TweenAnimationBuilder<double>(
+                              duration: Duration(milliseconds: 300 + (index * 50)),
+                              tween: Tween(begin: 0.0, end: 1.0),
+                              builder: (context, value, child) => Opacity(
+                                opacity: value,
+                                child: Transform.translate(
+                                  offset: Offset(0, 20 * (1 - value)),
+                                  child: child,
+                                ),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.only(bottom: 16),
+                                child: isPending
+                                    ? _PendingApprovalCard(
+                                        data: data,
+                                        status: status,
+                                        onApprove: () => _approveTherapist(doc.id),
+                                        onReject: () => _rejectTherapist(doc.id),
+                                        onViewDetails: () => _showTherapistDetails(data, status),
+                                      )
+                                    : _TherapistCard(
+                                        data: data,
+                                        status: status,
+                                        onApprove: status == 'approved' ? null : () => _approveTherapist(doc.id),
+                                        onReject: status == 'rejected' ? null : () => _rejectTherapist(doc.id),
+                                        onViewDetails: () => _showTherapistDetails(data, status),
+                                      ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
                     ),
                   );
                 },
@@ -639,24 +657,38 @@ class _StatCard extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.15)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: color.withValues(alpha: 0.18)),
+        boxShadow: const [BoxShadow(color: Color(0x12000000), blurRadius: 12, offset: Offset(0, 6))],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 22),
+          ),
+          const SizedBox(height: 10),
           Text(
             count.toString(),
-            style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700, color: color),
+            style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800, color: color),
           ),
+          const SizedBox(height: 4),
           Text(
-            label,
-            style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
+            label.toUpperCase(),
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: const Color(0xFF64748B),
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.6,
+            ),
           ),
         ],
       ),
@@ -753,20 +785,15 @@ class _PendingApprovalCardState extends State<_PendingApprovalCard> with SingleT
             // Main card
             Container(
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    colorScheme.surface,
-                    colorScheme.surface,
-                    amberColor.withValues(alpha: 0.03),
-                  ],
-                ),
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: amberColor.withValues(alpha: 0.3),
-                  width: 1.5,
+                  color: amberColor.withValues(alpha: 0.25),
+                  width: 1.3,
                 ),
+                boxShadow: const [
+                  BoxShadow(color: Color(0x14000000), blurRadius: 18, offset: Offset(0, 10)),
+                ],
               ),
               child: Column(
                 children: [
@@ -774,12 +801,7 @@ class _PendingApprovalCardState extends State<_PendingApprovalCard> with SingleT
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          amberColor.withValues(alpha: 0.15),
-                          amberColor.withValues(alpha: 0.05),
-                        ],
-                      ),
+                      color: amberColor.withValues(alpha: 0.08),
                       borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
                     ),
                     child: Row(

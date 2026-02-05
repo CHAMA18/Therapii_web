@@ -182,157 +182,204 @@ class _NewPatientInfoPageState extends State<NewPatientInfoPage> {
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final primary = scheme.primary;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FA),
+      backgroundColor: const Color(0xFFF6F8FB),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
+        centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
           tooltip: 'Back',
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text('Invite Patient'),
-        centerTitle: true,
+        title: const Text('Invite Patient', style: TextStyle(fontWeight: FontWeight.w600)),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: OutlinedButton.icon(
+              onPressed: () async {
+                await FirebaseAuthManager().signOut();
+                if (context.mounted) {
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const AuthWelcomePage(initialTab: AuthTab.login)),
+                    (route) => false,
+                  );
+                }
+              },
+              style: OutlinedButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                side: BorderSide(color: scheme.outline.withOpacity(0.35)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                backgroundColor: Colors.white,
+              ),
+              icon: const Icon(Icons.logout, size: 18),
+              label: const Text('Logout'),
+            ),
+          ),
+        ],
       ),
       body: SafeArea(
-        child: Stack(
-          children: [
-            SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 720),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Top bar
-                      Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 16,
-                            backgroundColor: Colors.white,
-                            child: Padding(
-                              padding: const EdgeInsets.all(2),
-                              child: Image.asset('assets/images/therapii_logo.png'),
-                            ),
-                          ),
-                          const Spacer(),
-                          OutlinedButton.icon(
-                            onPressed: () async {
-                              await FirebaseAuthManager().signOut();
-                              if (context.mounted) {
-                                Navigator.of(context).pushAndRemoveUntil(
-                                  MaterialPageRoute(builder: (_) => const AuthWelcomePage(initialTab: AuthTab.login)),
-                                  (route) => false,
-                                );
-                              }
-                            },
-                            icon: const Icon(Icons.logout),
-                            label: const Text('Logout'),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      Text('New Patient Info', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Please enter the information int he form then hit submit',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade700),
-                      ),
-                      const SizedBox(height: 16),
-                      Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            TextFormField(
-                              controller: _nameController,
-                              decoration: _fieldDecoration("Patient's Full Name"),
-                              validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter a name' : null,
-                            ),
-                            const SizedBox(height: 12),
-                            TextFormField(
-                              controller: _emailController,
-                              decoration: _fieldDecoration('Patient Email'),
-                              keyboardType: TextInputType.emailAddress,
-                              validator: (v) => (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
-                            ),
-                            const SizedBox(height: 16),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    'Offer free credits. Each credit is worth one free month',
-                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-                                  ),
-                                ),
-                                Switch(
-                                  value: _offerCredits,
-                                  activeColor: Colors.white,
-                                  activeTrackColor: primary,
-                                  onChanged: (v) => setState(() => _offerCredits = v),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            DropdownButtonFormField<int>(
-                              value: _selectedCredits,
-                              items: [1, 2, 3, 4, 5].map((e) => DropdownMenuItem(value: e, child: Text('$e'))).toList(),
-                              onChanged: _offerCredits ? (v) => setState(() => _selectedCredits = v) : null,
-                              decoration: _fieldDecoration('Select...'),
-                            ),
-                            const SizedBox(height: 12),
-                            TextFormField(
-                              controller: _notesController,
-                              minLines: 5,
-                              maxLines: 6,
-                              decoration: _fieldDecoration(
-                                "Let's personalize the AI's approach! Please provide some key information about this patient so the AI can tailor its style and make the session feel more personal.",
-                              ).copyWith(hintMaxLines: 5),
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'By clicking Submit, you authorize Therapii to send an email invitation to establish an Therapii account.',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey.shade700),
-                            ),
-                            const SizedBox(height: 20),
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton(
-                                onPressed: _isSubmitting ? null : _handleSubmit,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF3F62A8),
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                                ),
-                                child: _isSubmitting
-                                    ? const SizedBox(
-                                        height: 20,
-                                        width: 20,
-                                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                                      )
-                                    : const Text('Submit', style: TextStyle(fontWeight: FontWeight.w700)),
-                              ),
-                            ),
-                            const SizedBox(height: 40),
-                          ],
-                        ),
-                      ),
-                    ],
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 720),
+              child: Column(
+                children: [
+                  const SizedBox(height: 12),
+                  CircleAvatar(
+                    radius: 22,
+                    backgroundColor: Colors.white,
+                    child: Padding(
+                      padding: const EdgeInsets.all(6),
+                      child: Image.asset('assets/images/therapii_logo.png'),
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 20),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 26),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: const [
+                        BoxShadow(color: Color(0x14000000), blurRadius: 18, offset: Offset(0, 12)),
+                      ],
+                      border: Border.all(color: scheme.outline.withOpacity(0.12)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('New Patient Info',
+                            style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Please enter the information in the form below then hit submit to generate an invitation.',
+                          style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurface.withOpacity(0.6)),
+                        ),
+                        const SizedBox(height: 24),
+                        Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              TextFormField(
+                                controller: _nameController,
+                                decoration: _fieldDecoration("Patient's Full Name", prefix: const Icon(Icons.person)),
+                                validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter a name' : null,
+                              ),
+                              const SizedBox(height: 14),
+                              TextFormField(
+                                controller: _emailController,
+                                decoration: _fieldDecoration('Patient Email', prefix: const Icon(Icons.email_outlined)),
+                                keyboardType: TextInputType.emailAddress,
+                                validator: (v) => (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
+                              ),
+                              const SizedBox(height: 18),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Offer free credits',
+                                          style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Each credit is worth one free month',
+                                          style: theme.textTheme.bodySmall?.copyWith(
+                                            color: scheme.onSurface.withOpacity(0.6),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Switch(
+                                    value: _offerCredits,
+                                    activeColor: Colors.white,
+                                    activeTrackColor: primary,
+                                    onChanged: (v) => setState(() => _offerCredits = v),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              DropdownButtonFormField<int>(
+                                value: _offerCredits ? _selectedCredits : null,
+                                items: const [
+                                  DropdownMenuItem(value: 1, child: Text('1 Credit (1 Month)')),
+                                  DropdownMenuItem(value: 3, child: Text('3 Credits (3 Months)')),
+                                  DropdownMenuItem(value: 6, child: Text('6 Credits (6 Months)')),
+                                  DropdownMenuItem(value: 12, child: Text('12 Credits (1 Year)')),
+                                ],
+                                onChanged: _offerCredits ? (v) => setState(() => _selectedCredits = v) : null,
+                                decoration: _fieldDecoration('Select number of credits...'),
+                                validator: (v) {
+                                  if (!_offerCredits) return null;
+                                  if (v == null) return 'Select the number of credits';
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                controller: _notesController,
+                                minLines: 4,
+                                maxLines: 6,
+                                decoration: _fieldDecoration(
+                                  "Let's personalize the AI's approach! Please provide some key information about this patient so the AI can tailor its style and make the session feel more personal.",
+                                  prefix: const Icon(Icons.note_alt_outlined),
+                                ).copyWith(hintMaxLines: 5),
+                              ),
+                              const SizedBox(height: 20),
+                              Text(
+                                'By clicking Submit, you authorize Therapii to send an email invitation to establish a Therapii account.',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: scheme.onSurface.withOpacity(0.6),
+                                ),
+                              ),
+                              const SizedBox(height: 18),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: _isSubmitting ? null : _handleSubmit,
+                                  style: ElevatedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                    backgroundColor: const Color(0xFF3B6CC3),
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                                    shadowColor: const Color(0x4D3B6CC3),
+                                    elevation: 4,
+                                  ),
+                                  child: _isSubmitting
+                                      ? const SizedBox(
+                                          height: 22,
+                                          width: 22,
+                                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                        )
+                                      : const Text('Submit Invite', style: TextStyle(fontWeight: FontWeight.w700)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+                ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );

@@ -511,7 +511,7 @@ class _MyPatientsPageState extends State<MyPatientsPage> {
         _showAllPatients || !hasMorePatients ? _activePatients : _activePatients.take(maxVisiblePatients).toList();
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
@@ -560,7 +560,7 @@ class _MyPatientsPageState extends State<MyPatientsPage> {
                     children: [
                       // Greeting Header
                       Padding(
-                        padding: const EdgeInsets.only(top: 8, bottom: 28),
+                        padding: const EdgeInsets.only(top: 8, bottom: 24),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -569,50 +569,43 @@ class _MyPatientsPageState extends State<MyPatientsPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    _greeting() + ',',
-                                    style: theme.textTheme.headlineMedium?.copyWith(
-                                      color: theme.colorScheme.onSurface,
-                                      fontWeight: FontWeight.w400,
+                                    'Good evening,',
+                                    style: theme.textTheme.bodyLarge?.copyWith(
+                                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
+                                  const SizedBox(height: 4),
                                   Text(
-                                    _therapist?.firstName.isNotEmpty == true
-                                        ? _therapist!.firstName
-                                        : (_therapist?.fullName.isNotEmpty == true
-                                            ? _therapist!.fullName
-                                            : 'there'),
-                                    style: theme.textTheme.displaySmall?.copyWith(
-                                      fontWeight: FontWeight.w700,
+                                    _therapist?.fullName.isNotEmpty == true ? _therapist!.fullName : 'Therapist',
+                                    style: theme.textTheme.headlineMedium?.copyWith(
+                                      fontWeight: FontWeight.w800,
                                       color: theme.colorScheme.onSurface,
-                                      height: 1.1,
                                     ),
                                   ),
-                                  const SizedBox(height: 8),
+                                  const SizedBox(height: 6),
                                   Text(
                                     'Manage your patients, invites and conversations.',
-                                    style: theme.textTheme.bodyLarge?.copyWith(
-                                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                                      fontWeight: FontWeight.w500,
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      color: theme.colorScheme.onSurface.withOpacity(0.55),
                                     ),
                                   ),
                                 ],
                               ),
                             ),
                             Container(
-                              width: 60,
-                              height: 60,
+                              width: 50,
+                              height: 50,
                               decoration: BoxDecoration(
-                                color: theme.colorScheme.primaryContainer,
+                                color: theme.colorScheme.primary.withOpacity(0.12),
                                 shape: BoxShape.circle,
                               ),
                               child: Center(
                                 child: Text(
-                                  (_therapist?.firstName ?? 'T').isNotEmpty
-                                      ? (_therapist?.firstName ?? 'T')[0].toUpperCase()
-                                      : 'T',
-                                  style: theme.textTheme.titleLarge?.copyWith(
-                                    color: theme.colorScheme.onPrimaryContainer,
-                                    fontWeight: FontWeight.bold,
+                                  (_therapist?.firstName ?? 'E')[0].toUpperCase(),
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    color: theme.colorScheme.primary,
+                                    fontWeight: FontWeight.w800,
                                   ),
                                 ),
                               ),
@@ -621,20 +614,21 @@ class _MyPatientsPageState extends State<MyPatientsPage> {
                         ),
                       ),
 
-                      // Action Cards like Patient Dashboard
+                      // Hero tiles
                       LayoutBuilder(builder: (context, constraints) {
-                        final isWide = constraints.maxWidth > 600;
-                        final gap = isWide ? 24.0 : 20.0;
-                        final inviteCard = DashboardActionCard(
+                        final isWide = constraints.maxWidth > 620;
+                        final gap = isWide ? 16.0 : 12.0;
+                        final inviteTile = _HeroTile(
+                          gradient: true,
                           title: 'Invite New Patient',
                           subtitle: 'Share a code to connect',
-                          icon: Icons.person_add_alt_1_rounded,
-                          isPrimary: true,
+                          icon: Icons.person_add_rounded,
                           onTap: () => Navigator.of(context).push(
                             MaterialPageRoute(builder: (_) => const NewPatientInfoPage()),
                           ),
                         );
-                        final listenCard = DashboardActionCard(
+                        final listenTile = _HeroTile(
+                          gradient: false,
                           title: 'Listen',
                           subtitle: 'AI summaries, transcripts and voice updates',
                           icon: Icons.graphic_eq_rounded,
@@ -642,10 +636,9 @@ class _MyPatientsPageState extends State<MyPatientsPage> {
                             MaterialPageRoute(builder: (_) => const ListenPage()),
                           ),
                         );
-
                         return isWide
-                            ? Row(children: [Expanded(child: inviteCard), SizedBox(width: gap), Expanded(child: listenCard)])
-                            : Column(children: [inviteCard, SizedBox(height: gap), listenCard]);
+                            ? Row(children: [Expanded(child: inviteTile), SizedBox(width: gap), Expanded(child: listenTile)])
+                            : Column(children: [inviteTile, SizedBox(height: gap), listenTile]);
                       }),
 
                       const SizedBox(height: 28),
@@ -1249,6 +1242,127 @@ class _CornerBadge extends StatelessWidget {
   }
 }
 
+class _HeroTile extends StatefulWidget {
+  final bool gradient;
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _HeroTile({
+    required this.gradient,
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  State<_HeroTile> createState() => _HeroTileState();
+}
+
+class _HeroTileState extends State<_HeroTile> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
+    final background = widget.gradient
+        ? null
+        : (isDark ? scheme.surfaceContainerHighest : Colors.white);
+    final borderColor = widget.gradient
+        ? Colors.transparent
+        : scheme.outline.withValues(alpha: 0.15);
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          padding: const EdgeInsets.all(22),
+          decoration: BoxDecoration(
+            color: background,
+            gradient: widget.gradient
+                ? LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      scheme.primary,
+                      scheme.primary.withValues(alpha: 0.85),
+                    ],
+                  )
+                : null,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: borderColor),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: _hovered ? 0.12 : 0.06),
+                blurRadius: 14,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: widget.gradient
+                          ? Colors.white.withValues(alpha: 0.2)
+                          : scheme.primary.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Icon(
+                      widget.icon,
+                      color: widget.gradient ? scheme.onPrimary : scheme.primary,
+                      size: 22,
+                    ),
+                  ),
+                  Icon(
+                    Icons.arrow_forward_rounded,
+                    color: widget.gradient
+                        ? scheme.onPrimary.withValues(alpha: 0.7)
+                        : scheme.onSurface.withValues(alpha: 0.4),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Text(
+                widget.title,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: widget.gradient ? scheme.onPrimary : scheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                widget.subtitle,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: widget.gradient
+                      ? scheme.onPrimary.withValues(alpha: 0.8)
+                      : scheme.onSurface.withValues(alpha: 0.6),
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 // Drawer and static content were extracted to CommonSettingsDrawer for reuse.
 
 /// Premium Active Patients Card - styled like screenshot design
@@ -1412,17 +1526,14 @@ class _PendingInvitesCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(24),
         color: scheme.surface,
-        boxShadow: [
-          BoxShadow(
-            color: scheme.primary.withValues(alpha: 0.05),
-            blurRadius: 32,
-            offset: const Offset(0, 20),
-          ),
+        border: Border.all(color: scheme.outline.withOpacity(0.06)),
+        boxShadow: const [
+          BoxShadow(color: Color(0x0F000000), blurRadius: 18, offset: Offset(0, 10)),
         ],
       ),
-      padding: const EdgeInsets.all(26),
+      padding: const EdgeInsets.all(22),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
