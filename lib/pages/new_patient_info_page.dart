@@ -95,7 +95,7 @@ class _NewPatientInfoPageState extends State<NewPatientInfoPage> {
           ),
         );
       }
-    } on FirebaseAuth.FirebaseAuthException catch (e) {
+    } on FirebaseAuth.FirebaseAuthException {
       if (mounted) {
         // Auth token issue - prompt user to re-authenticate
         final shouldReauth = await showDialog<bool>(
@@ -307,7 +307,7 @@ class _NewPatientInfoPageState extends State<NewPatientInfoPage> {
                                   ),
                                   Switch(
                                     value: _offerCredits,
-                                    activeColor: Colors.white,
+                                    activeThumbColor: Colors.white,
                                     activeTrackColor: primary,
                                     onChanged: (v) => setState(() => _offerCredits = v),
                                   ),
@@ -315,7 +315,7 @@ class _NewPatientInfoPageState extends State<NewPatientInfoPage> {
                               ),
                               const SizedBox(height: 10),
                               DropdownButtonFormField<int>(
-                                value: _offerCredits ? _selectedCredits : null,
+                                initialValue: _offerCredits ? _selectedCredits : null,
                                 items: const [
                                   DropdownMenuItem(value: 1, child: Text('1 Credit (1 Month)')),
                                   DropdownMenuItem(value: 3, child: Text('3 Credits (3 Months)')),

@@ -11,10 +11,11 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && (
-        request.auth.token.email == 'chungu424@gmail.com' ||
-        request.auth.token.email == 'emacbean@gmail.com' ||
-        request.auth.token.email == 'chungu@thestackone.com'
+      // Keep admin checks case-insensitive to match app-side normalization.
+      return isSignedIn() && request.auth.token.email is string && (
+        request.auth.token.email.matches('(?i)^chungu424@gmail\\.com$') ||
+        request.auth.token.email.matches('(?i)^emacbean@gmail\\.com$') ||
+        request.auth.token.email.matches('(?i)^chungu@thestackone\\.com$')
       );
     }
 

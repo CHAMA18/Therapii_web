@@ -402,12 +402,12 @@ class SectionCard extends StatelessWidget {
   final Color color;
 
   const SectionCard({
-    Key? key,
+    super.key,
     required this.title,
     required this.subtitle,
     required this.child,
     required this.color,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -472,7 +472,7 @@ class SectionCard extends StatelessWidget {
 
 class LoadingInfo extends StatelessWidget {
   final String text;
-  const LoadingInfo({required this.text});
+  const LoadingInfo({super.key, required this.text});
 
   @override
   Widget build(BuildContext context) {
@@ -513,7 +513,7 @@ class _QuickLinkButton extends StatelessWidget {
       style: FilledButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
         foregroundColor: scheme.onSurface,
-        backgroundColor: scheme.surfaceVariant.withOpacity(0.6),
+        backgroundColor: scheme.surfaceContainerHighest.withOpacity(0.6),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
     );
@@ -523,7 +523,7 @@ class _QuickLinkButton extends StatelessWidget {
 class MessagePreview extends StatelessWidget {
   final ChatMessage message;
   final String therapistId;
-  const MessagePreview({required this.message, required this.therapistId});
+  const MessagePreview({super.key, required this.message, required this.therapistId});
 
   @override
   Widget build(BuildContext context) {
@@ -584,7 +584,7 @@ class ConversationCard extends StatelessWidget {
   final AiConversationSummary summary;
   final VoidCallback onTap;
   final void Function(AiConversationSummary)? onFeedback;
-  const ConversationCard({required this.summary, required this.onTap, this.onFeedback});
+  const ConversationCard({super.key, required this.summary, required this.onTap, this.onFeedback});
 
   @override
   Widget build(BuildContext context) {
@@ -602,7 +602,7 @@ class ConversationCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: scheme.surfaceVariant.withOpacity(0.5),
+          color: scheme.surfaceContainerHighest.withOpacity(0.5),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: hasFeedback ? scheme.primary.withOpacity(0.3) : scheme.outline.withOpacity(0.1)),
         ),
@@ -688,7 +688,7 @@ class ConversationCard extends StatelessWidget {
 
 class VoiceCheckinCard extends StatelessWidget {
   final VoiceCheckin checkin;
-  const VoiceCheckinCard({required this.checkin});
+  const VoiceCheckinCard({super.key, required this.checkin});
 
   @override
   Widget build(BuildContext context) {
@@ -703,7 +703,7 @@ class VoiceCheckinCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: scheme.surfaceVariant.withOpacity(0.5),
+        color: scheme.surfaceContainerHighest.withOpacity(0.5),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: scheme.outline.withOpacity(0.1)),
       ),

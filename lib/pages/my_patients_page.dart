@@ -37,7 +37,7 @@ class MyPatientsPage extends StatefulWidget {
 }
 
 class _MyPatientsPageState extends State<MyPatientsPage> {
-  TopNavSection _selected = TopNavSection.patients;
+  final TopNavSection _selected = TopNavSection.patients;
 
   final _invitationService = InvitationService();
   final _userService = UserService();
@@ -84,7 +84,7 @@ class _MyPatientsPageState extends State<MyPatientsPage> {
   Widget _buildPatientTile(AppUser.User user) {
     final displayName = user.fullName.isNotEmpty ? user.fullName : user.email;
     final therapistId = _therapistId;
-    final openChat = () => Navigator.of(context).push(
+    Future openChat() => Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => PatientChatPage(otherUser: user),
           ),
@@ -711,7 +711,7 @@ class _TopNav extends StatelessWidget {
           icon: const Icon(Icons.menu),
           color: theme.colorScheme.onSurface,
           style: IconButton.styleFrom(
-            backgroundColor: theme.colorScheme.surfaceVariant.withOpacity(0.6),
+            backgroundColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.6),
             padding: const EdgeInsets.all(12),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
@@ -814,7 +814,7 @@ class _PatientTile extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 24,
-                  backgroundColor: colorScheme.surfaceVariant,
+                  backgroundColor: colorScheme.surfaceContainerHighest,
                   child: Icon(Icons.person, color: colorScheme.onSurfaceVariant),
                 ),
                 const SizedBox(width: 14),
@@ -912,7 +912,7 @@ class _AiConversationTile extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 24,
-                  backgroundColor: colorScheme.surfaceVariant,
+                  backgroundColor: colorScheme.surfaceContainerHighest,
                   child: Icon(Icons.smart_toy_outlined, color: colorScheme.onSurfaceVariant),
                 ),
                 const SizedBox(width: 14),
@@ -1082,7 +1082,7 @@ class _AiSummaryTile extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 24,
-                  backgroundColor: colorScheme.surfaceVariant,
+                  backgroundColor: colorScheme.surfaceContainerHighest,
                   child: Icon(Icons.notes_rounded, color: colorScheme.onSurfaceVariant),
                 ),
                 const SizedBox(width: 14),
@@ -1169,7 +1169,7 @@ class _InviteTile extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 22,
-              backgroundColor: theme.colorScheme.surfaceVariant,
+              backgroundColor: theme.colorScheme.surfaceContainerHighest,
               child: Icon(Icons.mail_outline, color: theme.colorScheme.onSurfaceVariant),
             ),
             const SizedBox(width: 12),

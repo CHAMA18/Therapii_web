@@ -637,7 +637,7 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
         ),
         const SizedBox(height: 6),
         DropdownButtonFormField<String>(
-          value: value,
+          initialValue: value,
           hint: Text('Select State', style: TextStyle(color: scheme.onSurface.withValues(alpha: 0.4))),
           decoration: InputDecoration(
             filled: true,
@@ -1112,7 +1112,7 @@ class _LicensureDialogState extends State<LicensureDialog> {
           mainAxisSize: MainAxisSize.min,
           children: [
             DropdownButtonFormField<String>(
-              value: _selectedState,
+              initialValue: _selectedState,
               decoration: const InputDecoration(labelText: 'State'),
               items: widget.states.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
               onChanged: (val) => setState(() => _selectedState = val),

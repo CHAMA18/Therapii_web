@@ -445,7 +445,7 @@ class _ChatComposerState extends State<_ChatComposer> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: scheme.surfaceVariant.withValues(alpha: Theme.of(context).brightness == Brightness.dark ? 0.4 : 0.6),
+          color: scheme.surfaceContainerHighest.withValues(alpha: Theme.of(context).brightness == Brightness.dark ? 0.4 : 0.6),
           borderRadius: BorderRadius.circular(24),
         ),
         child: Row(

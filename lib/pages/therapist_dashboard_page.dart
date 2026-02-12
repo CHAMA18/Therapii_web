@@ -240,22 +240,10 @@ class _DashboardTopBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: isDark ? colorScheme.primary.withValues(alpha: 0.12) : const Color(0xFFEFF6FF),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(Icons.spa_rounded, color: colorScheme.primary),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            'Therapy Platform',
-            style: theme.textTheme.labelSmall?.copyWith(
-              letterSpacing: 2,
-              fontWeight: FontWeight.w700,
-              color: colorScheme.onSurface.withValues(alpha: 0.6),
-            ),
+          Image.asset(
+            'assets/images/Therapii_image.png',
+            height: 32,
+            fit: BoxFit.contain,
           ),
           const Spacer(),
           IconButton(

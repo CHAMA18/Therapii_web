@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:therapii/pages/auth_welcome_page.dart';
 import 'package:therapii/auth/firebase_auth_manager.dart';
+import 'package:therapii/models/user.dart' as app_user;
+import 'package:therapii/pages/journal_admin_studio_page.dart';
+import 'package:therapii/pages/journal_portal_page.dart';
+import 'package:therapii/services/user_service.dart';
+import 'package:therapii/utils/admin_access.dart';
 
 /// Landing colors for the dark cinematic theme
 class LandingColors {
@@ -359,6 +365,13 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
     setState(() => _savingCopy = true);
     try {
       final user = FirebaseAuthManager().currentUser;
+      if (!AdminAccess.isAdminEmail(user?.email)) {
+        throw FirebaseException(
+          plugin: 'cloud_firestore',
+          code: 'permission-denied',
+          message: 'Only admin accounts can update landing content.',
+        );
+      }
       await _firestore.collection('admin_settings').doc('landing_content').set({
         'hero_kicker': _kickerController.text.trim(),
         'hero_title': _titleController.text.trim(),
@@ -412,8 +425,11 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
       }
     } catch (e) {
       if (mounted) {
+        final message = e is FirebaseException && e.code == 'permission-denied'
+            ? 'Save blocked by Firestore permissions. Sign in with an admin account and verify deployed rules.'
+            : 'Failed to save: $e';
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save: $e')),
+          SnackBar(content: Text(message)),
         );
       }
     } finally {
@@ -486,6 +502,12 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
   }
 
   void _enterEditMode() {
+    final email = FirebaseAuthManager().currentUser?.email;
+    if (!AdminAccess.isAdminEmail(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Admin sign-in required to save landing content.')),
+      );
+    }
     setState(() => _editMode = true);
   }
 
@@ -531,6 +553,61 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
     Navigator.of(context).push(
       MaterialPageRoute(builder: (context) => const AuthWelcomePage(initialTab: AuthTab.login)),
     );
+  }
+
+  void _navigateToJournalAuth() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const AuthWelcomePage(
+          initialTab: AuthTab.login,
+          openJournalPortalAfterAuth: true,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openJournalPortal() async {
+    final authUser = firebase_auth.FirebaseAuth.instance.currentUser;
+
+    // User is not authenticated yet: send them to login first.
+    if (authUser == null) {
+      _navigateToJournalAuth();
+      return;
+    }
+
+    try {
+      final profile = await UserService().getUser(authUser.uid);
+      if (!mounted) return;
+
+      if (profile == null) {
+        _navigateToJournalAuth();
+        return;
+      }
+
+      final destination = _buildPortalDestination(authUser: authUser, profile: profile);
+      if (destination == null) {
+        _navigateToJournalAuth();
+        return;
+      }
+
+      Navigator.of(context).push(MaterialPageRoute(builder: (_) => destination));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to open Journal portal right now. Please try again.')),
+      );
+    }
+  }
+
+  Widget? _buildPortalDestination({
+    required firebase_auth.User authUser,
+    required app_user.User profile,
+  }) {
+    final email = authUser.email ?? '';
+    if (AdminAccess.isAdminEmail(email)) {
+      return const JournalAdminStudioPage();
+    }
+    return const JournalPortalPage();
   }
 
   @override
@@ -665,6 +742,7 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
           ),
           _NavBar(
             onSignIn: _navigateToAuth,
+            onNav1Tap: _openJournalPortal,
             onBrandTap: _handleBrandTap,
             brandText: _footerBrandController.text,
             nav1: nav1,
@@ -785,6 +863,7 @@ class _EditChip extends StatelessWidget {
 }
 class _NavBar extends StatelessWidget {
   final VoidCallback onSignIn;
+  final VoidCallback onNav1Tap;
   final VoidCallback onBrandTap;
   final String brandText;
   final String nav1;
@@ -797,6 +876,7 @@ class _NavBar extends StatelessWidget {
   final VoidCallback onEditNav3;
   const _NavBar({
     required this.onSignIn,
+    required this.onNav1Tap,
     required this.onBrandTap,
     required this.brandText,
     required this.nav1,
@@ -860,7 +940,7 @@ class _NavBar extends StatelessWidget {
             if (isWide)
               Row(
                 children: [
-                  _NavLink(label: nav1, editMode: editMode, onEdit: onEditNav1),
+                  _NavLink(label: nav1, editMode: editMode, onEdit: onEditNav1, onTap: onNav1Tap),
                   const SizedBox(width: 40),
                   _NavLink(label: nav2, editMode: editMode, onEdit: onEditNav2),
                   const SizedBox(width: 40),
@@ -893,7 +973,8 @@ class _NavLink extends StatelessWidget {
   final String label;
   final bool editMode;
   final VoidCallback? onEdit;
-  const _NavLink({required this.label, required this.editMode, this.onEdit});
+  final VoidCallback? onTap;
+  const _NavLink({required this.label, required this.editMode, this.onEdit, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -910,7 +991,10 @@ class _NavLink extends StatelessWidget {
       ),
     );
     if (!editMode) {
-      return MouseRegion(cursor: SystemMouseCursors.click, child: content);
+      return GestureDetector(
+        onTap: onTap,
+        child: MouseRegion(cursor: SystemMouseCursors.click, child: content),
+      );
     }
     return GestureDetector(
       onTap: onEdit,
@@ -1366,115 +1450,230 @@ class _EditOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final panelWidth = (MediaQuery.of(context).size.width - 48).clamp(320.0, 430.0).toDouble();
+    final stats = _completionStats();
+
     return Positioned(
       top: 80,
       right: 24,
+      bottom: 24,
       child: Container(
-        width: 360,
-        padding: const EdgeInsets.all(16),
+        width: panelWidth,
+        padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 20, offset: Offset(0, 10))],
+          color: const Color(0xFFF7F8FA),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: const Color(0xFFDFE4EA)),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x29000000),
+              blurRadius: 28,
+              offset: Offset(0, 12),
+            ),
+          ],
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: MainAxisSize.max,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                const Icon(Icons.edit_note_rounded, color: Colors.black87),
-                const SizedBox(width: 8),
-                const Text('Edit Landing Text', style: TextStyle(fontWeight: FontWeight.w700)),
-                const Spacer(),
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1D78FF).withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.edit_note_rounded, color: Color(0xFF1D78FF), size: 20),
+                ),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Text(
+                    'Landing Content Studio',
+                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: Color(0xFF111827)),
+                  ),
+                ),
                 IconButton(
+                  tooltip: 'Close editor',
                   icon: const Icon(Icons.close),
                   onPressed: onClose,
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 2),
             if (updatedAt != null || updatedBy != null)
               Text(
                 'Last updated${updatedBy != null ? " by $updatedBy" : ""}${updatedAt != null ? " • ${_friendlyDate(updatedAt!)}" : ""}',
-                style: const TextStyle(fontSize: 12, color: Colors.black54),
+                style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
               ),
-            const SizedBox(height: 12),
-            _field('Kicker', kickerController),
-            _field('Title', titleController),
-            _field('Subtitle', subtitleController, maxLines: 3),
-            _field('Primary CTA', ctaPrimaryController),
-            _field('Secondary CTA', ctaSecondaryController),
-            _field('Support Quote', supportQuoteController, maxLines: 2),
-            _field('Support Status', supportStatusController),
-            _field('Support Description', supportDescriptionController, maxLines: 3),
-            _field('Support Title Prefix', supportTitlePrefixController, maxLines: 2),
-            _field('Support Title Highlight', supportTitleHighlightController),
-            _field('Download iOS Label', downloadIosController),
-            _field('Download Android Label', downloadAndroidController),
-            _field('Adaptive Label', adaptiveLabelController),
-            _field('Adaptive Title', adaptiveTitleController),
-            _field('Feature I Title', feature1TitleController),
-            _field('Feature I Description', feature1DescController, maxLines: 3),
-            _field('Feature II Title', feature2TitleController),
-            _field('Feature II Description', feature2DescController, maxLines: 3),
-            _field('Feature III Title', feature3TitleController),
-            _field('Feature III Description', feature3DescController, maxLines: 3),
-            _field('Premium Badge', premiumBadgeController),
-            _field('Premium Title', premiumTitleController),
-            _field('Premium Subtitle', premiumSubtitleController, maxLines: 3),
-            _field('Premium Price', premiumPriceController),
-            _field('Premium Period', premiumPeriodController),
-            _field('Premium Feature 1', premiumFeature1Controller),
-            _field('Premium Feature 2', premiumFeature2Controller),
-            _field('Premium Feature 3', premiumFeature3Controller),
-            _field('Premium CTA', premiumCtaController),
-            _field('Footer Brand', footerBrandController),
-            _field('Footer Locations', footerLocationsController, maxLines: 2),
-            _field('Footer Link 1', footerLink1Controller),
-            _field('Footer Link 2', footerLink2Controller),
-            _field('Footer Copyright', footerCopyrightController),
-            _field('Message 1', message1Controller, maxLines: 3),
-            _field('Message 2', message2Controller, maxLines: 2),
-            _field('Message 3', message3Controller, maxLines: 3),
-            _field('Message Placeholder', messagePlaceholderController),
-            Row(
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
               children: [
-                Expanded(child: _field('Nav 1', nav1Controller, dense: true)),
-                const SizedBox(width: 8),
-                Expanded(child: _field('Nav 2', nav2Controller, dense: true)),
-                const SizedBox(width: 8),
-                Expanded(child: _field('Nav 3', nav3Controller, dense: true)),
+                _statusPill(Icons.check_circle_outline, '${stats.$1}/${stats.$2} fields complete'),
+                _statusPill(Icons.priority_high_rounded, '${stats.$3} required missing', warn: stats.$3 > 0),
+                _statusPill(Icons.auto_awesome_outlined, 'Live preview enabled'),
               ],
+            ),
+            const SizedBox(height: 10),
+            if (loading) const LinearProgressIndicator(minHeight: 2),
+            const SizedBox(height: 10),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    _section(
+                      title: 'Hero Section',
+                      subtitle: 'Above-the-fold headline and primary actions.',
+                      children: [
+                        _field('Kicker', kickerController, isRequired: true, recommendedMax: 28),
+                        _field('Title', titleController, isRequired: true, recommendedMax: 34),
+                        _field(
+                          'Subtitle',
+                          subtitleController,
+                          maxLines: 3,
+                          isRequired: true,
+                          recommendedMax: 140,
+                          helperText: 'Keep concise for stronger readability on mobile screens.',
+                        ),
+                        _field('Primary CTA', ctaPrimaryController, isRequired: true, recommendedMax: 24),
+                        _field('Secondary CTA', ctaSecondaryController, isRequired: true, recommendedMax: 18),
+                      ],
+                    ),
+                    _section(
+                      title: 'Navigation',
+                      subtitle: 'Top navigation labels for main sections.',
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(child: _field('Nav 1', nav1Controller, dense: true, isRequired: true, recommendedMax: 16)),
+                            const SizedBox(width: 8),
+                            Expanded(child: _field('Nav 2', nav2Controller, dense: true, isRequired: true, recommendedMax: 16)),
+                            const SizedBox(width: 8),
+                            Expanded(child: _field('Nav 3', nav3Controller, dense: true, isRequired: true, recommendedMax: 16)),
+                          ],
+                        ),
+                      ],
+                    ),
+                    _section(
+                      title: 'Support Spotlight',
+                      subtitle: 'Floating support module and app-download labels.',
+                      children: [
+                        _field('Support Quote', supportQuoteController, maxLines: 2, isRequired: true, recommendedMax: 80),
+                        _field('Support Status', supportStatusController, isRequired: true, recommendedMax: 24),
+                        _field(
+                          'Support Description',
+                          supportDescriptionController,
+                          maxLines: 3,
+                          isRequired: true,
+                          recommendedMax: 140,
+                        ),
+                        _field('Support Title Prefix', supportTitlePrefixController, maxLines: 2, recommendedMax: 24),
+                        _field('Support Title Highlight', supportTitleHighlightController, recommendedMax: 14),
+                        _field('Download iOS Label', downloadIosController, recommendedMax: 20),
+                        _field('Download Android Label', downloadAndroidController, recommendedMax: 20),
+                      ],
+                    ),
+                    _section(
+                      title: 'Adaptive Intelligence',
+                      subtitle: 'Section title, label, and feature blocks.',
+                      children: [
+                        _field('Adaptive Label', adaptiveLabelController, isRequired: true, recommendedMax: 22),
+                        _field('Adaptive Title', adaptiveTitleController, isRequired: true, recommendedMax: 40),
+                        _field('Feature I Title', feature1TitleController, isRequired: true, recommendedMax: 28),
+                        _field('Feature I Description', feature1DescController, maxLines: 3, isRequired: true, recommendedMax: 120),
+                        _field('Feature II Title', feature2TitleController, isRequired: true, recommendedMax: 28),
+                        _field('Feature II Description', feature2DescController, maxLines: 3, isRequired: true, recommendedMax: 120),
+                        _field('Feature III Title', feature3TitleController, isRequired: true, recommendedMax: 28),
+                        _field('Feature III Description', feature3DescController, maxLines: 3, isRequired: true, recommendedMax: 120),
+                      ],
+                    ),
+                    _section(
+                      title: 'Conversation Preview',
+                      subtitle: 'Chat simulation shown in the support area.',
+                      children: [
+                        _field('Message 1', message1Controller, maxLines: 3, recommendedMax: 100),
+                        _field('Message 2', message2Controller, maxLines: 2, recommendedMax: 80),
+                        _field('Message 3', message3Controller, maxLines: 3, recommendedMax: 100),
+                        _field('Message Placeholder', messagePlaceholderController, recommendedMax: 30),
+                      ],
+                    ),
+                    _section(
+                      title: 'Premium Section',
+                      subtitle: 'Pricing, value proposition, and premium CTA.',
+                      children: [
+                        _field('Premium Badge', premiumBadgeController, isRequired: true, recommendedMax: 22),
+                        _field('Premium Title', premiumTitleController, isRequired: true, recommendedMax: 32),
+                        _field('Premium Subtitle', premiumSubtitleController, maxLines: 3, isRequired: true, recommendedMax: 130),
+                        _field('Premium Price', premiumPriceController, isRequired: true, recommendedMax: 8),
+                        _field('Premium Period', premiumPeriodController, isRequired: true, recommendedMax: 14),
+                        _field('Premium Feature 1', premiumFeature1Controller, recommendedMax: 54),
+                        _field('Premium Feature 2', premiumFeature2Controller, recommendedMax: 54),
+                        _field('Premium Feature 3', premiumFeature3Controller, recommendedMax: 54),
+                        _field('Premium CTA', premiumCtaController, isRequired: true, recommendedMax: 24),
+                      ],
+                    ),
+                    _section(
+                      title: 'Footer',
+                      subtitle: 'Brand, legal line, and social labels.',
+                      children: [
+                        _field('Footer Brand', footerBrandController, isRequired: true, recommendedMax: 18),
+                        _field('Footer Locations', footerLocationsController, maxLines: 2, recommendedMax: 80),
+                        _field('Footer Link 1', footerLink1Controller, recommendedMax: 20),
+                        _field('Footer Link 2', footerLink2Controller, recommendedMax: 20),
+                        _field('Footer Copyright', footerCopyrightController, recommendedMax: 52),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ),
             const SizedBox(height: 12),
             Row(
               children: [
-                ElevatedButton.icon(
-                  onPressed: saving ? null : onSave,
-                  icon: saving
-                      ? const SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Icon(Icons.save_rounded, size: 18),
-                  label: Text(saving ? 'Saving...' : 'Save'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1d78ff),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: saving ? null : onSave,
+                    icon: saving
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Icon(Icons.save_rounded, size: 18),
+                    label: Text(saving ? 'Saving...' : 'Save Changes'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1D78FF),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
                   ),
                 ),
-                const SizedBox(width: 8),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
                 if (showReset)
-                if (showReset)
-                  OutlinedButton.icon(
-                    onPressed: loading || saving ? null : onReset,
-                    icon: const Icon(Icons.refresh_rounded, size: 18),
-                    label: const Text('Reset'),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: loading || saving ? null : onReset,
+                      icon: const Icon(Icons.refresh_rounded, size: 18),
+                      label: const Text('Reset to Saved'),
+                    ),
                   ),
+                if (showReset) const SizedBox(width: 8),
+                Expanded(
+                  child: TextButton.icon(
+                    onPressed: saving ? null : onClose,
+                    icon: const Icon(Icons.visibility_outlined, size: 18),
+                    label: const Text('Back to Preview'),
+                  ),
+                ),
               ],
             ),
           ],
@@ -1483,17 +1682,234 @@ class _EditOverlay extends StatelessWidget {
     );
   }
 
-  Widget _field(String label, TextEditingController controller, {int maxLines = 1, bool dense = false}) {
+  (int, int, int) _completionStats() {
+    final all = <TextEditingController>[
+      kickerController,
+      titleController,
+      subtitleController,
+      ctaPrimaryController,
+      ctaSecondaryController,
+      nav1Controller,
+      nav2Controller,
+      nav3Controller,
+      supportQuoteController,
+      supportStatusController,
+      supportDescriptionController,
+      supportTitlePrefixController,
+      supportTitleHighlightController,
+      downloadIosController,
+      downloadAndroidController,
+      adaptiveLabelController,
+      adaptiveTitleController,
+      feature1TitleController,
+      feature1DescController,
+      feature2TitleController,
+      feature2DescController,
+      feature3TitleController,
+      feature3DescController,
+      premiumBadgeController,
+      premiumTitleController,
+      premiumSubtitleController,
+      premiumPriceController,
+      premiumPeriodController,
+      premiumFeature1Controller,
+      premiumFeature2Controller,
+      premiumFeature3Controller,
+      premiumCtaController,
+      footerBrandController,
+      footerLocationsController,
+      footerLink1Controller,
+      footerLink2Controller,
+      footerCopyrightController,
+      message1Controller,
+      message2Controller,
+      message3Controller,
+      messagePlaceholderController,
+    ];
+
+    final required = <TextEditingController>[
+      kickerController,
+      titleController,
+      subtitleController,
+      ctaPrimaryController,
+      ctaSecondaryController,
+      nav1Controller,
+      nav2Controller,
+      nav3Controller,
+      supportQuoteController,
+      supportStatusController,
+      supportDescriptionController,
+      adaptiveLabelController,
+      adaptiveTitleController,
+      feature1TitleController,
+      feature1DescController,
+      feature2TitleController,
+      feature2DescController,
+      feature3TitleController,
+      feature3DescController,
+      premiumBadgeController,
+      premiumTitleController,
+      premiumSubtitleController,
+      premiumPriceController,
+      premiumPeriodController,
+      premiumCtaController,
+      footerBrandController,
+    ];
+
+    final filled = all.where((c) => c.text.trim().isNotEmpty).length;
+    final requiredMissing = required.where((c) => c.text.trim().isEmpty).length;
+    return (filled, all.length, requiredMissing);
+  }
+
+  Widget _statusPill(IconData icon, String text, {bool warn = false}) {
+    final color = warn ? const Color(0xFFB45309) : const Color(0xFF1F2937);
+    final bg = warn ? const Color(0xFFFEF3C7) : const Color(0xFFE5E7EB);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 6),
+          Text(
+            text,
+            style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _section({
+    required String title,
+    required String subtitle,
+    required List<Widget> children,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 2),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF111827),
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            subtitle,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xFF6B7280),
+            ),
+          ),
+          const SizedBox(height: 10),
+          ...children,
+        ],
+      ),
+    );
+  }
+
+  Widget _field(
+    String label,
+    TextEditingController controller, {
+    int maxLines = 1,
+    bool dense = false,
+    bool isRequired = false,
+    int? recommendedMax,
+    String? helperText,
+  }) {
+    final count = controller.text.trim().length;
+    final overLimit = recommendedMax != null && count > recommendedMax;
+
     return Padding(
       padding: EdgeInsets.only(bottom: dense ? 8 : 12),
-      child: TextField(
-        controller: controller,
-        maxLines: maxLines,
-        decoration: InputDecoration(
-          labelText: label,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          isDense: dense,
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF374151),
+                ),
+              ),
+              if (isRequired)
+                Container(
+                  margin: const EdgeInsets.only(left: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFDBEAFE),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: const Text(
+                    'Required',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1D4ED8),
+                    ),
+                  ),
+                ),
+              const Spacer(),
+              if (recommendedMax != null)
+                Text(
+                  '$count/$recommendedMax',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: overLimit ? const Color(0xFFB91C1C) : const Color(0xFF6B7280),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+            ],
+          ),
+          if (helperText != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              helperText,
+              style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280)),
+            ),
+          ],
+          const SizedBox(height: 6),
+          TextField(
+            controller: controller,
+            maxLines: maxLines,
+            decoration: InputDecoration(
+              hintText: 'Enter $label',
+              filled: true,
+              fillColor: const Color(0xFFF9FAFB),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: overLimit ? const Color(0xFFDC2626) : const Color(0xFF1D78FF),
+                  width: 1.3,
+                ),
+              ),
+              isDense: dense,
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -1,15 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart' as FirebaseAuth;
 import 'package:therapii/auth/firebase_auth_manager.dart';
+import 'package:therapii/pages/journal_portal_page.dart';
+import 'package:therapii/pages/admin_dashboard_page.dart';
+import 'package:therapii/pages/journal_admin_studio_page.dart';
 import 'package:therapii/pages/patient_dashboard_page.dart';
 import 'package:therapii/pages/patient_onboarding_flow_page.dart';
 import 'package:therapii/pages/therapist_welcome_psychology_today_page.dart';
 import 'package:therapii/services/user_service.dart';
+import 'package:therapii/utils/admin_access.dart';
 
 class VerifyEmailPage extends StatefulWidget {
   final String email;
   final bool isTherapist;
-  const VerifyEmailPage({super.key, required this.email, required this.isTherapist});
+  final bool openJournalPortalAfterVerification;
+  const VerifyEmailPage({
+    super.key,
+    required this.email,
+    required this.isTherapist,
+    this.openJournalPortalAfterVerification = false,
+  });
 
   @override
   State<VerifyEmailPage> createState() => _VerifyEmailPageState();
@@ -44,6 +54,18 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
     final user = _firebaseUser;
     if (user == null) return;
 
+    final email = user.email ?? '';
+    if (AdminAccess.isAdminEmail(email)) {
+      final destination = widget.openJournalPortalAfterVerification
+          ? const JournalAdminStudioPage()
+          : const AdminDashboardPage();
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => destination),
+        (route) => false,
+      );
+      return;
+    }
+
     bool isTherapist = widget.isTherapist;
     bool onboardingCompleted = false;
 
@@ -56,11 +78,17 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
     }
 
     final destination = isTherapist
-        ? const TherapistWelcomePsychologyTodayPage()
+        ? (widget.openJournalPortalAfterVerification
+            ? const JournalPortalPage()
+            : const TherapistWelcomePsychologyTodayPage())
         : (onboardingCompleted ? const PatientDashboardPage() : const PatientOnboardingFlowPage());
 
+    final resolvedDestination = widget.openJournalPortalAfterVerification && !isTherapist
+        ? const JournalPortalPage()
+        : destination;
+
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => destination),
+      MaterialPageRoute(builder: (_) => resolvedDestination),
       (route) => false,
     );
   }

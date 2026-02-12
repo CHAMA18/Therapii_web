@@ -8,6 +8,8 @@ import 'package:therapii/widgets/form_fields.dart';
 import 'package:therapii/auth/firebase_auth_manager.dart';
 import 'package:therapii/services/user_service.dart';
 import 'package:therapii/pages/admin_dashboard_page.dart';
+import 'package:therapii/pages/journal_admin_studio_page.dart';
+import 'package:therapii/pages/journal_portal_page.dart';
 import 'package:therapii/pages/therapist_dashboard_page.dart';
 import 'package:therapii/pages/patient_dashboard_page.dart';
 import 'package:therapii/pages/patient_onboarding_flow_page.dart';
@@ -22,7 +24,12 @@ enum AccountRole { therapist, patient }
 
 class AuthWelcomePage extends StatefulWidget {
   final AuthTab initialTab;
-  const AuthWelcomePage({super.key, this.initialTab = AuthTab.create});
+  final bool openJournalPortalAfterAuth;
+  const AuthWelcomePage({
+    super.key,
+    this.initialTab = AuthTab.create,
+    this.openJournalPortalAfterAuth = false,
+  });
 
   @override
   State<AuthWelcomePage> createState() => _AuthWelcomePageState();
@@ -52,6 +59,7 @@ class _AuthWelcomePageState extends State<AuthWelcomePage> {
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
                 child: _AuthCard(
                   tab: _tab,
+                  openJournalPortalAfterAuth: widget.openJournalPortalAfterAuth,
                   onTabChanged: (t) => setState(() => _tab = t),
                 ),
               ),
@@ -120,9 +128,14 @@ class _ThemeToggleButton extends StatelessWidget {
 
 class _AuthCard extends StatelessWidget {
   final AuthTab tab;
+  final bool openJournalPortalAfterAuth;
   final ValueChanged<AuthTab> onTabChanged;
   
-  const _AuthCard({required this.tab, required this.onTabChanged});
+  const _AuthCard({
+    required this.tab,
+    required this.onTabChanged,
+    required this.openJournalPortalAfterAuth,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -157,8 +170,14 @@ class _AuthCard extends StatelessWidget {
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 200),
               child: tab == AuthTab.create 
-                ? const _CreateAccountForm(key: ValueKey('create')) 
-                : const _LoginForm(key: ValueKey('login')),
+                ? _CreateAccountForm(
+                    key: const ValueKey('create'),
+                    openJournalPortalAfterAuth: openJournalPortalAfterAuth,
+                  ) 
+                : _LoginForm(
+                    key: const ValueKey('login'),
+                    openJournalPortalAfterAuth: openJournalPortalAfterAuth,
+                  ),
             ),
           ],
         ),
@@ -481,7 +500,11 @@ class _PrimaryActionButton extends StatelessWidget {
 }
 
 class _CreateAccountForm extends StatefulWidget {
-  const _CreateAccountForm({super.key});
+  final bool openJournalPortalAfterAuth;
+  const _CreateAccountForm({
+    super.key,
+    required this.openJournalPortalAfterAuth,
+  });
 
   @override
   State<_CreateAccountForm> createState() => _CreateAccountFormState();
@@ -638,6 +661,7 @@ class _CreateAccountFormState extends State<_CreateAccountForm> {
                 builder: (context) => VerifyEmailPage(
                   email: emailCtl.text.trim(),
                   isTherapist: isTherapist,
+                  openJournalPortalAfterVerification: widget.openJournalPortalAfterAuth,
                 ),
               ),
             );
@@ -646,7 +670,17 @@ class _CreateAccountFormState extends State<_CreateAccountForm> {
           final email = currentUser?.email;
           if (AdminAccess.isAdminEmail(email)) {
             Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => const AdminDashboardPage()),
+              MaterialPageRoute(
+                builder: (context) => widget.openJournalPortalAfterAuth
+                    ? const JournalAdminStudioPage()
+                    : const AdminDashboardPage(),
+              ),
+            );
+          } else if (widget.openJournalPortalAfterAuth) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (context) => const JournalPortalPage(),
+              ),
             );
           } else {
             Navigator.of(context).pushReplacement(
@@ -748,7 +782,11 @@ class _CreateAccountFormState extends State<_CreateAccountForm> {
 }
 
 class _LoginForm extends StatefulWidget {
-  const _LoginForm({super.key});
+  final bool openJournalPortalAfterAuth;
+  const _LoginForm({
+    super.key,
+    required this.openJournalPortalAfterAuth,
+  });
 
   @override
   State<_LoginForm> createState() => _LoginFormState();
@@ -867,6 +905,7 @@ class _LoginFormState extends State<_LoginForm> {
                 builder: (context) => VerifyEmailPage(
                   email: emailCtl.text.trim(),
                   isTherapist: user.isTherapist,
+                  openJournalPortalAfterVerification: widget.openJournalPortalAfterAuth,
                 ),
               ),
             );
@@ -877,16 +916,26 @@ class _LoginFormState extends State<_LoginForm> {
         if (mounted) {
           if (AdminAccess.isAdminEmail(authUser?.email)) {
             Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => const AdminDashboardPage()),
+              MaterialPageRoute(
+                builder: (context) => widget.openJournalPortalAfterAuth
+                    ? const JournalAdminStudioPage()
+                    : const AdminDashboardPage(),
+              ),
             );
           } else if (user.isTherapist) {
             Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => const TherapistDashboardPage()),
+              MaterialPageRoute(
+                builder: (context) => widget.openJournalPortalAfterAuth
+                    ? const JournalPortalPage()
+                    : const TherapistDashboardPage(),
+              ),
             );
           } else {
-            final destination = user.patientOnboardingCompleted
-                ? const PatientDashboardPage()
-                : const PatientOnboardingFlowPage();
+            final destination = widget.openJournalPortalAfterAuth
+                ? const JournalPortalPage()
+                : (user.patientOnboardingCompleted
+                    ? const PatientDashboardPage()
+                    : const PatientOnboardingFlowPage());
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(builder: (context) => destination),
             );
