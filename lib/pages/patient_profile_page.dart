@@ -3,13 +3,11 @@ import 'package:therapii/models/ai_conversation_summary.dart';
 import 'package:therapii/models/chat_message.dart';
 import 'package:therapii/models/user.dart' as app_user;
 import 'package:therapii/models/voice_checkin.dart';
-import 'package:therapii/pages/ai_summary_detail_page.dart';
 import 'package:therapii/pages/patient_chat_page.dart';
 import 'package:therapii/pages/patient_profile_details_page.dart';
 import 'package:therapii/services/ai_conversation_service.dart';
 import 'package:therapii/services/chat_service.dart';
 import 'package:therapii/services/voice_checkin_service.dart';
-import 'package:therapii/widgets/primary_button.dart';
 
 class PatientProfilePage extends StatefulWidget {
   final app_user.User patient;

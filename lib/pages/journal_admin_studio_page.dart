@@ -3,6 +3,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:therapii/auth/firebase_auth_manager.dart';
+import 'package:therapii/pages/journal_admin_dashboard_page.dart';
+import 'package:therapii/pages/journal_admin_patients_page.dart';
+import 'package:therapii/pages/journal_admin_team_page.dart';
+import 'package:therapii/utils/admin_access.dart';
 
 class JournalAdminStudioPage extends StatefulWidget {
   const JournalAdminStudioPage({super.key});
@@ -39,6 +43,8 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
   bool _publishImmediately = false;
   bool _isPublic = true;
   bool _hasUnsavedChanges = false;
+  bool _isMainSidebarCollapsed = false;
+  bool _isContentLibraryCollapsed = false;
   DateTime? _lastSavedAt;
   List<String> _tags = const ['Resilience', 'Anxiety'];
 
@@ -172,6 +178,18 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
     });
   }
 
+  void _toggleMainSidebar() {
+    setState(() {
+      _isMainSidebarCollapsed = !_isMainSidebarCollapsed;
+    });
+  }
+
+  void _toggleContentLibrary() {
+    setState(() {
+      _isContentLibraryCollapsed = !_isContentLibraryCollapsed;
+    });
+  }
+
   String get _saveStatusText {
     if (_hasUnsavedChanges) return 'Unsaved changes';
     final savedAt = _lastSavedAt;
@@ -199,7 +217,7 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
-    final showLibrary = width >= 1100;
+    final canShowLibrary = width >= 1100;
     final showRightRail = width >= 1380;
 
     return Scaffold(
@@ -207,9 +225,14 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
       body: SafeArea(
         child: Row(
           children: [
-            const _LeftSidebar(),
-            if (showLibrary)
+            _LeftSidebar(
+              isCollapsed: _isMainSidebarCollapsed,
+              onToggleCollapse: _toggleMainSidebar,
+            ),
+            if (canShowLibrary)
               _ContentLibrary(
+                isCollapsed: _isContentLibraryCollapsed,
+                onToggleCollapse: _toggleContentLibrary,
                 draftTitle: _titleController.text.trim().isEmpty ? 'Untitled draft' : _titleController.text.trim(),
                 draftSubtitle: _introController.text.trim().isEmpty
                     ? 'Start writing to see a live preview here...'
@@ -250,7 +273,13 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
 }
 
 class _LeftSidebar extends StatelessWidget {
-  const _LeftSidebar();
+  final bool isCollapsed;
+  final VoidCallback onToggleCollapse;
+
+  const _LeftSidebar({
+    required this.isCollapsed,
+    required this.onToggleCollapse,
+  });
 
   String _displayName() {
     final user = FirebaseAuthManager().currentUser;
@@ -281,14 +310,21 @@ class _LeftSidebar extends StatelessWidget {
     return raw;
   }
 
+  bool _isAdmin() {
+    return AdminAccess.isAdminEmail(FirebaseAuthManager().currentUser?.email);
+  }
+
   @override
   Widget build(BuildContext context) {
     final name = _displayName();
     final photoUrl = _safePhotoUrl();
     final hasPhoto = photoUrl != null;
+    final isAdmin = _isAdmin();
 
-    return Container(
-      width: 260,
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeInOut,
+      width: isCollapsed ? 96 : 260,
       decoration: const BoxDecoration(
         color: Color(0xFFFDFDFD),
         border: Border(right: BorderSide(color: Color(0xFFE2E8F0))),
@@ -296,46 +332,87 @@ class _LeftSidebar extends StatelessWidget {
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+            padding: EdgeInsets.fromLTRB(isCollapsed ? 12 : 24, 24, isCollapsed ? 12 : 16, 8),
             child: Row(
-              children: const [
-                _LogoGlyph(),
-                SizedBox(width: 10),
-                Flexible(
-                  child: Text(
-                    'Therapii',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-                    overflow: TextOverflow.ellipsis,
+              children: [
+                const _LogoGlyph(),
+                if (!isCollapsed) ...[
+                  const SizedBox(width: 10),
+                  const Flexible(
+                    child: Text(
+                      'Therapii',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+                const Spacer(),
+                IconButton(
+                  tooltip: isCollapsed ? 'Expand sidebar' : 'Collapse sidebar',
+                  onPressed: onToggleCollapse,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
+                  icon: Icon(
+                    isCollapsed ? Icons.chevron_right_rounded : Icons.chevron_left_rounded,
+                    size: 20,
+                    color: const Color(0xFF64748B),
                   ),
                 ),
               ],
             ),
           ),
-          const Expanded(
+          Expanded(
             child: SingleChildScrollView(
-              padding: EdgeInsets.symmetric(horizontal: 16),
+              padding: EdgeInsets.symmetric(horizontal: isCollapsed ? 10 : 16),
               child: Column(
                 children: [
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   _SidebarGroup(
                     title: 'Main',
+                    collapsed: isCollapsed,
                     items: [
-                      _NavItemData(icon: Icons.dashboard_outlined, label: 'Dashboard'),
-                      _NavItemData(icon: Icons.article_outlined, label: 'Articles', active: true),
+                      _NavItemData(
+                        icon: Icons.dashboard_outlined,
+                        label: 'Dashboard',
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => const JournalAdminDashboardPage()),
+                          );
+                        },
+                      ),
+                      const _NavItemData(icon: Icons.article_outlined, label: 'Articles', active: true),
                     ],
                   ),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   _SidebarGroup(
                     title: 'People',
+                    collapsed: isCollapsed,
                     items: [
-                      _NavItemData(icon: Icons.group_outlined, label: 'Team'),
-                      _NavItemData(icon: Icons.people_alt_outlined, label: 'Patients'),
+                      _NavItemData(
+                        icon: Icons.group_outlined,
+                        label: 'Team',
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => const JournalAdminTeamPage()),
+                          );
+                        },
+                      ),
+                      _NavItemData(
+                        icon: Icons.people_alt_outlined,
+                        label: 'Patients',
+                        onTap: () {
+                          Navigator.of(context).pushReplacement(
+                            MaterialPageRoute(builder: (_) => const JournalAdminPatientsPage()),
+                          );
+                        },
+                      ),
                     ],
                   ),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   _SidebarGroup(
                     title: 'System',
-                    items: [
+                    collapsed: isCollapsed,
+                    items: const [
                       _NavItemData(icon: Icons.analytics_outlined, label: 'Analytics'),
                       _NavItemData(icon: Icons.settings_outlined, label: 'Settings'),
                     ],
@@ -350,48 +427,99 @@ class _LeftSidebar extends StatelessWidget {
               color: Color(0xFFFAFAFA),
               border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
             ),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: const Color(0xFFE2E8F0),
-                  backgroundImage: hasPhoto ? NetworkImage(photoUrl!) : null,
-                  onBackgroundImageError: hasPhoto ? (_, __) {} : null,
-                  child: hasPhoto
-                      ? null
-                      : Text(
-                          _initials(name),
-                          style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF475569)),
-                        ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            child: isCollapsed
+                ? Column(
                     children: [
-                      Text(
-                        name,
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
-                        overflow: TextOverflow.ellipsis,
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundColor: const Color(0xFFE2E8F0),
+                        backgroundImage: hasPhoto ? NetworkImage(photoUrl) : null,
+                        onBackgroundImageError: hasPhoto ? (_, __) {} : null,
+                        child: hasPhoto
+                            ? null
+                            : Text(
+                                _initials(name),
+                                style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF475569)),
+                              ),
                       ),
-                      Text(
-                        'View Profile',
-                        style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                        overflow: TextOverflow.ellipsis,
+                      const SizedBox(height: 8),
+                      IconButton(
+                        tooltip: 'Logout',
+                        onPressed: () => Navigator.of(context).pop(),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                        visualDensity: VisualDensity.compact,
+                        icon: const Icon(Icons.logout, color: Color(0xFF64748B), size: 20),
+                      ),
+                    ],
+                  )
+                : Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundColor: const Color(0xFFE2E8F0),
+                        backgroundImage: hasPhoto ? NetworkImage(photoUrl) : null,
+                        onBackgroundImageError: hasPhoto ? (_, __) {} : null,
+                        child: hasPhoto
+                            ? null
+                            : Text(
+                                _initials(name),
+                                style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF475569)),
+                              ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              name,
+                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2),
+                            Row(
+                              children: [
+                                const Text(
+                                  'View Profile',
+                                  style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                if (isAdmin) ...[
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF2B8CEE).withValues(alpha: 0.12),
+                                      borderRadius: BorderRadius.circular(999),
+                                      border: Border.all(color: const Color(0xFF2B8CEE).withValues(alpha: 0.3)),
+                                    ),
+                                    child: const Text(
+                                      'ADMIN',
+                                      style: TextStyle(
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 0.4,
+                                        color: Color(0xFF2B8CEE),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Logout',
+                        onPressed: () => Navigator.of(context).pop(),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                        visualDensity: VisualDensity.compact,
+                        icon: const Icon(Icons.logout, color: Color(0xFF64748B), size: 20),
                       ),
                     ],
                   ),
-                ),
-                IconButton(
-                  tooltip: 'Logout',
-                  onPressed: () => Navigator.of(context).pop(),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                  visualDensity: VisualDensity.compact,
-                  icon: const Icon(Icons.logout, color: Color(0xFF64748B), size: 20),
-                ),
-              ],
-            ),
           ),
         ],
       ),
@@ -423,26 +551,32 @@ class _LogoGlyph extends StatelessWidget {
 class _SidebarGroup extends StatelessWidget {
   final String title;
   final List<_NavItemData> items;
-  const _SidebarGroup({required this.title, required this.items});
+  final bool collapsed;
+  const _SidebarGroup({
+    required this.title,
+    required this.items,
+    this.collapsed = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: collapsed ? CrossAxisAlignment.center : CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-          child: Text(
-            title.toUpperCase(),
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.7,
-              color: Color(0xFF94A3B8),
+        if (!collapsed)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+            child: Text(
+              title.toUpperCase(),
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.7,
+                color: Color(0xFF94A3B8),
+              ),
             ),
           ),
-        ),
-        ...items.map(_SidebarItem.new),
+        ...items.map((item) => _SidebarItem(item, collapsed: collapsed)),
       ],
     );
   }
@@ -452,16 +586,49 @@ class _NavItemData {
   final IconData icon;
   final String label;
   final bool active;
-  const _NavItemData({required this.icon, required this.label, this.active = false});
+  final VoidCallback? onTap;
+  const _NavItemData({
+    required this.icon,
+    required this.label,
+    this.active = false,
+    this.onTap,
+  });
 }
 
 class _SidebarItem extends StatelessWidget {
   final _NavItemData item;
-  const _SidebarItem(this.item);
+  final bool collapsed;
+  const _SidebarItem(this.item, {this.collapsed = false});
 
   @override
   Widget build(BuildContext context) {
     final active = item.active;
+    if (collapsed) {
+      return Container(
+        margin: const EdgeInsets.only(bottom: 6),
+        decoration: BoxDecoration(
+          color: active ? const Color(0xFFEFF6FF) : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Tooltip(
+          message: item.label,
+          child: InkWell(
+            onTap: item.onTap,
+            borderRadius: BorderRadius.circular(10),
+            child: SizedBox(
+              width: 48,
+              height: 44,
+              child: Icon(
+                item.icon,
+                size: 20,
+                color: active ? const Color(0xFF2B8CEE) : const Color(0xFF64748B),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 4),
       decoration: BoxDecoration(
@@ -469,6 +636,7 @@ class _SidebarItem extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
       ),
       child: ListTile(
+        onTap: item.onTap,
         dense: true,
         minVerticalPadding: 0,
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
@@ -491,107 +659,147 @@ class _SidebarItem extends StatelessWidget {
 }
 
 class _ContentLibrary extends StatelessWidget {
+  final bool isCollapsed;
+  final VoidCallback onToggleCollapse;
   final String draftTitle;
   final String draftSubtitle;
-  const _ContentLibrary({required this.draftTitle, required this.draftSubtitle});
+  const _ContentLibrary({
+    required this.isCollapsed,
+    required this.onToggleCollapse,
+    required this.draftTitle,
+    required this.draftSubtitle,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 340,
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeInOut,
+      width: isCollapsed ? 68 : 340,
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(right: BorderSide(color: Color(0xFFE2E8F0))),
       ),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Column(
+      child: isCollapsed
+          ? Column(
               children: [
-                Row(
-                  children: [
-                    const Expanded(
-                      child: Text(
-                        'Content Library',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () {},
-                      icon: const Icon(Icons.add, color: Color(0xFF2B8CEE)),
-                    ),
-                  ],
+                const SizedBox(height: 12),
+                IconButton(
+                  tooltip: 'Expand content library',
+                  onPressed: onToggleCollapse,
+                  icon: const Icon(Icons.chevron_right_rounded, color: Color(0xFF64748B)),
                 ),
-                TextField(
-                  decoration: InputDecoration(
-                    isDense: true,
-                    filled: true,
-                    fillColor: const Color(0xFFF8FAFC),
-                    hintText: 'Search articles...',
-                    hintStyle: const TextStyle(fontSize: 13),
-                    prefixIcon: const Icon(Icons.search, size: 20),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide.none,
+                const SizedBox(height: 8),
+                const Icon(Icons.menu_book_rounded, color: Color(0xFF2B8CEE), size: 22),
+                const SizedBox(height: 10),
+                const RotatedBox(
+                  quarterTurns: 3,
+                  child: Text(
+                    'Library',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.3,
+                      color: Color(0xFF64748B),
                     ),
                   ),
                 ),
-                const SizedBox(height: 10),
-                const Row(
-                  children: [
-                    _LibraryTab(label: 'All', active: true),
-                    _LibraryTab(label: 'Drafts'),
-                    _LibraryTab(label: 'Published'),
-                  ],
+              ],
+            )
+          : Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          const Expanded(
+                            child: Text(
+                              'Content Library',
+                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+                            ),
+                          ),
+                          IconButton(
+                            tooltip: 'Collapse content library',
+                            onPressed: onToggleCollapse,
+                            icon: const Icon(Icons.chevron_left_rounded, color: Color(0xFF64748B)),
+                          ),
+                          IconButton(
+                            onPressed: () {},
+                            icon: const Icon(Icons.add, color: Color(0xFF2B8CEE)),
+                          ),
+                        ],
+                      ),
+                      TextField(
+                        decoration: InputDecoration(
+                          isDense: true,
+                          filled: true,
+                          fillColor: const Color(0xFFF8FAFC),
+                          hintText: 'Search articles...',
+                          hintStyle: const TextStyle(fontSize: 13),
+                          prefixIcon: const Icon(Icons.search, size: 20),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      const Row(
+                        children: [
+                          _LibraryTab(label: 'All', active: true),
+                          _LibraryTab(label: 'Drafts'),
+                          _LibraryTab(label: 'Published'),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                    child: Column(
+                      children: [
+                        _ArticleListItem(
+                          status: 'Draft',
+                          statusColor: Color(0xFFF59E0B),
+                          title: draftTitle,
+                          subtitle: draftSubtitle,
+                          author: 'Dr. Emily Stone',
+                          age: 'Just now',
+                          highlighted: true,
+                        ),
+                        const _ArticleListItem(
+                          status: 'Published',
+                          statusColor: Color(0xFF10B981),
+                          title: '5 Steps to Better Sleep Hygiene',
+                          subtitle: 'Addressing insomnia through behavioral...',
+                          author: 'Dr. Mark Chen',
+                          age: '2d ago',
+                        ),
+                        const _ArticleListItem(
+                          status: 'Published',
+                          statusColor: Color(0xFF10B981),
+                          title: 'Understanding CBT Core Principles',
+                          subtitle: 'A guide for new therapy patients...',
+                          author: 'Dr. Admin Portal',
+                          age: '5d ago',
+                        ),
+                        const _ArticleListItem(
+                          status: 'Scheduled',
+                          statusColor: Color(0xFF64748B),
+                          title: 'Managing Workplace Anxiety',
+                          subtitle: 'Strategies for high-stress environments...',
+                          author: 'Dr. Emily Stone',
+                          age: 'Nov 14',
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ),
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-              child: Column(
-                children: [
-                  _ArticleListItem(
-                    status: 'Draft',
-                    statusColor: Color(0xFFF59E0B),
-                    title: draftTitle,
-                    subtitle: draftSubtitle,
-                    author: 'Dr. Emily Stone',
-                    age: 'Just now',
-                    highlighted: true,
-                  ),
-                  const _ArticleListItem(
-                    status: 'Published',
-                    statusColor: Color(0xFF10B981),
-                    title: '5 Steps to Better Sleep Hygiene',
-                    subtitle: 'Addressing insomnia through behavioral...',
-                    author: 'Dr. Mark Chen',
-                    age: '2d ago',
-                  ),
-                  const _ArticleListItem(
-                    status: 'Published',
-                    statusColor: Color(0xFF10B981),
-                    title: 'Understanding CBT Core Principles',
-                    subtitle: 'A guide for new therapy patients...',
-                    author: 'Dr. Admin Portal',
-                    age: '5d ago',
-                  ),
-                  const _ArticleListItem(
-                    status: 'Scheduled',
-                    statusColor: Color(0xFF64748B),
-                    title: 'Managing Workplace Anxiety',
-                    subtitle: 'Strategies for high-stress environments...',
-                    author: 'Dr. Emily Stone',
-                    age: 'Nov 14',
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

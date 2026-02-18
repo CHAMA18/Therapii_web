@@ -949,18 +949,40 @@ class _NavBar extends StatelessWidget {
               ),
             // Sign In button
             if (signInLabel.trim().isNotEmpty)
-              ElevatedButton(
-                onPressed: onSignIn,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.black,
-                  padding: EdgeInsets.symmetric(horizontal: isWide ? 32 : 20, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                ),
-                child: Text(
-                  signInLabel,
-                  style: GoogleFonts.dmSans(fontSize: 14, fontWeight: FontWeight.w500),
-                ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ElevatedButton(
+                    onPressed: onSignIn,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white.withOpacity(0.08),
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(horizontal: isWide ? 30 : 18, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        side: const BorderSide(color: Colors.white24),
+                      ),
+                    ),
+                    child: Text(
+                      'Sign In - Journal Portal',
+                      style: GoogleFonts.dmSans(fontSize: 14, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  ElevatedButton(
+                    onPressed: onSignIn,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.black,
+                      padding: EdgeInsets.symmetric(horizontal: isWide ? 32 : 20, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                    ),
+                    child: Text(
+                      signInLabel,
+                      style: GoogleFonts.dmSans(fontSize: 14, fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ],
               ),
           ],
         ),

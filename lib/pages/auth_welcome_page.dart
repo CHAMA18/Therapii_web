@@ -163,7 +163,7 @@ class _AuthCard extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _Header(),
+            _Header(showJournalTag: openJournalPortalAfterAuth),
             const SizedBox(height: 48),
             _TabBar(tab: tab, onChanged: onTabChanged),
             const SizedBox(height: 40),
@@ -187,13 +187,55 @@ class _AuthCard extends StatelessWidget {
 }
 
 class _Header extends StatelessWidget {
+  final bool showJournalTag;
+  const _Header({this.showJournalTag = false});
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     
     return Column(
       children: [
-        Image.asset('assets/images/therapii_logo.png', height: 120, fit: BoxFit.contain),
+        Padding(
+          padding: const EdgeInsets.only(top: 12),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Image.asset('assets/images/therapii_logo.png', height: 240, fit: BoxFit.contain),
+              if (showJournalTag)
+                Positioned(
+                  right: -8,
+                  top: -4,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF2E67DD), Color(0xFF1546B9)],
+                      ),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.9), width: 1.2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF1754CF).withValues(alpha: 0.35),
+                          blurRadius: 14,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: const Text(
+                      'JORNUAL',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.9,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
         const SizedBox(height: 32),
         Text(
           'Welcome',

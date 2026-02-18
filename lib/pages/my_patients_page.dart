@@ -12,11 +12,9 @@ import 'package:therapii/services/user_service.dart';
 import 'package:therapii/models/invitation_code.dart';
 import 'package:therapii/models/user.dart' as AppUser;
 import 'package:therapii/widgets/shimmer_widgets.dart';
-import 'package:therapii/widgets/app_drawer.dart';
 import 'package:therapii/widgets/common_settings_drawer.dart';
 import 'package:therapii/services/chat_service.dart';
 import 'package:therapii/models/chat_conversation.dart';
-import 'package:therapii/theme_mode_controller.dart';
 import 'package:therapii/services/ai_conversation_service.dart';
 import 'package:therapii/models/ai_conversation_summary.dart';
 import 'package:therapii/pages/ai_summary_detail_page.dart';
@@ -24,8 +22,6 @@ import 'package:therapii/services/voice_checkin_service.dart';
 import 'package:therapii/models/voice_checkin.dart';
 import 'package:therapii/pages/voice_checkin_detail_page.dart';
 import 'package:therapii/widgets/therapist_approval_gate.dart';
-import 'package:therapii/widgets/dashboard_action_card.dart';
-import 'package:therapii/widgets/primary_button.dart';
 
 enum TopNavSection { patients, listen }
 
@@ -766,18 +762,18 @@ class _HeaderTab extends StatelessWidget {
 class _PatientTile extends StatelessWidget {
   final String name;
   final String lastMessage;
-  final Color? blue;
+  final Color blue;
   final VoidCallback? onViewDetails;
   final VoidCallback? onOpenChat;
   final int unreadCount;
   const _PatientTile({
     required this.name,
     required this.lastMessage,
-    this.blue,
+    Color? blue,
     this.onViewDetails,
     this.onOpenChat,
     this.unreadCount = 0,
-  });
+  }) : blue = blue ?? const Color(0xFF2B8CEE);
 
   @override
   Widget build(BuildContext context) {
@@ -786,7 +782,7 @@ class _PatientTile extends StatelessWidget {
     final borderRadius = BorderRadius.circular(16);
     final borderColor = colorScheme.outline.withOpacity(0.2);
     final surfaceColor = colorScheme.surface;
-    final blueColor = blue ?? colorScheme.primary;
+    final blueColor = blue;
     final subtitleStyle = theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurface.withOpacity(0.6));
 
     return Material(
@@ -1134,7 +1130,7 @@ class _UnreadBadge extends StatelessWidget {
 class _InviteTile extends StatelessWidget {
   final InvitationCode invitation;
   final VoidCallback? onDelete;
-  const _InviteTile({required this.invitation, this.onDelete});
+  const _InviteTile({required this.invitation, VoidCallback? onDelete}) : onDelete = onDelete;
 
   String _remainingText(DateTime now, DateTime expiry) {
     final diff = expiry.difference(now);

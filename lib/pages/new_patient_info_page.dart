@@ -4,7 +4,6 @@ import 'package:therapii/auth/firebase_auth_manager.dart';
 import 'package:therapii/pages/auth_welcome_page.dart';
 import 'package:therapii/pages/new_patient_confirm_page.dart';
 import 'package:therapii/services/invitation_service.dart';
-import 'package:therapii/models/invitation_code.dart';
 
 class NewPatientInfoPage extends StatefulWidget {
   const NewPatientInfoPage({super.key});
