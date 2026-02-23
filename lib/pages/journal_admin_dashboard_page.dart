@@ -4,22 +4,60 @@ import 'dart:math' as math;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:therapii/auth/firebase_auth_manager.dart';
-import 'package:therapii/pages/journal_admin_patients_page.dart';
+import 'package:therapii/pages/journal_admin_analytics_page.dart';
+import 'package:therapii/pages/journal_admin_patients_hub_page.dart';
+import 'package:therapii/pages/journal_admin_settings_page.dart';
 import 'package:therapii/pages/journal_admin_studio_page.dart';
-import 'package:therapii/pages/journal_admin_team_page.dart';
+import 'package:therapii/pages/journal_admin_team_hub_page.dart';
+import 'package:therapii/widgets/journal_admin_sidebar.dart';
 
 class JournalAdminDashboardPage extends StatelessWidget {
   const JournalAdminDashboardPage({super.key});
+
+  void _onSidebarNavigate(BuildContext context, JournalAdminSidebarItem item) {
+    switch (item) {
+      case JournalAdminSidebarItem.dashboard:
+        return;
+      case JournalAdminSidebarItem.articles:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const JournalAdminStudioPage()),
+        );
+        break;
+      case JournalAdminSidebarItem.team:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const JournalAdminTeamHubPage()),
+        );
+        break;
+      case JournalAdminSidebarItem.patients:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const JournalAdminPatientsHubPage()),
+        );
+        break;
+      case JournalAdminSidebarItem.analytics:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const JournalAdminAnalyticsPage()),
+        );
+        break;
+      case JournalAdminSidebarItem.settings:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const JournalAdminSettingsPage()),
+        );
+        break;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF6F7F8),
-      body: const SafeArea(
+      body: SafeArea(
         child: Row(
           children: [
-            _DashboardSidebar(),
-            Expanded(child: _DashboardContent()),
+            JournalAdminSidebar(
+              activeItem: JournalAdminSidebarItem.dashboard,
+              onNavigate: (item) => _onSidebarNavigate(context, item),
+            ),
+            const Expanded(child: _DashboardContent()),
           ],
         ),
       ),
@@ -128,7 +166,7 @@ class _DashboardSidebar extends StatelessWidget {
                     label: 'Team',
                     onTap: () {
                       Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(builder: (_) => const JournalAdminTeamPage()),
+                        MaterialPageRoute(builder: (_) => const JournalAdminTeamHubPage()),
                       );
                     },
                   ),
@@ -137,19 +175,29 @@ class _DashboardSidebar extends StatelessWidget {
                     label: 'Patients',
                     onTap: () {
                       Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(builder: (_) => const JournalAdminPatientsPage()),
+                        MaterialPageRoute(builder: (_) => const JournalAdminPatientsHubPage()),
                       );
                     },
                   ),
                   const SizedBox(height: 16),
                   const _SidebarSectionTitle('Insights'),
-                  const _SidebarItem(
+                  _SidebarItem(
                     icon: Icons.analytics_outlined,
                     label: 'Analytics',
+                    onTap: () {
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(builder: (_) => const JournalAdminAnalyticsPage()),
+                      );
+                    },
                   ),
-                  const _SidebarItem(
+                  _SidebarItem(
                     icon: Icons.settings_outlined,
                     label: 'Settings',
+                    onTap: () {
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(builder: (_) => const JournalAdminSettingsPage()),
+                      );
+                    },
                   ),
                 ],
               ),

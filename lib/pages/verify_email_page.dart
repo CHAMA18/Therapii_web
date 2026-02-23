@@ -4,9 +4,9 @@ import 'package:therapii/auth/firebase_auth_manager.dart';
 import 'package:therapii/pages/journal_portal_page.dart';
 import 'package:therapii/pages/admin_dashboard_page.dart';
 import 'package:therapii/pages/journal_admin_studio_page.dart';
+import 'package:therapii/pages/my_patients_page.dart';
 import 'package:therapii/pages/patient_dashboard_page.dart';
 import 'package:therapii/pages/patient_onboarding_flow_page.dart';
-import 'package:therapii/pages/therapist_welcome_psychology_today_page.dart';
 import 'package:therapii/services/user_service.dart';
 import 'package:therapii/utils/admin_access.dart';
 
@@ -78,9 +78,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
     }
 
     final destination = isTherapist
-        ? (widget.openJournalPortalAfterVerification
-            ? const JournalPortalPage()
-            : const TherapistWelcomePsychologyTodayPage())
+        ? const MyPatientsPage()
         : (onboardingCompleted ? const PatientDashboardPage() : const PatientOnboardingFlowPage());
 
     final resolvedDestination = widget.openJournalPortalAfterVerification && !isTherapist

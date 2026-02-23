@@ -77,7 +77,7 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
   final _premiumSubtitleController = TextEditingController(
     text: 'Unrestricted access to the world\'s most advanced emotional intelligence engine.',
   );
-  final _premiumPriceController = TextEditingController(text: '\$29');
+  final _premiumPriceController = TextEditingController(text: '\$150');
   final _premiumPeriodController = TextEditingController(text: '/ month');
   final _premiumFeature1Controller = TextEditingController(text: '24/7 Deep Learning Analysis');
   final _premiumFeature2Controller = TextEditingController(text: 'Therapist Dashboard Integration');
@@ -741,6 +741,7 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
             ),
           ),
           _NavBar(
+            onJournalSignIn: _openJournalPortal,
             onSignIn: _navigateToAuth,
             onNav1Tap: _openJournalPortal,
             onBrandTap: _handleBrandTap,
@@ -862,6 +863,7 @@ class _EditChip extends StatelessWidget {
   }
 }
 class _NavBar extends StatelessWidget {
+  final VoidCallback onJournalSignIn;
   final VoidCallback onSignIn;
   final VoidCallback onNav1Tap;
   final VoidCallback onBrandTap;
@@ -875,6 +877,7 @@ class _NavBar extends StatelessWidget {
   final VoidCallback onEditNav2;
   final VoidCallback onEditNav3;
   const _NavBar({
+    required this.onJournalSignIn,
     required this.onSignIn,
     required this.onNav1Tap,
     required this.onBrandTap,
@@ -953,7 +956,7 @@ class _NavBar extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   ElevatedButton(
-                    onPressed: onSignIn,
+                    onPressed: onJournalSignIn,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white.withOpacity(0.08),
                       foregroundColor: Colors.white,

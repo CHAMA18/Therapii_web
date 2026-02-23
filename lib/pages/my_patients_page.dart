@@ -22,6 +22,7 @@ import 'package:therapii/services/voice_checkin_service.dart';
 import 'package:therapii/models/voice_checkin.dart';
 import 'package:therapii/pages/voice_checkin_detail_page.dart';
 import 'package:therapii/widgets/therapist_approval_gate.dart';
+import 'package:therapii/theme_mode_controller.dart';
 
 enum TopNavSection { patients, listen }
 
@@ -505,26 +506,53 @@ class _MyPatientsPageState extends State<MyPatientsPage> {
     final bool hasMorePatients = _activePatients.length > maxVisiblePatients;
     final List<AppUser.User> patientsToDisplay =
         _showAllPatients || !hasMorePatients ? _activePatients : _activePatients.take(maxVisiblePatients).toList();
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final horizontalPadding = screenWidth >= 1200 ? 40.0 : screenWidth >= 900 ? 28.0 : 16.0;
+    final contentMaxWidth = screenWidth >= 1400 ? 980.0 : 900.0;
+    final appBarDivider = theme.colorScheme.outline.withValues(alpha: 0.12);
+    final onSurface = theme.colorScheme.onSurface;
+    final therapistName = _therapist?.fullName.isNotEmpty == true ? _therapist!.fullName : 'Therapist';
+    final therapistInitial = (_therapist?.firstName ?? therapistName)[0].toUpperCase();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color(0xFFF5F7FB),
       appBar: AppBar(
+        titleSpacing: 0,
+        centerTitle: false,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        backgroundColor: const Color(0xFFF5F7FB),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
           tooltip: 'Back',
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text('My Patients'),
-        centerTitle: true,
+        title: Text(
+          'My Patients',
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: onSurface,
+          ),
+        ),
         scrolledUnderElevation: 0,
-        backgroundColor: Colors.transparent,
         actions: [
+          IconButton(
+            icon: Icon(
+              theme.brightness == Brightness.dark ? Icons.light_mode_rounded : Icons.brightness_2_rounded,
+            ),
+            tooltip: 'Toggle theme',
+            onPressed: themeModeController.toggleLightDark,
+          ),
           IconButton(
             icon: const Icon(Icons.settings_rounded),
             tooltip: 'Settings',
             onPressed: () => showSettingsPopup(context),
           ),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: appBarDivider),
+        ),
       ),
       body: SafeArea(
         child: Builder(builder: (innerContext) {
@@ -547,125 +575,101 @@ class _MyPatientsPageState extends State<MyPatientsPage> {
             onRefresh: _loadData,
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              padding: EdgeInsets.fromLTRB(horizontalPadding, 16, horizontalPadding, 28),
               child: Center(
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 800),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Greeting Header
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8, bottom: 24),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Good evening,',
-                                    style: theme.textTheme.bodyLarge?.copyWith(
-                                      color: theme.colorScheme.onSurface.withOpacity(0.6),
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    _therapist?.fullName.isNotEmpty == true ? _therapist!.fullName : 'Therapist',
-                                    style: theme.textTheme.headlineMedium?.copyWith(
-                                      fontWeight: FontWeight.w800,
-                                      color: theme.colorScheme.onSurface,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    'Manage your patients, invites and conversations.',
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      color: theme.colorScheme.onSurface.withOpacity(0.55),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Container(
-                              width: 50,
-                              height: 50,
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.primary.withOpacity(0.12),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Center(
-                                child: Text(
-                                  (_therapist?.firstName ?? 'E')[0].toUpperCase(),
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    color: theme.colorScheme.primary,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // Hero tiles
-                      LayoutBuilder(builder: (context, constraints) {
-                        final isWide = constraints.maxWidth > 620;
-                        final gap = isWide ? 16.0 : 12.0;
-                        final inviteTile = _HeroTile(
-                          gradient: true,
-                          title: 'Invite New Patient',
-                          subtitle: 'Share a code to connect',
-                          icon: Icons.person_add_rounded,
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => const NewPatientInfoPage()),
-                          ),
-                        );
-                        final listenTile = _HeroTile(
-                          gradient: false,
-                          title: 'Listen',
-                          subtitle: 'AI summaries, transcripts and voice updates',
-                          icon: Icons.graphic_eq_rounded,
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => const ListenPage()),
-                          ),
-                        );
-                        return isWide
-                            ? Row(children: [Expanded(child: inviteTile), SizedBox(width: gap), Expanded(child: listenTile)])
-                            : Column(children: [inviteTile, SizedBox(height: gap), listenTile]);
-                      }),
-
-                      const SizedBox(height: 28),
-
-                      // Active Patients Card - Premium styling like Billing page
-                      _ActivePatientsCard(
-                        isLoading: _loading,
-                        error: _error,
-                        patients: patientsToDisplay,
-                        hasMorePatients: hasMorePatients,
-                        showAllPatients: _showAllPatients,
-                        onShowAll: () => setState(() => _showAllPatients = true),
-                        onManage: () => Navigator.of(context).push(
+                  constraints: BoxConstraints(maxWidth: contentMaxWidth),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final isCompact = constraints.maxWidth < 640;
+                      final useStackedActions = constraints.maxWidth < 760;
+                      final actionGap = useStackedActions ? 12.0 : 16.0;
+                      final inviteTile = _HeroTile(
+                        gradient: true,
+                        title: 'Invite New Patient',
+                        subtitle: 'Share a code to securely connect.',
+                        icon: Icons.person_add_alt_1_rounded,
+                        onTap: () => Navigator.of(context).push(
                           MaterialPageRoute(builder: (_) => const NewPatientInfoPage()),
                         ),
-                        buildPatientTile: _buildPatientTile,
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      // Pending Invites Card - Premium styling
-                      if (!_loading && _pendingInvites.isNotEmpty)
-                        _PendingInvitesCard(
-                          invites: _pendingInvites,
-                          onDelete: _confirmAndDelete,
-                          onGenerateInvite: () => Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => const NewPatientInfoPage()),
-                          ),
+                      );
+                      final listenTile = _HeroTile(
+                        gradient: false,
+                        title: 'Listen',
+                        subtitle: 'AI summaries, transcripts and voice updates.',
+                        icon: Icons.graphic_eq_rounded,
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const ListenPage()),
                         ),
-                      const SizedBox(height: 40),
-                    ],
+                      );
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(top: 10, bottom: 24),
+                            child: isCompact
+                                ? Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      _HeaderTextBlock(
+                                        greeting: _greeting(),
+                                        therapistName: therapistName,
+                                      ),
+                                      const SizedBox(height: 16),
+                                      _TherapistAvatarChip(initial: therapistInitial),
+                                    ],
+                                  )
+                                : Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                        child: _HeaderTextBlock(
+                                          greeting: _greeting(),
+                                          therapistName: therapistName,
+                                        ),
+                                      ),
+                                      _TherapistAvatarChip(initial: therapistInitial),
+                                    ],
+                                  ),
+                          ),
+                          if (useStackedActions) ...[
+                            inviteTile,
+                            SizedBox(height: actionGap),
+                            listenTile,
+                          ] else
+                            Row(
+                              children: [
+                                Expanded(flex: 11, child: inviteTile),
+                                SizedBox(width: actionGap),
+                                Expanded(flex: 10, child: listenTile),
+                              ],
+                            ),
+                          const SizedBox(height: 28),
+                          _ActivePatientsCard(
+                            isLoading: _loading,
+                            error: _error,
+                            patients: patientsToDisplay,
+                            hasMorePatients: hasMorePatients,
+                            showAllPatients: _showAllPatients,
+                            onShowAll: () => setState(() => _showAllPatients = true),
+                            onManage: () => Navigator.of(context).push(
+                              MaterialPageRoute(builder: (_) => const NewPatientInfoPage()),
+                            ),
+                            buildPatientTile: _buildPatientTile,
+                          ),
+                          const SizedBox(height: 26),
+                          _PendingInvitesCard(
+                            invites: _pendingInvites,
+                            onDelete: _confirmAndDelete,
+                            onGenerateInvite: () => Navigator.of(context).push(
+                              MaterialPageRoute(builder: (_) => const NewPatientInfoPage()),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+                      );
+                    },
                   ),
                 ),
               ),
@@ -681,6 +685,79 @@ class _MyPatientsPageState extends State<MyPatientsPage> {
     if (hour < 12) return 'Good morning';
     if (hour < 17) return 'Good afternoon';
     return 'Good evening';
+  }
+}
+
+class _HeaderTextBlock extends StatelessWidget {
+  final String greeting;
+  final String therapistName;
+  const _HeaderTextBlock({
+    required this.greeting,
+    required this.therapistName,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '$greeting,',
+          style: theme.textTheme.titleMedium?.copyWith(
+            color: onSurface.withValues(alpha: 0.58),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          therapistName,
+          style: theme.textTheme.headlineMedium?.copyWith(
+            fontWeight: FontWeight.w800,
+            color: onSurface,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Manage your patients, invites and conversations in one place.',
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: onSurface.withValues(alpha: 0.5),
+            height: 1.35,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TherapistAvatarChip extends StatelessWidget {
+  final String initial;
+  const _TherapistAvatarChip({required this.initial});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final primary = theme.colorScheme.primary;
+    return Container(
+      width: 52,
+      height: 52,
+      decoration: BoxDecoration(
+        color: primary.withValues(alpha: 0.14),
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 2),
+      ),
+      child: Center(
+        child: Text(
+          initial,
+          style: theme.textTheme.titleMedium?.copyWith(
+            color: primary,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -779,11 +856,10 @@ class _PatientTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final borderRadius = BorderRadius.circular(16);
-    final borderColor = colorScheme.outline.withOpacity(0.2);
-    final surfaceColor = colorScheme.surface;
+    final borderRadius = BorderRadius.circular(18);
+    final borderColor = colorScheme.outline.withValues(alpha: 0.1);
     final blueColor = blue;
-    final subtitleStyle = theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurface.withOpacity(0.6));
+    final subtitleStyle = theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurface.withValues(alpha: 0.5));
 
     return Material(
       color: Colors.transparent,
@@ -793,25 +869,18 @@ class _PatientTile extends StatelessWidget {
         onTap: onViewDetails,
         child: Ink(
           decoration: BoxDecoration(
-            color: surfaceColor,
+            color: Colors.white,
             borderRadius: borderRadius,
             border: Border.all(color: borderColor),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 6,
-                offset: const Offset(0, 3),
-              ),
-            ],
           ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
             child: Row(
               children: [
                 CircleAvatar(
-                  radius: 24,
-                  backgroundColor: colorScheme.surfaceContainerHighest,
-                  child: Icon(Icons.person, color: colorScheme.onSurfaceVariant),
+                  radius: 22,
+                  backgroundColor: const Color(0xFFF1F4FA),
+                  child: Icon(Icons.person, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8)),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -821,7 +890,7 @@ class _PatientTile extends StatelessWidget {
                       Text(
                         name,
                         style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w800,
                               color: colorScheme.onSurface,
                             ),
                         maxLines: 1,
@@ -847,8 +916,8 @@ class _PatientTile extends StatelessWidget {
                     ],
                     IconButton(
                       onPressed: onOpenChat,
-                      icon: const Icon(Icons.chat_bubble_outline, size: 20),
-                      color: blueColor,
+                      icon: const Icon(Icons.chat_bubble_outline_rounded, size: 20),
+                      color: blueColor.withValues(alpha: 0.8),
                       padding: const EdgeInsets.all(8),
                       constraints: const BoxConstraints(minHeight: 36, minWidth: 36),
                       tooltip: 'Message History',
@@ -1265,13 +1334,8 @@ class _HeroTileState extends State<_HeroTile> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
-
-    final background = widget.gradient
-        ? null
-        : (isDark ? scheme.surfaceContainerHighest : Colors.white);
-    final borderColor = widget.gradient
-        ? Colors.transparent
-        : scheme.outline.withValues(alpha: 0.15);
+    final background = widget.gradient ? null : (isDark ? scheme.surfaceContainerHighest : Colors.white);
+    final borderColor = widget.gradient ? Colors.transparent : scheme.outline.withValues(alpha: 0.1);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
@@ -1282,6 +1346,7 @@ class _HeroTileState extends State<_HeroTile> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOut,
+          constraints: const BoxConstraints(minHeight: 170),
           padding: const EdgeInsets.all(22),
           decoration: BoxDecoration(
             color: background,
@@ -1295,18 +1360,19 @@ class _HeroTileState extends State<_HeroTile> {
                     ],
                   )
                 : null,
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(22),
             border: Border.all(color: borderColor),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: _hovered ? 0.12 : 0.06),
-                blurRadius: 14,
-                offset: const Offset(0, 6),
+                color: Colors.black.withValues(alpha: _hovered ? 0.09 : 0.045),
+                blurRadius: _hovered ? 20 : 12,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1332,12 +1398,12 @@ class _HeroTileState extends State<_HeroTile> {
                         : scheme.onSurface.withValues(alpha: 0.4),
                   ),
                 ],
-              ),
-              const SizedBox(height: 24),
+                ),
+              const SizedBox(height: 18),
               Text(
                 widget.title,
                 style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w800,
                   color: widget.gradient ? scheme.onPrimary : scheme.onSurface,
                 ),
               ),
@@ -1388,117 +1454,144 @@ class _ActivePatientsCard extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
 
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        color: scheme.surface,
-        border: Border.all(color: scheme.outline.withValues(alpha: 0.08)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header row with icon, title, and Manage button
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Blue circle icon
-              Container(
-                height: 52,
-                width: 52,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: scheme.primaryContainer.withValues(alpha: 0.6),
-                ),
-                child: Center(
-                  child: Icon(
-                    Icons.circle,
-                    color: scheme.primary,
-                    size: 16,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              // Title
-              Expanded(
-                child: Text(
-                  'Active patients',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    height: 1.15,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          // Subtitle - full width below header
-          const SizedBox(height: 12),
-          Text(
-            patients.isEmpty
-                ? 'No active patients yet. Share an invitation code to begin collaborating.'
-                : '${patients.length} patient${patients.length == 1 ? '' : 's'} connected',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: scheme.onSurface.withValues(alpha: 0.55),
-              height: 1.4,
-            ),
-          ),
-          if (isLoading) ...[
-            const SizedBox(height: 22),
-            const ShimmerListTile(),
-            const SizedBox(height: 12),
-            const ShimmerListTile(),
-          ] else if (error != null) ...[
-            const SizedBox(height: 22),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
+              height: 38,
+              width: 38,
               decoration: BoxDecoration(
-                color: scheme.errorContainer.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: scheme.error.withValues(alpha: 0.3)),
+                shape: BoxShape.circle,
+                color: scheme.primaryContainer.withValues(alpha: 0.5),
               ),
-              child: Row(
+              child: Center(
+                child: Icon(
+                  Icons.circle,
+                  color: scheme.primary,
+                  size: 11,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.error_outline_rounded, color: scheme.error),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      error!,
-                      style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onErrorContainer),
+                  Text(
+                    'Active patients',
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      height: 1.1,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    patients.isEmpty
+                        ? 'No active patients yet. Share an invitation code to begin collaborating.'
+                        : '${patients.length} patient${patients.length == 1 ? '' : 's'} connected',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: scheme.onSurface.withValues(alpha: 0.48),
                     ),
                   ),
                 ],
               ),
             ),
-          ] else if (patients.isNotEmpty) ...[
-            const SizedBox(height: 22),
-            for (final patient in patients) ...[
-              buildPatientTile(patient),
-              const SizedBox(height: 12),
-            ],
-            if (hasMorePatients && !showAllPatients)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Center(
-                  child: TextButton.icon(
-                    onPressed: onShowAll,
-                    icon: const Icon(Icons.expand_more_rounded),
-                    label: const Text('Show all patients'),
+          ],
+        ),
+        if (isLoading) ...[
+          const SizedBox(height: 18),
+          const ShimmerListTile(),
+          const SizedBox(height: 12),
+          const ShimmerListTile(),
+        ] else if (error != null) ...[
+          const SizedBox(height: 16),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: scheme.errorContainer.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: scheme.error.withValues(alpha: 0.2)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.error_outline_rounded, color: scheme.error),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    error!,
+                    style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onErrorContainer),
                   ),
                 ),
-              ),
+              ],
+            ),
+          ),
+        ] else if (patients.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          for (final patient in patients) ...[
+            buildPatientTile(patient),
+            const SizedBox(height: 12),
           ],
+          if (hasMorePatients && !showAllPatients)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: onShowAll,
+                  icon: const Icon(Icons.expand_more_rounded),
+                  label: const Text('Show all patients'),
+                ),
+              ),
+            ),
+        ] else ...[
+          const SizedBox(height: 14),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = constraints.maxWidth < 420;
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: scheme.outline.withValues(alpha: 0.1)),
+                ),
+                child: compact
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'No patients connected yet.',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: scheme.onSurface.withValues(alpha: 0.65),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          TextButton(onPressed: onManage, child: const Text('Invite patient')),
+                        ],
+                      )
+                    : Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'No patients connected yet.',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: scheme.onSurface.withValues(alpha: 0.65),
+                              ),
+                            ),
+                          ),
+                          TextButton(onPressed: onManage, child: const Text('Invite patient')),
+                        ],
+                      ),
+              );
+            },
+          ),
         ],
-      ),
+      ],
     );
   }
 }
@@ -1520,71 +1613,102 @@ class _PendingInvitesCard extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
 
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        color: scheme.surface,
-        border: Border.all(color: scheme.outline.withOpacity(0.06)),
-        boxShadow: const [
-          BoxShadow(color: Color(0x0F000000), blurRadius: 18, offset: Offset(0, 10)),
-        ],
-      ),
-      padding: const EdgeInsets.all(22),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                height: 54,
-                width: 54,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              height: 38,
+              width: 38,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: scheme.surfaceContainerHighest,
+              ),
+              child: Icon(
+                Icons.mail_outline_rounded,
+                size: 18,
+                color: scheme.onSurface.withValues(alpha: 0.6),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Pending invitations',
+                    style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800, height: 1.1),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${invites.length} invitation${invites.length == 1 ? '' : 's'} waiting for response',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: scheme.onSurface.withValues(alpha: 0.48),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        if (invites.isEmpty)
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = constraints.maxWidth < 420;
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(18),
-                  color: scheme.tertiary.withValues(alpha: 0.18),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: scheme.outline.withValues(alpha: 0.1)),
                 ),
-                child: Icon(Icons.mail_outline_rounded, color: scheme.tertiary),
-              ),
-              const SizedBox(width: 18),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Pending invitations',
-                      style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      '${invites.length} invitation${invites.length == 1 ? '' : 's'} waiting for response',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: scheme.onSurface.withValues(alpha: 0.65),
-                        height: 1.5,
+                child: compact
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'No pending invitations right now.',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: scheme.onSurface.withValues(alpha: 0.6),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          TextButton(
+                            onPressed: onGenerateInvite,
+                            child: const Text('Create invite'),
+                          ),
+                        ],
+                      )
+                    : Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'No pending invitations right now.',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: scheme.onSurface.withValues(alpha: 0.6),
+                              ),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: onGenerateInvite,
+                            child: const Text('Create invite'),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 22),
+              );
+            },
+          )
+        else ...[
           for (var i = 0; i < invites.length; i++) ...[
             _PremiumInviteTile(invitation: invites[i], onDelete: () => onDelete(invites[i])),
             if (i < invites.length - 1) const SizedBox(height: 12),
           ],
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: onGenerateInvite,
-                  icon: const Icon(Icons.add_rounded),
-                  label: const Text('New invitation'),
-                ),
-              ),
-            ],
-          ),
         ],
-      ),
+      ],
     );
   }
 }
@@ -1613,29 +1737,29 @@ class _PremiumInviteTile extends StatelessWidget {
     final isUrgent = invitation.expiresAt.difference(now).inHours < 6;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        color: scheme.surfaceContainerHighest.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(18),
+        color: Colors.white,
         border: Border.all(
           color: isUrgent && showCode
-              ? Colors.amber.withValues(alpha: 0.5)
-              : scheme.outline.withValues(alpha: 0.12),
+              ? Colors.amber.withValues(alpha: 0.35)
+              : scheme.outline.withValues(alpha: 0.1),
         ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           CircleAvatar(
-            radius: 24,
-            backgroundColor: scheme.primaryContainer.withValues(alpha: 0.5),
+            radius: 22,
+            backgroundColor: const Color(0xFFF1F4FA),
             child: Text(
               invitation.patientFirstName.isNotEmpty
                   ? invitation.patientFirstName[0].toUpperCase()
                   : '?',
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
-                color: scheme.onPrimaryContainer,
+                color: scheme.primary,
               ),
             ),
           ),
@@ -1654,7 +1778,7 @@ class _PremiumInviteTile extends StatelessWidget {
                 Text(
                   invitation.patientEmail,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: scheme.onSurface.withValues(alpha: 0.6),
+                    color: scheme.onSurface.withValues(alpha: 0.45),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -1697,7 +1821,7 @@ class _PremiumInviteTile extends StatelessWidget {
                         child: Text(
                           _remainingText(now, invitation.expiresAt),
                           style: theme.textTheme.labelSmall?.copyWith(
-                            color: isUrgent ? Colors.amber.shade800 : scheme.onSurface.withValues(alpha: 0.6),
+                            color: isUrgent ? Colors.amber.shade800 : scheme.onSurface.withValues(alpha: 0.55),
                             fontWeight: isUrgent ? FontWeight.w600 : FontWeight.normal,
                           ),
                         ),
@@ -1708,7 +1832,7 @@ class _PremiumInviteTile extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
-                      color: scheme.error.withValues(alpha: 0.12),
+                      color: scheme.error.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(

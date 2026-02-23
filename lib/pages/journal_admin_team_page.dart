@@ -3,23 +3,61 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:therapii/auth/firebase_auth_manager.dart';
+import 'package:therapii/pages/journal_admin_analytics_page.dart';
 import 'package:therapii/pages/journal_admin_dashboard_page.dart';
-import 'package:therapii/pages/journal_admin_patients_page.dart';
+import 'package:therapii/pages/journal_admin_patients_hub_page.dart';
+import 'package:therapii/pages/journal_admin_settings_page.dart';
 import 'package:therapii/pages/journal_admin_studio_page.dart';
 import 'package:therapii/utils/admin_access.dart';
+import 'package:therapii/widgets/journal_admin_sidebar.dart';
 
 class JournalAdminTeamPage extends StatelessWidget {
   const JournalAdminTeamPage({super.key});
+
+  void _onSidebarNavigate(BuildContext context, JournalAdminSidebarItem item) {
+    switch (item) {
+      case JournalAdminSidebarItem.dashboard:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const JournalAdminDashboardPage()),
+        );
+        break;
+      case JournalAdminSidebarItem.articles:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const JournalAdminStudioPage()),
+        );
+        break;
+      case JournalAdminSidebarItem.team:
+        return;
+      case JournalAdminSidebarItem.patients:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const JournalAdminPatientsHubPage()),
+        );
+        break;
+      case JournalAdminSidebarItem.analytics:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const JournalAdminAnalyticsPage()),
+        );
+        break;
+      case JournalAdminSidebarItem.settings:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const JournalAdminSettingsPage()),
+        );
+        break;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF6F7F8),
-      body: const SafeArea(
+      body: SafeArea(
         child: Row(
           children: [
-            _TeamSidebar(),
-            Expanded(child: _TeamMainContent()),
+            JournalAdminSidebar(
+              activeItem: JournalAdminSidebarItem.team,
+              onNavigate: (item) => _onSidebarNavigate(context, item),
+            ),
+            const Expanded(child: _TeamMainContent()),
           ],
         ),
       ),
@@ -136,19 +174,29 @@ class _TeamSidebar extends StatelessWidget {
                     label: 'Patients',
                     onTap: () {
                       Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(builder: (_) => const JournalAdminPatientsPage()),
+                        MaterialPageRoute(builder: (_) => const JournalAdminPatientsHubPage()),
                       );
                     },
                   ),
                   const SizedBox(height: 16),
                   const _SidebarSectionTitle('Insights'),
-                  const _SidebarItem(
+                  _SidebarItem(
                     icon: Icons.analytics_outlined,
                     label: 'Analytics',
+                    onTap: () {
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(builder: (_) => const JournalAdminAnalyticsPage()),
+                      );
+                    },
                   ),
-                  const _SidebarItem(
+                  _SidebarItem(
                     icon: Icons.settings_outlined,
                     label: 'Settings',
+                    onTap: () {
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(builder: (_) => const JournalAdminSettingsPage()),
+                      );
+                    },
                   ),
                 ],
               ),

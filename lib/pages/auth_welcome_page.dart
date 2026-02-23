@@ -10,7 +10,7 @@ import 'package:therapii/services/user_service.dart';
 import 'package:therapii/pages/admin_dashboard_page.dart';
 import 'package:therapii/pages/journal_admin_studio_page.dart';
 import 'package:therapii/pages/journal_portal_page.dart';
-import 'package:therapii/pages/therapist_dashboard_page.dart';
+import 'package:therapii/pages/my_patients_page.dart';
 import 'package:therapii/pages/patient_dashboard_page.dart';
 import 'package:therapii/pages/patient_onboarding_flow_page.dart';
 import 'package:therapii/pages/verify_email_page.dart';
@@ -163,7 +163,8 @@ class _AuthCard extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _Header(showJournalTag: openJournalPortalAfterAuth),
+            // Always show the JORNUAL tag on the logo for consistent branding.
+            _Header(showJournalTag: true),
             const SizedBox(height: 48),
             _TabBar(tab: tab, onChanged: onTabChanged),
             const SizedBox(height: 40),
@@ -204,32 +205,41 @@ class _Header extends StatelessWidget {
               Image.asset('assets/images/therapii_logo.png', height: 240, fit: BoxFit.contain),
               if (showJournalTag)
                 Positioned(
-                  right: -8,
-                  top: -4,
+                  right: -6,
+                  bottom: -6,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
                         colors: [Color(0xFF2E67DD), Color(0xFF1546B9)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
                       borderRadius: BorderRadius.circular(999),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.9), width: 1.2),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.9), width: 1.3),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF1754CF).withValues(alpha: 0.35),
-                          blurRadius: 14,
-                          offset: const Offset(0, 6),
+                          color: const Color(0xFF0F2D6D).withValues(alpha: 0.28),
+                          blurRadius: 16,
+                          offset: const Offset(0, 8),
                         ),
                       ],
                     ),
-                    child: const Text(
-                      'JORNUAL',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.9,
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Icon(Icons.auto_awesome_rounded, size: 14, color: Colors.white),
+                        SizedBox(width: 6),
+                        Text(
+                          'JORNUAL',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.9,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -718,6 +728,12 @@ class _CreateAccountFormState extends State<_CreateAccountForm> {
                     : const AdminDashboardPage(),
               ),
             );
+          } else if (isTherapist) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (context) => const MyPatientsPage(),
+              ),
+            );
           } else if (widget.openJournalPortalAfterAuth) {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
@@ -727,7 +743,7 @@ class _CreateAccountFormState extends State<_CreateAccountForm> {
           } else {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
-                builder: (context) => isTherapist ? const TherapistDashboardPage() : const PatientOnboardingFlowPage(),
+                builder: (context) => const PatientOnboardingFlowPage(),
               ),
             );
           }
@@ -967,9 +983,7 @@ class _LoginFormState extends State<_LoginForm> {
           } else if (user.isTherapist) {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
-                builder: (context) => widget.openJournalPortalAfterAuth
-                    ? const JournalPortalPage()
-                    : const TherapistDashboardPage(),
+                builder: (context) => const MyPatientsPage(),
               ),
             );
           } else {

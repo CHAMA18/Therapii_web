@@ -1214,36 +1214,48 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
               final displayList = pending.take(5).toList();
 
-              return SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minWidth: MediaQuery.of(context).size.width - 48),
-                  child: Column(
-                    children: [
-                      // Table Header
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF1e293b).withValues(alpha: 0.5) : const Color(0xFFF8FAFC),
-                        ),
-                        child: Row(
-                          children: [
-                            SizedBox(width: 200, child: _TableHeader('Applicant', isDark)),
-                            SizedBox(width: 120, child: _TableHeader('Identity / ID', isDark)),
-                            SizedBox(width: 120, child: _TableHeader('Location', isDark)),
-                            SizedBox(width: 120, child: _TableHeader('Applied Date', isDark)),
-                            const SizedBox(width: 140),
-                          ],
-                        ),
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  const tableMinWidth = 760.0;
+                  final tableWidth = constraints.maxWidth.isFinite
+                      ? (constraints.maxWidth > tableMinWidth ? constraints.maxWidth : tableMinWidth)
+                      : tableMinWidth;
+
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SizedBox(
+                      width: tableWidth,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Table Header
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF1e293b).withValues(alpha: 0.5) : const Color(0xFFF8FAFC),
+                            ),
+                            child: Row(
+                              children: [
+                                SizedBox(width: 200, child: _TableHeader('Applicant', isDark)),
+                                SizedBox(width: 120, child: _TableHeader('Identity / ID', isDark)),
+                                SizedBox(width: 120, child: _TableHeader('Location', isDark)),
+                                SizedBox(width: 120, child: _TableHeader('Applied Date', isDark)),
+                                const Spacer(),
+                                const SizedBox(width: 140),
+                              ],
+                            ),
+                          ),
+                          // Table Rows
+                          ...displayList.map((doc) {
+                            final data = doc.data();
+                            return _buildTableRow(doc.id, data, isDark, primaryColor);
+                          }),
+                        ],
                       ),
-                      // Table Rows
-                      ...displayList.map((doc) {
-                        final data = doc.data();
-                        return _buildTableRow(doc.id, data, isDark, primaryColor);
-                      }),
-                    ],
-                  ),
-                ),
+                    ),
+                  );
+                },
               );
             },
           ),
@@ -1292,6 +1304,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     return InkWell(
       onTap: () => _showTherapistDetails(data),
       child: Container(
+        width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
         decoration: BoxDecoration(
           border: Border(
@@ -1375,6 +1388,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 ),
               ),
             ),
+            const Spacer(),
             // Actions
             SizedBox(
               width: 140,
@@ -1398,6 +1412,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                       onPressed: () => _rejectTherapist(docId),
                       tooltip: 'Reject',
                       padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
                     ),
                   ),
                   const SizedBox(width: 8),

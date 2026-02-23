@@ -136,6 +136,46 @@ class _JournalPortalPageState extends State<JournalPortalPage> {
                 if (showRightRail) _RightRail(savedItems: _savedArticles),
               ],
             ),
+            Positioned(
+              top: 12,
+              left: 12,
+              child: SafeArea(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: SizedBox(
+                    width: 72,
+                    height: 72,
+                    child: Image.asset(
+                      'assets/images/Therapii_image.png',
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 12,
+              right: 12,
+              child: SafeArea(
+                child: FilledButton.icon(
+                  onPressed: () async {
+                    try {
+                      await FirebaseAuthManager().signOut();
+                    } catch (_) {}
+                    if (context.mounted) Navigator.of(context).maybePop();
+                  },
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF0F172A),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    textStyle: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                  icon: const Icon(Icons.logout_rounded, size: 18),
+                  label: const Text('Log Out'),
+                ),
+              ),
+            ),
           ],
         ),
       ),

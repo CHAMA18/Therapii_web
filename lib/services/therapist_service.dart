@@ -146,6 +146,18 @@ class TherapistService {
   // Get therapists by user ID (for therapists managing their profile)
   Future<Therapist?> getTherapistByUserId(String userId) async {
     try {
+      // Many backends store therapist docs keyed by the userId; check that first.
+      final direct = await _firestore.collection(_collection).doc(userId).get();
+      if (direct.exists) {
+        final data = direct.data();
+        if (data != null) {
+          // Ensure id is present for downstream consumers.
+          data['id'] = direct.id;
+          return Therapist.fromJson(data);
+        }
+      }
+
+      // Fallback: query by explicit user_id field.
       final querySnapshot = await _firestore
           .collection(_collection)
           .where('user_id', isEqualTo: userId)

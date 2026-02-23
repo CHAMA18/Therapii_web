@@ -3,10 +3,13 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:therapii/auth/firebase_auth_manager.dart';
+import 'package:therapii/pages/journal_admin_analytics_page.dart';
 import 'package:therapii/pages/journal_admin_dashboard_page.dart';
-import 'package:therapii/pages/journal_admin_patients_page.dart';
-import 'package:therapii/pages/journal_admin_team_page.dart';
+import 'package:therapii/pages/journal_admin_patients_hub_page.dart';
+import 'package:therapii/pages/journal_admin_settings_page.dart';
+import 'package:therapii/pages/journal_admin_team_hub_page.dart';
 import 'package:therapii/utils/admin_access.dart';
+import 'package:therapii/widgets/journal_admin_sidebar.dart';
 
 class JournalAdminStudioPage extends StatefulWidget {
   const JournalAdminStudioPage({super.key});
@@ -43,7 +46,6 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
   bool _publishImmediately = false;
   bool _isPublic = true;
   bool _hasUnsavedChanges = false;
-  bool _isMainSidebarCollapsed = false;
   bool _isContentLibraryCollapsed = false;
   DateTime? _lastSavedAt;
   List<String> _tags = const ['Resilience', 'Anxiety'];
@@ -178,16 +180,42 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
     });
   }
 
-  void _toggleMainSidebar() {
-    setState(() {
-      _isMainSidebarCollapsed = !_isMainSidebarCollapsed;
-    });
-  }
-
   void _toggleContentLibrary() {
     setState(() {
       _isContentLibraryCollapsed = !_isContentLibraryCollapsed;
     });
+  }
+
+  void _onSidebarNavigate(JournalAdminSidebarItem item) {
+    switch (item) {
+      case JournalAdminSidebarItem.dashboard:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const JournalAdminDashboardPage()),
+        );
+        break;
+      case JournalAdminSidebarItem.articles:
+        return;
+      case JournalAdminSidebarItem.team:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const JournalAdminTeamHubPage()),
+        );
+        break;
+      case JournalAdminSidebarItem.patients:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const JournalAdminPatientsHubPage()),
+        );
+        break;
+      case JournalAdminSidebarItem.analytics:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const JournalAdminAnalyticsPage()),
+        );
+        break;
+      case JournalAdminSidebarItem.settings:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const JournalAdminSettingsPage()),
+        );
+        break;
+    }
   }
 
   String get _saveStatusText {
@@ -225,9 +253,9 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
       body: SafeArea(
         child: Row(
           children: [
-            _LeftSidebar(
-              isCollapsed: _isMainSidebarCollapsed,
-              onToggleCollapse: _toggleMainSidebar,
+            JournalAdminSidebar(
+              activeItem: JournalAdminSidebarItem.articles,
+              onNavigate: _onSidebarNavigate,
             ),
             if (canShowLibrary)
               _ContentLibrary(
@@ -393,7 +421,7 @@ class _LeftSidebar extends StatelessWidget {
                         label: 'Team',
                         onTap: () {
                           Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => const JournalAdminTeamPage()),
+                            MaterialPageRoute(builder: (_) => const JournalAdminTeamHubPage()),
                           );
                         },
                       ),
@@ -402,7 +430,7 @@ class _LeftSidebar extends StatelessWidget {
                         label: 'Patients',
                         onTap: () {
                           Navigator.of(context).pushReplacement(
-                            MaterialPageRoute(builder: (_) => const JournalAdminPatientsPage()),
+                            MaterialPageRoute(builder: (_) => const JournalAdminPatientsHubPage()),
                           );
                         },
                       ),
@@ -412,9 +440,25 @@ class _LeftSidebar extends StatelessWidget {
                   _SidebarGroup(
                     title: 'System',
                     collapsed: isCollapsed,
-                    items: const [
-                      _NavItemData(icon: Icons.analytics_outlined, label: 'Analytics'),
-                      _NavItemData(icon: Icons.settings_outlined, label: 'Settings'),
+                    items: [
+                      _NavItemData(
+                        icon: Icons.analytics_outlined,
+                        label: 'Analytics',
+                        onTap: () {
+                          Navigator.of(context).pushReplacement(
+                            MaterialPageRoute(builder: (_) => const JournalAdminAnalyticsPage()),
+                          );
+                        },
+                      ),
+                      _NavItemData(
+                        icon: Icons.settings_outlined,
+                        label: 'Settings',
+                        onTap: () {
+                          Navigator.of(context).pushReplacement(
+                            MaterialPageRoute(builder: (_) => const JournalAdminSettingsPage()),
+                          );
+                        },
+                      ),
                     ],
                   ),
                 ],

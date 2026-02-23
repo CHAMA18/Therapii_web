@@ -15,6 +15,7 @@ import 'package:therapii/pages/patient_onboarding_flow_page.dart';
 import 'package:therapii/pages/verify_email_page.dart';
 import 'package:therapii/utils/admin_access.dart';
 import 'package:therapii/services/user_service.dart';
+import 'package:therapii/services/therapist_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -63,6 +64,13 @@ class MyApp extends StatelessWidget {
 
 /// Stores any initialization error so we can show a fallback UI instead of crashing.
 Object? _firebaseInitError;
+
+class _ProfileContext {
+  final app_user.User? user;
+  final bool hasTherapistDoc;
+  final bool isTherapist;
+  const _ProfileContext({required this.user, required this.hasTherapistDoc, required this.isTherapist});
+}
 
 Future<void> _bootstrapFirebase() async {
   try {
@@ -150,8 +158,8 @@ class _RootRouter extends StatelessWidget {
           return const LandingPage();
         }
 
-        return FutureBuilder<app_user.User?>(
-          future: UserService().getUser(authUser.uid),
+        return FutureBuilder<_ProfileContext>(
+          future: _loadUserContext(authUser.uid),
           builder: (context, profileSnap) {
             if (profileSnap.connectionState == ConnectionState.waiting) {
               return const Scaffold(
@@ -161,12 +169,13 @@ class _RootRouter extends StatelessWidget {
 
             // If we couldn't load the Firestore profile, bounce to auth so the
             // user can re-auth or create their profile cleanly.
-            if (profileSnap.hasError || profileSnap.data == null) {
+            if (profileSnap.hasError || profileSnap.data?.user == null) {
               return const AuthWelcomePage(initialTab: AuthTab.login);
             }
 
-            final profile = profileSnap.data!;
-            final isTherapist = profile.isTherapist;
+            final profileCtx = profileSnap.data!;
+            final profile = profileCtx.user!;
+            final isTherapist = profileCtx.isTherapist;
             final onboardingDone = profile.patientOnboardingCompleted;
             final email = authUser.email ?? '';
 
@@ -190,4 +199,20 @@ class _RootRouter extends StatelessWidget {
       },
     );
   }
+}
+
+Future<_ProfileContext> _loadUserContext(String uid) async {
+  final user = await UserService().getUser(uid);
+  bool hasTherapistDoc = false;
+  bool isTherapist = user?.isTherapist == true;
+  try {
+    final therapist = await TherapistService().getTherapistByUserId(uid);
+    hasTherapistDoc = therapist != null;
+    if (therapist != null) {
+      isTherapist = true;
+    }
+  } catch (_) {
+    // swallow; fallback to user record
+  }
+  return _ProfileContext(user: user, hasTherapistDoc: hasTherapistDoc, isTherapist: isTherapist);
 }
