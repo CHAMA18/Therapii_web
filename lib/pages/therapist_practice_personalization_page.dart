@@ -491,7 +491,7 @@ class _TherapistPracticePersonalizationPageState extends State<TherapistPractice
                       context,
                       label: 'State',
                       child: DropdownButtonFormField<String>(
-                        initialValue: _selectedState,
+                        value: _selectedState,
                         decoration: _inputDecoration(context, 'Select State'),
                         items: _usStates
                             .map((s) => DropdownMenuItem(value: s, child: Text(s)))
@@ -518,7 +518,7 @@ class _TherapistPracticePersonalizationPageState extends State<TherapistPractice
                     context,
                     label: 'State',
                     child: DropdownButtonFormField<String>(
-                      initialValue: _selectedState,
+                      value: _selectedState,
                       decoration: _inputDecoration(context, 'Select State'),
                       items: _usStates
                           .map((s) => DropdownMenuItem(value: s, child: Text(s)))
@@ -1033,7 +1033,7 @@ class _LicensureDialogState extends State<_LicensureDialog> {
           mainAxisSize: MainAxisSize.min,
           children: [
             DropdownButtonFormField<String>(
-              initialValue: _state,
+              value: _state,
               decoration: const InputDecoration(labelText: 'State'),
               items: widget.states.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
               onChanged: (v) => setState(() => _state = v),

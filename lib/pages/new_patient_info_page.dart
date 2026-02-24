@@ -306,15 +306,25 @@ class _NewPatientInfoPageState extends State<NewPatientInfoPage> {
                                   ),
                                   Switch(
                                     value: _offerCredits,
-                                    activeThumbColor: Colors.white,
-                                    activeTrackColor: primary,
+                                    thumbColor: WidgetStateProperty.resolveWith((states) {
+                                      if (states.contains(WidgetState.selected)) {
+                                        return Colors.white;
+                                      }
+                                      return null;
+                                    }),
+                                    trackColor: WidgetStateProperty.resolveWith((states) {
+                                      if (states.contains(WidgetState.selected)) {
+                                        return primary;
+                                      }
+                                      return null;
+                                    }),
                                     onChanged: (v) => setState(() => _offerCredits = v),
                                   ),
                                 ],
                               ),
                               const SizedBox(height: 10),
                               DropdownButtonFormField<int>(
-                                initialValue: _offerCredits ? _selectedCredits : null,
+                                value: _offerCredits ? _selectedCredits : null,
                                 items: const [
                                   DropdownMenuItem(value: 1, child: Text('1 Credit (1 Month)')),
                                   DropdownMenuItem(value: 3, child: Text('3 Credits (3 Months)')),

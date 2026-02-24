@@ -748,8 +748,18 @@ class _ToggleRow extends StatelessWidget {
         ),
         Switch(
           value: value,
-          activeThumbColor: Colors.white,
-          activeTrackColor: const Color(0xFF0EA5E9),
+          thumbColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return Colors.white;
+            }
+            return null;
+          }),
+          trackColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return const Color(0xFF0EA5E9);
+            }
+            return null;
+          }),
           onChanged: onChanged,
         ),
       ],
