@@ -103,6 +103,44 @@ TextStyle _satoshi(
   );
 }
 
+/// Creates a TextTheme with explicit colors for light mode.
+TextTheme _lightTextTheme() => TextTheme(
+  displayLarge: _satoshi(FontSizes.displayLarge, weight: FontWeight.w400, color: LightModeColors.onSurface),
+  displayMedium: _satoshi(FontSizes.displayMedium, weight: FontWeight.w400, color: LightModeColors.onSurface),
+  displaySmall: _satoshi(FontSizes.displaySmall, weight: FontWeight.w600, color: LightModeColors.onSurface),
+  headlineLarge: _satoshi(FontSizes.headlineLarge, weight: FontWeight.w500, color: LightModeColors.onSurface),
+  headlineMedium: _satoshi(FontSizes.headlineMedium, weight: FontWeight.w600, color: LightModeColors.onSurface),
+  headlineSmall: _satoshi(FontSizes.headlineSmall, weight: FontWeight.w700, color: LightModeColors.onSurface),
+  titleLarge: _satoshi(FontSizes.titleLarge, weight: FontWeight.w600, color: LightModeColors.onSurface),
+  titleMedium: _satoshi(FontSizes.titleMedium, weight: FontWeight.w600, color: LightModeColors.onSurface),
+  titleSmall: _satoshi(FontSizes.titleSmall, weight: FontWeight.w600, color: LightModeColors.onSurface),
+  labelLarge: _satoshi(FontSizes.labelLarge, weight: FontWeight.w700, color: LightModeColors.onSurface),
+  labelMedium: _satoshi(FontSizes.labelMedium, weight: FontWeight.w600, color: LightModeColors.onSurface),
+  labelSmall: _satoshi(FontSizes.labelSmall, weight: FontWeight.w600, color: LightModeColors.onSurface),
+  bodyLarge: _satoshi(FontSizes.bodyLarge, weight: FontWeight.w400, color: LightModeColors.onSurface),
+  bodyMedium: _satoshi(FontSizes.bodyMedium, weight: FontWeight.w400, color: LightModeColors.onSurface),
+  bodySmall: _satoshi(FontSizes.bodySmall, weight: FontWeight.w400, color: LightModeColors.onSurface),
+);
+
+/// Creates a TextTheme with explicit colors for dark mode.
+TextTheme _darkTextTheme() => TextTheme(
+  displayLarge: _satoshi(FontSizes.displayLarge, weight: FontWeight.w400, color: DarkModeColors.onSurface),
+  displayMedium: _satoshi(FontSizes.displayMedium, weight: FontWeight.w400, color: DarkModeColors.onSurface),
+  displaySmall: _satoshi(FontSizes.displaySmall, weight: FontWeight.w600, color: DarkModeColors.onSurface),
+  headlineLarge: _satoshi(FontSizes.headlineLarge, weight: FontWeight.w500, color: DarkModeColors.onSurface),
+  headlineMedium: _satoshi(FontSizes.headlineMedium, weight: FontWeight.w600, color: DarkModeColors.onSurface),
+  headlineSmall: _satoshi(FontSizes.headlineSmall, weight: FontWeight.w700, color: DarkModeColors.onSurface),
+  titleLarge: _satoshi(FontSizes.titleLarge, weight: FontWeight.w600, color: DarkModeColors.onSurface),
+  titleMedium: _satoshi(FontSizes.titleMedium, weight: FontWeight.w600, color: DarkModeColors.onSurface),
+  titleSmall: _satoshi(FontSizes.titleSmall, weight: FontWeight.w600, color: DarkModeColors.onSurface),
+  labelLarge: _satoshi(FontSizes.labelLarge, weight: FontWeight.w700, color: DarkModeColors.onSurface),
+  labelMedium: _satoshi(FontSizes.labelMedium, weight: FontWeight.w600, color: DarkModeColors.onSurface),
+  labelSmall: _satoshi(FontSizes.labelSmall, weight: FontWeight.w600, color: DarkModeColors.onSurface),
+  bodyLarge: _satoshi(FontSizes.bodyLarge, weight: FontWeight.w400, color: DarkModeColors.onSurface),
+  bodyMedium: _satoshi(FontSizes.bodyMedium, weight: FontWeight.w400, color: DarkModeColors.onSurface),
+  bodySmall: _satoshi(FontSizes.bodySmall, weight: FontWeight.w400, color: DarkModeColors.onSurface),
+);
+
 ThemeData get lightTheme => ThemeData(
   useMaterial3: true,
   fontFamily: 'Satoshi',
@@ -208,23 +246,7 @@ ThemeData get lightTheme => ThemeData(
     dense: false,
     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
   ),
-  textTheme: TextTheme(
-    displayLarge: _satoshi(FontSizes.displayLarge, weight: FontWeight.w400),
-    displayMedium: _satoshi(FontSizes.displayMedium, weight: FontWeight.w400),
-    displaySmall: _satoshi(FontSizes.displaySmall, weight: FontWeight.w600),
-    headlineLarge: _satoshi(FontSizes.headlineLarge, weight: FontWeight.w500),
-    headlineMedium: _satoshi(FontSizes.headlineMedium, weight: FontWeight.w600),
-    headlineSmall: _satoshi(FontSizes.headlineSmall, weight: FontWeight.w700),
-    titleLarge: _satoshi(FontSizes.titleLarge, weight: FontWeight.w600),
-    titleMedium: _satoshi(FontSizes.titleMedium, weight: FontWeight.w600),
-    titleSmall: _satoshi(FontSizes.titleSmall, weight: FontWeight.w600),
-    labelLarge: _satoshi(FontSizes.labelLarge, weight: FontWeight.w700),
-    labelMedium: _satoshi(FontSizes.labelMedium, weight: FontWeight.w600),
-    labelSmall: _satoshi(FontSizes.labelSmall, weight: FontWeight.w600),
-    bodyLarge: _satoshi(FontSizes.bodyLarge, weight: FontWeight.w400),
-    bodyMedium: _satoshi(FontSizes.bodyMedium, weight: FontWeight.w400),
-    bodySmall: _satoshi(FontSizes.bodySmall, weight: FontWeight.w400),
-  ),
+  textTheme: _lightTextTheme(),
 );
 
 ThemeData get darkTheme => ThemeData(
@@ -332,21 +354,5 @@ ThemeData get darkTheme => ThemeData(
     dense: false,
     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
   ),
-  textTheme: TextTheme(
-    displayLarge: _satoshi(FontSizes.displayLarge, weight: FontWeight.w400),
-    displayMedium: _satoshi(FontSizes.displayMedium, weight: FontWeight.w400),
-    displaySmall: _satoshi(FontSizes.displaySmall, weight: FontWeight.w600),
-    headlineLarge: _satoshi(FontSizes.headlineLarge, weight: FontWeight.w500),
-    headlineMedium: _satoshi(FontSizes.headlineMedium, weight: FontWeight.w600),
-    headlineSmall: _satoshi(FontSizes.headlineSmall, weight: FontWeight.w700),
-    titleLarge: _satoshi(FontSizes.titleLarge, weight: FontWeight.w600),
-    titleMedium: _satoshi(FontSizes.titleMedium, weight: FontWeight.w600),
-    titleSmall: _satoshi(FontSizes.titleSmall, weight: FontWeight.w600),
-    labelLarge: _satoshi(FontSizes.labelLarge, weight: FontWeight.w700),
-    labelMedium: _satoshi(FontSizes.labelMedium, weight: FontWeight.w600),
-    labelSmall: _satoshi(FontSizes.labelSmall, weight: FontWeight.w600),
-    bodyLarge: _satoshi(FontSizes.bodyLarge, weight: FontWeight.w400),
-    bodyMedium: _satoshi(FontSizes.bodyMedium, weight: FontWeight.w400),
-    bodySmall: _satoshi(FontSizes.bodySmall, weight: FontWeight.w400),
-  ),
+  textTheme: _darkTextTheme(),
 );
