@@ -19,6 +19,11 @@ class AdminDashboardPage extends StatefulWidget {
 }
 
 class _AdminDashboardPageState extends State<AdminDashboardPage> {
+  static const int _approvalsApplicantFlex = 4;
+  static const int _approvalsMetaFlex = 2;
+  static const double _approvalsColumnGap = 24;
+  static const double _approvalsActionsWidth = 176;
+
   int _humanConversationCount = 0;
   int _aiConversationCount = 0;
   int _pendingCount = 0;
@@ -995,78 +1000,81 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   }
 
   Widget _buildActionCardsGrid(ThemeData theme, bool isDark, Color primaryColor) {
+    final cards = [
+      _ActionCard(
+        title: 'Therapist Approvals',
+        subtitle: '$_pendingCount new clinicians pending',
+        icon: Icons.verified_user_outlined,
+        isPrimary: true,
+        primaryColor: primaryColor,
+        isDark: isDark,
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const TherapistApprovalsPage()),
+        ),
+      ),
+      _ActionCard(
+        title: 'Admin Settings',
+        subtitle: 'OpenAI, SendGrid and keys',
+        icon: Icons.auto_fix_high_outlined,
+        isPrimary: false,
+        primaryColor: primaryColor,
+        isDark: isDark,
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const AdminSettingsPage()),
+        ),
+      ),
+      _ActionCard(
+        title: 'Sessions',
+        subtitle: _loadingCounts ? 'Loading...' : '$_humanConversationCount active sessions today',
+        icon: Icons.forum_outlined,
+        isPrimary: false,
+        primaryColor: primaryColor,
+        isDark: isDark,
+        onTap: _loadCounts,
+      ),
+      _ActionCard(
+        title: 'AI Chats',
+        subtitle: _loadingCounts ? 'Loading...' : '$_aiConversationCount assistant interactions',
+        icon: Icons.smart_toy_outlined,
+        isPrimary: false,
+        primaryColor: primaryColor,
+        isDark: isDark,
+        onTap: _loadCounts,
+      ),
+      _ActionCard(
+        title: 'Edit Text Content',
+        subtitle: 'Update landing page copy',
+        icon: Icons.edit_note_rounded,
+        isPrimary: false,
+        primaryColor: primaryColor,
+        isDark: isDark,
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const LandingPage(editable: true)),
+        ),
+      ),
+    ];
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        int crossAxisCount;
-        if (width >= 1440) {
-          crossAxisCount = 5;
-        } else if (width >= 1024) {
-          crossAxisCount = 4;
-        } else if (width >= 640) {
-          crossAxisCount = 2;
-        } else {
-          crossAxisCount = 1;
-        }
+        final spacing = width >= 1000 ? 20.0 : (width >= 640 ? 16.0 : 12.0);
+        const minCardWidth = 220.0;
+        const maxColumns = 5;
+        final minWidthForFive = (minCardWidth * 5) + (spacing * 4);
 
-        final cards = [
-          _ActionCard(
-            title: 'Therapist Approvals',
-            subtitle: '$_pendingCount new clinicians pending',
-            icon: Icons.verified_user_outlined,
-            isPrimary: true,
-            primaryColor: primaryColor,
-            isDark: isDark,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const TherapistApprovalsPage()),
-            ),
-          ),
-          _ActionCard(
-            title: 'Admin Settings',
-            subtitle: 'OpenAI, SendGrid and keys',
-            icon: Icons.auto_fix_high_outlined,
-            isPrimary: false,
-            primaryColor: primaryColor,
-            isDark: isDark,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const AdminSettingsPage()),
-            ),
-          ),
-          _ActionCard(
-            title: 'Sessions',
-            subtitle: _loadingCounts ? 'Loading...' : '$_humanConversationCount active sessions today',
-            icon: Icons.forum_outlined,
-            isPrimary: false,
-            primaryColor: primaryColor,
-            isDark: isDark,
-            onTap: _loadCounts,
-          ),
-          _ActionCard(
-            title: 'AI Chats',
-            subtitle: _loadingCounts ? 'Loading...' : '$_aiConversationCount assistant interactions',
-            icon: Icons.smart_toy_outlined,
-            isPrimary: false,
-            primaryColor: primaryColor,
-            isDark: isDark,
-            onTap: _loadCounts,
-          ),
-          _ActionCard(
-            title: 'Edit Text Content',
-            subtitle: 'Update landing page copy',
-            icon: Icons.edit_note_rounded,
-            isPrimary: false,
-            primaryColor: primaryColor,
-            isDark: isDark,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const LandingPage(editable: true)),
-            ),
-          ),
-        ];
+        int crossAxisCount;
+        if (width >= minWidthForFive) {
+          crossAxisCount = maxColumns;
+        } else {
+          crossAxisCount = ((width + spacing) / (minCardWidth + spacing))
+              .floor()
+              .clamp(1, maxColumns);
+        }
 
         if (crossAxisCount == 1) {
           return Column(
             children: cards.map((card) => Padding(
-              padding: const EdgeInsets.only(bottom: 16),
+              padding: EdgeInsets.only(bottom: spacing),
               child: card,
             )).toList(),
           );
@@ -1074,11 +1082,13 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
         return GridView.count(
           crossAxisCount: crossAxisCount,
-          crossAxisSpacing: 24,
-          mainAxisSpacing: 24,
+          crossAxisSpacing: spacing,
+          mainAxisSpacing: spacing,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          childAspectRatio: crossAxisCount >= 4 ? 1.1 : (crossAxisCount == 2 ? 1.2 : 1.1),
+          childAspectRatio: crossAxisCount >= 5
+              ? 1.28
+              : (crossAxisCount == 4 ? 1.18 : (crossAxisCount == 3 ? 1.14 : 1.2)),
           children: cards,
         );
       },
@@ -1216,7 +1226,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
               return LayoutBuilder(
                 builder: (context, constraints) {
-                  const tableMinWidth = 760.0;
+                  const tableMinWidth = 980.0;
                   final tableWidth = constraints.maxWidth.isFinite
                       ? (constraints.maxWidth > tableMinWidth ? constraints.maxWidth : tableMinWidth)
                       : tableMinWidth;
@@ -1237,12 +1247,33 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                             ),
                             child: Row(
                               children: [
-                                SizedBox(width: 200, child: _TableHeader('Applicant', isDark)),
-                                SizedBox(width: 120, child: _TableHeader('Identity / ID', isDark)),
-                                SizedBox(width: 120, child: _TableHeader('Location', isDark)),
-                                SizedBox(width: 120, child: _TableHeader('Applied Date', isDark)),
-                                const Spacer(),
-                                const SizedBox(width: 140),
+                                Expanded(
+                                  flex: _approvalsApplicantFlex,
+                                  child: _TableHeader('Applicant', isDark),
+                                ),
+                                const SizedBox(width: _approvalsColumnGap),
+                                Expanded(
+                                  flex: _approvalsMetaFlex,
+                                  child: _TableHeader('Identity / ID', isDark),
+                                ),
+                                const SizedBox(width: _approvalsColumnGap),
+                                Expanded(
+                                  flex: _approvalsMetaFlex,
+                                  child: _TableHeader('Location', isDark),
+                                ),
+                                const SizedBox(width: _approvalsColumnGap),
+                                Expanded(
+                                  flex: _approvalsMetaFlex,
+                                  child: _TableHeader('Applied Date', isDark),
+                                ),
+                                const SizedBox(width: _approvalsColumnGap),
+                                SizedBox(
+                                  width: _approvalsActionsWidth,
+                                  child: Align(
+                                    alignment: Alignment.centerRight,
+                                    child: _TableHeader('Actions', isDark),
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -1316,8 +1347,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         child: Row(
           children: [
             // Applicant
-            SizedBox(
-              width: 200,
+            Expanded(
+              flex: _approvalsApplicantFlex,
               child: Row(
                 children: [
                   Container(
@@ -1353,9 +1384,10 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 ],
               ),
             ),
+            const SizedBox(width: _approvalsColumnGap),
             // ID
-            SizedBox(
-              width: 120,
+            Expanded(
+              flex: _approvalsMetaFlex,
               child: Text(
                 id,
                 style: TextStyle(
@@ -1365,9 +1397,10 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
+            const SizedBox(width: _approvalsColumnGap),
             // Location
-            SizedBox(
-              width: 120,
+            Expanded(
+              flex: _approvalsMetaFlex,
               child: Text(
                 location.isNotEmpty ? location : '—',
                 style: TextStyle(
@@ -1377,9 +1410,10 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
+            const SizedBox(width: _approvalsColumnGap),
             // Date
-            SizedBox(
-              width: 120,
+            Expanded(
+              flex: _approvalsMetaFlex,
               child: Text(
                 dateStr,
                 style: TextStyle(
@@ -1388,10 +1422,10 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 ),
               ),
             ),
-            const Spacer(),
+            const SizedBox(width: _approvalsColumnGap),
             // Actions
             SizedBox(
-              width: 140,
+              width: _approvalsActionsWidth,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -2248,6 +2282,8 @@ class _ActionCardState extends State<_ActionCard> {
                     children: [
                       Text(
                         widget.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -2259,6 +2295,8 @@ class _ActionCardState extends State<_ActionCard> {
                       const SizedBox(height: 4),
                       Text(
                         widget.subtitle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 12,
                           color: widget.isPrimary

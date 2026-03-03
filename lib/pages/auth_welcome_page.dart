@@ -48,6 +48,8 @@ class _AuthWelcomePageState extends State<AuthWelcomePage> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
+    final viewportHeight = MediaQuery.of(context).size.height;
+    final compact = viewportHeight < 920;
     
     return Scaffold(
       backgroundColor: bgColor,
@@ -56,9 +58,13 @@ class _AuthWelcomePageState extends State<AuthWelcomePage> {
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                padding: EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: compact ? 12 : 24,
+                ),
                 child: _AuthCard(
                   tab: _tab,
+                  compact: compact,
                   openJournalPortalAfterAuth: widget.openJournalPortalAfterAuth,
                   onTabChanged: (t) => setState(() => _tab = t),
                 ),
@@ -129,12 +135,14 @@ class _ThemeToggleButton extends StatelessWidget {
 class _AuthCard extends StatelessWidget {
   final AuthTab tab;
   final bool openJournalPortalAfterAuth;
+  final bool compact;
   final ValueChanged<AuthTab> onTabChanged;
   
   const _AuthCard({
     required this.tab,
     required this.onTabChanged,
     required this.openJournalPortalAfterAuth,
+    required this.compact,
   });
 
   @override
@@ -159,24 +167,32 @@ class _AuthCard extends StatelessWidget {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 48),
+        padding: EdgeInsets.symmetric(
+          horizontal: compact ? 28 : 40,
+          vertical: compact ? 26 : 48,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Always show the JORNUAL tag on the logo for consistent branding.
-            _Header(showJournalTag: true),
-            const SizedBox(height: 48),
-            _TabBar(tab: tab, onChanged: onTabChanged),
-            const SizedBox(height: 40),
+            // Show this callout only on the journal auth flow.
+            _Header(
+              showJournalTag: openJournalPortalAfterAuth,
+              compact: compact,
+            ),
+            SizedBox(height: compact ? 28 : 48),
+            _TabBar(tab: tab, onChanged: onTabChanged, compact: compact),
+            SizedBox(height: compact ? 24 : 40),
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 200),
               child: tab == AuthTab.create 
                 ? _CreateAccountForm(
                     key: const ValueKey('create'),
+                    compact: compact,
                     openJournalPortalAfterAuth: openJournalPortalAfterAuth,
                   ) 
                 : _LoginForm(
                     key: const ValueKey('login'),
+                    compact: compact,
                     openJournalPortalAfterAuth: openJournalPortalAfterAuth,
                   ),
             ),
@@ -189,68 +205,76 @@ class _AuthCard extends StatelessWidget {
 
 class _Header extends StatelessWidget {
   final bool showJournalTag;
-  const _Header({this.showJournalTag = false});
+  final bool compact;
+  const _Header({this.showJournalTag = false, this.compact = false});
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final journalHintColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
     
     return Column(
       children: [
         Padding(
           padding: const EdgeInsets.only(top: 12),
-          child: Stack(
-            clipBehavior: Clip.none,
+          child: Column(
             children: [
-              Image.asset('assets/images/therapii_logo.png', height: 240, fit: BoxFit.contain),
               if (showJournalTag)
-                Positioned(
-                  right: -6,
-                  bottom: -6,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF2E67DD), Color(0xFF1546B9)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+                Container(
+                  width: compact ? 250 : 320,
+                  padding: EdgeInsets.all(compact ? 12 : 16),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(compact ? 24 : 30),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.08),
+                        blurRadius: compact ? 22 : 30,
+                        offset: const Offset(0, 12),
                       ),
-                      borderRadius: BorderRadius.circular(999),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.9), width: 1.3),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF0F2D6D).withValues(alpha: 0.28),
-                          blurRadius: 16,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(compact ? 18 : 22),
+                    child: AspectRatio(
+                      aspectRatio: 0.84,
+                      child: Image.asset(
+                        'assets/images/JournalPage.png',
+                        fit: BoxFit.cover,
+                      ),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: const [
-                        Icon(Icons.auto_awesome_rounded, size: 14, color: Colors.white),
-                        SizedBox(width: 6),
-                        Text(
-                          'JORNUAL',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 0.9,
-                          ),
-                        ),
-                      ],
-                    ),
+                  ),
+                )
+              else
+                Image.asset(
+                  'assets/images/therapii_logo.png',
+                  height: compact ? 160 : 240,
+                  fit: BoxFit.contain,
+                ),
+              if (showJournalTag)
+                SizedBox(height: compact ? 12 : 16),
+              if (showJournalTag)
+                Text(
+                  'Sign in to complete your journal check-in',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: compact ? 12 : 13,
+                    fontWeight: FontWeight.w600,
+                    color: journalHintColor,
                   ),
                 ),
             ],
           ),
         ),
-        const SizedBox(height: 32),
+        SizedBox(height: compact ? 20 : 32),
         Text(
           'Welcome',
           style: TextStyle(
-            fontSize: 32,
+            fontSize: compact ? 26 : 32,
             fontWeight: FontWeight.w600,
             color: scheme.primary,
           ),
@@ -262,9 +286,14 @@ class _Header extends StatelessWidget {
 
 class _TabBar extends StatelessWidget {
   final AuthTab tab;
+  final bool compact;
   final ValueChanged<AuthTab> onChanged;
   
-  const _TabBar({required this.tab, required this.onChanged});
+  const _TabBar({
+    required this.tab,
+    required this.onChanged,
+    this.compact = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -282,11 +311,11 @@ class _TabBar extends StatelessWidget {
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.only(bottom: 20),
+                padding: EdgeInsets.only(bottom: compact ? 14 : 20),
                 child: Text(
                   label,
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: compact ? 16 : 18,
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                     color: isSelected ? selectedColor : unselectedColor,
                   ),
@@ -323,11 +352,13 @@ class _RoleSelector extends StatelessWidget {
   final AccountRole? role;
   final ValueChanged<AccountRole> onChanged;
   final bool enabled;
+  final bool compact;
 
   const _RoleSelector({
     required this.role,
     required this.onChanged,
     this.enabled = true,
+    this.compact = false,
   });
 
   @override
@@ -345,7 +376,10 @@ class _RoleSelector extends StatelessWidget {
           onTap: enabled ? () => onChanged(value) : null,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+            padding: EdgeInsets.symmetric(
+              vertical: compact ? 12 : 16,
+              horizontal: compact ? 20 : 24,
+            ),
             decoration: BoxDecoration(
               color: isSelected ? selectedBg : Colors.transparent,
               borderRadius: BorderRadius.circular(12),
@@ -364,7 +398,7 @@ class _RoleSelector extends StatelessWidget {
               child: Text(
                 label,
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: compact ? 15 : 16,
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
                   color: isSelected ? selectedText : unselectedText,
                 ),
@@ -380,15 +414,15 @@ class _RoleSelector extends StatelessWidget {
         Text(
           'SELECT ACCOUNT TYPE',
           style: TextStyle(
-            fontSize: 12,
+            fontSize: compact ? 11 : 12,
             fontWeight: FontWeight.w700,
-            letterSpacing: 2,
+            letterSpacing: compact ? 1.6 : 2,
             color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: compact ? 12 : 16),
         Container(
-          padding: const EdgeInsets.all(8),
+          padding: EdgeInsets.all(compact ? 6 : 8),
           decoration: BoxDecoration(
             color: bgColor,
             borderRadius: BorderRadius.circular(16),
@@ -412,6 +446,7 @@ class _StyledTextField extends StatelessWidget {
   final bool obscureText;
   final Widget? suffixIcon;
   final bool enabled;
+  final bool compact;
 
   const _StyledTextField({
     required this.controller,
@@ -420,6 +455,7 @@ class _StyledTextField extends StatelessWidget {
     this.obscureText = false,
     this.suffixIcon,
     this.enabled = true,
+    this.compact = false,
   });
 
   @override
@@ -435,13 +471,16 @@ class _StyledTextField extends StatelessWidget {
       keyboardType: keyboardType,
       obscureText: obscureText,
       enabled: enabled,
-      style: TextStyle(fontSize: 18, color: textColor),
+      style: TextStyle(fontSize: compact ? 16 : 18, color: textColor),
       decoration: InputDecoration(
         hintText: placeholder,
-        hintStyle: TextStyle(fontSize: 18, color: placeholderColor),
+        hintStyle: TextStyle(fontSize: compact ? 16 : 18, color: placeholderColor),
         filled: true,
         fillColor: bgColor,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: compact ? 20 : 24,
+          vertical: compact ? 16 : 20,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(color: borderColor),
@@ -464,11 +503,13 @@ class _PasswordField extends StatefulWidget {
   final TextEditingController controller;
   final String placeholder;
   final bool enabled;
+  final bool compact;
 
   const _PasswordField({
     required this.controller,
     required this.placeholder,
     this.enabled = true,
+    this.compact = false,
   });
 
   @override
@@ -488,6 +529,7 @@ class _PasswordFieldState extends State<_PasswordField> {
       placeholder: widget.placeholder,
       obscureText: _obscured,
       enabled: widget.enabled,
+      compact: widget.compact,
       suffixIcon: IconButton(
         onPressed: () => setState(() => _obscured = !_obscured),
         icon: Icon(
@@ -504,11 +546,13 @@ class _PrimaryActionButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
   final bool isLoading;
+  final bool compact;
 
   const _PrimaryActionButton({
     required this.label,
     this.onPressed,
     this.isLoading = false,
+    this.compact = false,
   });
 
   @override
@@ -524,7 +568,7 @@ class _PrimaryActionButton extends StatelessWidget {
         onTap: isLoading ? null : onPressed,
         borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 20),
+          padding: EdgeInsets.symmetric(vertical: compact ? 16 : 20),
           child: Center(
             child: isLoading
               ? const SizedBox(
@@ -537,8 +581,8 @@ class _PrimaryActionButton extends StatelessWidget {
                 )
               : Text(
                   label,
-                  style: const TextStyle(
-                    fontSize: 18,
+                  style: TextStyle(
+                    fontSize: compact ? 16 : 18,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 1.5,
                     color: Colors.white,
@@ -553,9 +597,11 @@ class _PrimaryActionButton extends StatelessWidget {
 
 class _CreateAccountForm extends StatefulWidget {
   final bool openJournalPortalAfterAuth;
+  final bool compact;
   const _CreateAccountForm({
     super.key,
     required this.openJournalPortalAfterAuth,
+    this.compact = false,
   });
 
   @override
@@ -728,16 +774,16 @@ class _CreateAccountFormState extends State<_CreateAccountForm> {
                     : const AdminDashboardPage(),
               ),
             );
-          } else if (isTherapist) {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(
-                builder: (context) => const MyPatientsPage(),
-              ),
-            );
           } else if (widget.openJournalPortalAfterAuth) {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
                 builder: (context) => const JournalPortalPage(),
+              ),
+            );
+          } else if (isTherapist) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (context) => const MyPatientsPage(),
               ),
             );
           } else {
@@ -765,13 +811,17 @@ class _CreateAccountFormState extends State<_CreateAccountForm> {
         onTap: _isLoading ? null : _pickAvatar,
         customBorder: const CircleBorder(),
         child: CircleAvatar(
-          radius: 44,
+          radius: widget.compact ? 38 : 44,
           backgroundColor: isDark ? const Color(0xFF334155) : Colors.grey.shade200,
           backgroundImage: _avatarBytes != null
               ? MemoryImage(_avatarBytes!)
               : (_avatarPreviewUrl != null ? NetworkImage(_avatarPreviewUrl!) as ImageProvider : null),
           child: _avatarBytes == null && _avatarPreviewUrl == null
-              ? Icon(Icons.person, size: 56, color: isDark ? const Color(0xFF64748B) : Colors.grey.shade600)
+              ? Icon(
+                  Icons.person,
+                  size: widget.compact ? 48 : 56,
+                  color: isDark ? const Color(0xFF64748B) : Colors.grey.shade600,
+                )
               : null,
         ),
       ),
@@ -781,38 +831,43 @@ class _CreateAccountFormState extends State<_CreateAccountForm> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Center(child: avatarWidget),
-        const SizedBox(height: 24),
+        SizedBox(height: widget.compact ? 18 : 24),
         _RoleSelector(
           role: _role,
           onChanged: (r) => setState(() => _role = r),
           enabled: !_isLoading,
+          compact: widget.compact,
         ),
-        const SizedBox(height: 32),
+        SizedBox(height: widget.compact ? 22 : 32),
         _StyledTextField(
           controller: nameCtl,
           placeholder: 'User Name',
           enabled: !_isLoading,
+          compact: widget.compact,
         ),
-        const SizedBox(height: 20),
+        SizedBox(height: widget.compact ? 14 : 20),
         _StyledTextField(
           controller: emailCtl,
           placeholder: 'Email Address',
           keyboardType: TextInputType.emailAddress,
           enabled: !_isLoading,
+          compact: widget.compact,
         ),
-        const SizedBox(height: 20),
+        SizedBox(height: widget.compact ? 14 : 20),
         _PasswordField(
           controller: passCtl,
           placeholder: 'Password',
           enabled: !_isLoading,
+          compact: widget.compact,
         ),
-        const SizedBox(height: 20),
+        SizedBox(height: widget.compact ? 14 : 20),
         _PasswordField(
           controller: confirmCtl,
           placeholder: 'Confirm Password',
           enabled: !_isLoading,
+          compact: widget.compact,
         ),
-        const SizedBox(height: 20),
+        SizedBox(height: widget.compact ? 14 : 20),
         TermsCheckbox(
           value: agreeTos,
           onChanged: (v) => setState(() => agreeTos = v ?? false),
@@ -820,7 +875,7 @@ class _CreateAccountFormState extends State<_CreateAccountForm> {
           underlined: 'Terms of Service',
           onLinkTap: () => _openUrl('https://trytherapii.com/?page_id=115'),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: widget.compact ? 6 : 8),
         TermsCheckbox(
           value: agreePrivacy,
           onChanged: (v) => setState(() => agreePrivacy = v ?? false),
@@ -828,11 +883,12 @@ class _CreateAccountFormState extends State<_CreateAccountForm> {
           underlined: 'Privacy Policy',
           onLinkTap: () => _openUrl('https://trytherapii.com/?page_id=3'),
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: widget.compact ? 16 : 24),
         _PrimaryActionButton(
           label: 'SUBMIT',
           onPressed: _submit,
           isLoading: _isLoading,
+          compact: widget.compact,
         ),
       ],
     );
@@ -841,9 +897,11 @@ class _CreateAccountFormState extends State<_CreateAccountForm> {
 
 class _LoginForm extends StatefulWidget {
   final bool openJournalPortalAfterAuth;
+  final bool compact;
   const _LoginForm({
     super.key,
     required this.openJournalPortalAfterAuth,
+    this.compact = false,
   });
 
   @override
@@ -980,6 +1038,12 @@ class _LoginFormState extends State<_LoginForm> {
                     : const AdminDashboardPage(),
               ),
             );
+          } else if (widget.openJournalPortalAfterAuth) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (context) => const JournalPortalPage(),
+              ),
+            );
           } else if (user.isTherapist) {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
@@ -987,11 +1051,9 @@ class _LoginFormState extends State<_LoginForm> {
               ),
             );
           } else {
-            final destination = widget.openJournalPortalAfterAuth
-                ? const JournalPortalPage()
-                : (user.patientOnboardingCompleted
-                    ? const PatientDashboardPage()
-                    : const PatientOnboardingFlowPage());
+            final destination = user.patientOnboardingCompleted
+                ? const PatientDashboardPage()
+                : const PatientOnboardingFlowPage();
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(builder: (context) => destination),
             );
@@ -1027,21 +1089,24 @@ class _LoginFormState extends State<_LoginForm> {
           role: _role,
           onChanged: (r) => setState(() => _role = r),
           enabled: !_isLoading,
+          compact: widget.compact,
         ),
-        const SizedBox(height: 32),
+        SizedBox(height: widget.compact ? 22 : 32),
         _StyledTextField(
           controller: emailCtl,
           placeholder: 'Email Address',
           keyboardType: TextInputType.emailAddress,
           enabled: !_isLoading,
+          compact: widget.compact,
         ),
-        const SizedBox(height: 20),
+        SizedBox(height: widget.compact ? 14 : 20),
         _PasswordField(
           controller: passCtl,
           placeholder: 'Password',
           enabled: !_isLoading,
+          compact: widget.compact,
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: widget.compact ? 12 : 16),
         Row(
           children: [
             SizedBox(
@@ -1060,7 +1125,7 @@ class _LoginFormState extends State<_LoginForm> {
               child: Text(
                 'Remember Me',
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: widget.compact ? 15 : 16,
                   fontWeight: FontWeight.w500,
                   color: textColor,
                 ),
@@ -1072,7 +1137,7 @@ class _LoginFormState extends State<_LoginForm> {
               child: Text(
                 'Forgot Password?',
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: widget.compact ? 15 : 16,
                   fontWeight: FontWeight.w600,
                   color: scheme.primary,
                 ),
@@ -1080,11 +1145,12 @@ class _LoginFormState extends State<_LoginForm> {
             ),
           ],
         ),
-        const SizedBox(height: 28),
+        SizedBox(height: widget.compact ? 20 : 28),
         _PrimaryActionButton(
           label: 'LOG IN',
           onPressed: _login,
           isLoading: _isLoading,
+          compact: widget.compact,
         ),
       ],
     );

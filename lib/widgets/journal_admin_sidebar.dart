@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:therapii/auth/firebase_auth_manager.dart';
+import 'package:therapii/pages/auth_welcome_page.dart';
 import 'package:therapii/utils/admin_access.dart';
 
 enum JournalAdminSidebarItem {
@@ -71,6 +72,30 @@ class _JournalAdminSidebarState extends State<JournalAdminSidebar> {
   void _handleNavigate(JournalAdminSidebarItem item) {
     if (item == widget.activeItem) return;
     widget.onNavigate(item);
+  }
+
+  Future<void> _handleLogout() async {
+    try {
+      await FirebaseAuthManager().signOut();
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => const AuthWelcomePage(
+            initialTab: AuthTab.login,
+            openJournalPortalAfterAuth: true,
+          ),
+        ),
+        (route) => false,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to log out right now. Please try again.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   @override
@@ -215,7 +240,7 @@ class _JournalAdminSidebarState extends State<JournalAdminSidebar> {
                       const SizedBox(height: 8),
                       IconButton(
                         tooltip: 'Logout',
-                        onPressed: () => Navigator.of(context).maybePop(),
+                        onPressed: _handleLogout,
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                         visualDensity: VisualDensity.compact,
@@ -282,7 +307,7 @@ class _JournalAdminSidebarState extends State<JournalAdminSidebar> {
                       ),
                       IconButton(
                         tooltip: 'Logout',
-                        onPressed: () => Navigator.of(context).maybePop(),
+                        onPressed: _handleLogout,
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                         visualDensity: VisualDensity.compact,

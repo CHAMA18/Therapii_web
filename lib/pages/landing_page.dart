@@ -939,18 +939,6 @@ class _NavBar extends StatelessWidget {
                 ],
               ),
             ),
-            // Nav links (only on wide screens)
-            if (isWide)
-              Row(
-                children: [
-                  _NavLink(label: nav1, editMode: editMode, onEdit: onEditNav1, onTap: onNav1Tap),
-                  const SizedBox(width: 40),
-                  _NavLink(label: nav2, editMode: editMode, onEdit: onEditNav2),
-                  const SizedBox(width: 40),
-                  _NavLink(label: nav3, editMode: editMode, onEdit: onEditNav3),
-                ],
-              ),
-            // Sign In button
             if (signInLabel.trim().isNotEmpty)
               Row(
                 mainAxisSize: MainAxisSize.min,
@@ -1151,71 +1139,6 @@ class _HeroSection extends StatelessWidget {
                         height: 1.6,
                       ),
                     ),
-                  ),
-                  SizedBox(height: isWide ? 48 : 32),
-                  // CTA buttons
-                  Wrap(
-                    alignment: WrapAlignment.center,
-                    spacing: 24,
-                    runSpacing: 16,
-                    children: [
-                      if (ctaPrimary.trim().isNotEmpty)
-                        GestureDetector(
-                          onTap: editMode ? onEditPrimaryCta : onBeginExperience,
-                          child: _GlassButton(label: ctaPrimary, onTap: onBeginExperience),
-                        ),
-                      const SizedBox(width: 8),
-                      if (ctaSecondary.trim().isNotEmpty)
-                        OutlinedButton(
-                          onPressed: editMode ? onEditSecondaryCta : onSignIn,
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: Colors.white.withValues(alpha: 0.4)),
-                            foregroundColor: Colors.white,
-                            padding: EdgeInsets.symmetric(horizontal: isWide ? 24 : 18, vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                          ),
-                          child: Text(
-                            ctaSecondary,
-                            style: GoogleFonts.dmSans(fontSize: isWide ? 14 : 13, fontWeight: FontWeight.w500),
-                          ),
-                        ),
-                      // User avatars
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _UserAvatar(
-                            imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAPYqBHJkYvOHxTg6ABVBrKxu3L3otYwP_EQhzI548wFCbgkZVnhr-AexW46rJ4zVnx79c2kcM616Zdb8QthXFvovSBPcdLM55IwOf-PboLXiXaJ-LJOd138V0VFaxA4U_N_pThpLHjHvoY8VdKXhu8JJAO3Kl8PDvIn_aXsEk6LXkllGz48p1OGMC3hjGnNGp9QxuCoH-2n3M8TnV9IOEY-mP3cMmPMYFHpVGO1DxzSD64H6QNU50EDrfmbIDFno88pRZuwP7BTIs',
-                          ),
-                          Transform.translate(
-                            offset: const Offset(-16, 0),
-                            child: _UserAvatar(
-                              imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCLhbTy2TcFiVmdAHSR3DRjtG6cgiBA2ec-lsWZWtBmbMkoyE4YcedJNB0XRSbqe0wm39TRUWYyJl7XtW7iM-cDijU1I59Ew0c26zTQZgZikovP1qYOZMt0Ds4ARiVxZUrMOiPfIMG7QqY30C4mbA23stXwxakcSN6INFTtxc2HIxZMU6XwLgJDxYzccUDZZkRbVifyVdc2LvXoE0_o062hN-TT9iQj_kZC7oaKQ7ryYcRtES4_zfdFBloFgBNs2yIpi9dUK5oW7QA',
-                            ),
-                          ),
-                          Transform.translate(
-                            offset: const Offset(-32, 0),
-                            child: Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-                                color: Colors.white.withValues(alpha: 0.05),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  '+2k',
-                                  style: GoogleFonts.dmSans(
-                                    fontSize: 12,
-                                    color: Colors.white.withValues(alpha: 0.5),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
                   ),
                 ],
               ),

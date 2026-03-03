@@ -1,7 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:therapii/auth/firebase_auth_manager.dart';
 import 'package:therapii/pages/journal_article_page.dart';
+import 'package:therapii/theme_mode_controller.dart';
 import 'package:therapii/utils/admin_access.dart';
+
+enum _PortalSidebarItem { home, journal }
+
+const _portalDestinationKey = 'journal_portal_destination';
+const _portalDestinationHome = 'home';
+const _portalDestinationJournal = 'journal';
 
 class JournalPortalPage extends StatefulWidget {
   const JournalPortalPage({super.key});
@@ -11,6 +19,9 @@ class JournalPortalPage extends StatefulWidget {
 }
 
 class _JournalPortalPageState extends State<JournalPortalPage> {
+  static const int _initialVisibleCardCount = 5;
+  static const int _loadMoreBatchSize = 4;
+
   final List<String> _topics = const [
     'For You',
     'Resilience',
@@ -75,6 +86,57 @@ class _JournalPortalPageState extends State<JournalPortalPage> {
       imageHeight: 210,
       estimatedHeight: 398,
     ),
+    _FeedCardData(
+      category: 'Boundaries',
+      title: 'How to Say No Without Guilt',
+      subtitle: 'Scripts and mindset shifts for protecting your energy with compassion.',
+      readTime: '6 min read',
+      accent: Color(0xFF1F7A73),
+      imageUrl:
+          'https://images.unsplash.com/photo-1516589091380-5d8e87df6999?auto=format&fit=crop&w=1200&q=80',
+      imageHeight: 230,
+      estimatedHeight: 414,
+    ),
+    _FeedCardData(
+      category: 'Resilience',
+      title: 'Rebuilding Confidence After Setbacks',
+      subtitle: 'A steadier way to regain momentum when life interrupts your plans.',
+      readTime: '5 min read',
+      accent: Color(0xFF3157D5),
+      imageUrl:
+          'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80',
+      imageHeight: 208,
+      estimatedHeight: 396,
+    ),
+    _FeedCardData.quote(
+      title: '"Healing is not becoming someone new. It is returning to who you were beneath survival."',
+      subtitle: 'Therapii Wisdom',
+      readTime: "Editor's Note",
+      estimatedHeight: 334,
+    ),
+    _FeedCardData(
+      category: 'Relationships',
+      title: 'Rupture and Repair in Close Relationships',
+      subtitle: 'Conflict does not have to mean disconnection when repair is intentional.',
+      readTime: '8 min read',
+      accent: Color(0xFF8452D6),
+      imageUrl:
+          'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&w=1200&q=80',
+      imageHeight: 214,
+      personalized: true,
+      estimatedHeight: 404,
+    ),
+    _FeedCardData(
+      category: 'Anxiety',
+      title: 'What to Do When Your Mind Won’t Slow Down',
+      subtitle: 'Grounding patterns for nights when overthinking keeps your body awake.',
+      readTime: '4 min read',
+      accent: Color(0xFFCC6A24),
+      imageUrl:
+          'https://images.unsplash.com/photo-1493836512294-502baa1986e2?auto=format&fit=crop&w=1200&q=80',
+      imageHeight: 224,
+      estimatedHeight: 404,
+    ),
   ];
 
   final List<_SavedArticleData> _savedArticles = const [
@@ -99,12 +161,49 @@ class _JournalPortalPageState extends State<JournalPortalPage> {
   ];
 
   int _selectedTopicIndex = 0;
+  int _visibleCardCount = _initialVisibleCardCount;
+  bool _isRestoringDestination = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _restoreDestination();
+  }
+
+  Future<void> _restoreDestination() async {
+    final prefs = await SharedPreferences.getInstance();
+    final destination = prefs.getString(_portalDestinationKey) ?? _portalDestinationHome;
+
+    if (!mounted) return;
+
+    if (destination == _portalDestinationJournal) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const _JournalReflectionPage()),
+        );
+      });
+      return;
+    }
+
+    await prefs.setString(_portalDestinationKey, _portalDestinationHome);
+    if (!mounted) return;
+    setState(() => _isRestoringDestination = false);
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_isRestoringDestination) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFF4F6FB),
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     final width = MediaQuery.sizeOf(context).width;
-    // Hide the sidebar (left rail) on all screen sizes.
-    const showLeftRail = false;
+    final showLeftRail = width >= 1100;
     final showRightRail = width >= 1480;
     final isAdmin = AdminAccess.isAdminEmail(FirebaseAuthManager().currentUser?.email);
 
@@ -119,8 +218,12 @@ class _JournalPortalPageState extends State<JournalPortalPage> {
               children: [
                 if (showLeftRail)
                   _LeftRail(
-                    onBack: () => Navigator.of(context).maybePop(),
                     isAdmin: isAdmin,
+                    activeItem: _PortalSidebarItem.home,
+                    onHomeTap: () {},
+                    onJournalTap: () {
+                      _openJournal();
+                    },
                   ),
                 Expanded(
                   child: _FeedPane(
@@ -130,56 +233,81 @@ class _JournalPortalPageState extends State<JournalPortalPage> {
                     onTopicSelected: (index) {
                       setState(() => _selectedTopicIndex = index);
                     },
-                    cards: _cards,
+                    cards: _visibleCards,
+                    hasMoreArticles: _visibleCardCount < _cards.length,
+                    onLoadMore: _loadMoreArticles,
                   ),
                 ),
                 if (showRightRail) _RightRail(savedItems: _savedArticles),
               ],
             ),
-            Positioned(
-              top: 12,
-              left: 12,
-              child: SafeArea(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: SizedBox(
-                    width: 72,
-                    height: 72,
-                    child: Image.asset(
-                      'assets/images/Therapii_image.png',
-                      fit: BoxFit.cover,
+            if (!showLeftRail) ...[
+              Positioned(
+                top: 12,
+                left: 12,
+                child: SafeArea(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: SizedBox(
+                      width: 72,
+                      height: 72,
+                      child: Image.asset(
+                        'assets/images/Therapii_image.png',
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-            Positioned(
-              top: 12,
-              right: 12,
-              child: SafeArea(
-                child: FilledButton.icon(
-                  onPressed: () async {
-                    try {
-                      await FirebaseAuthManager().signOut();
-                    } catch (_) {}
-                    if (context.mounted) Navigator.of(context).maybePop();
-                  },
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF0F172A),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    textStyle: const TextStyle(fontWeight: FontWeight.w800),
+              Positioned(
+                top: 12,
+                right: 12,
+                child: SafeArea(
+                  child: FilledButton.icon(
+                    onPressed: () async {
+                      try {
+                        await FirebaseAuthManager().signOut();
+                      } catch (_) {}
+                      if (context.mounted) Navigator.of(context).maybePop();
+                    },
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF0F172A),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      textStyle: const TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                    icon: const Icon(Icons.logout_rounded, size: 18),
+                    label: const Text('Log Out'),
                   ),
-                  icon: const Icon(Icons.logout_rounded, size: 18),
-                  label: const Text('Log Out'),
                 ),
               ),
-            ),
+            ],
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _openJournal() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_portalDestinationKey, _portalDestinationJournal);
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const _JournalReflectionPage()),
+    );
+  }
+
+  List<_FeedCardData> get _visibleCards {
+    final upperBound = _visibleCardCount.clamp(0, _cards.length) as int;
+    return _cards.take(upperBound).toList(growable: false);
+  }
+
+  void _loadMoreArticles() {
+    if (_visibleCardCount >= _cards.length) return;
+    setState(() {
+      _visibleCardCount = (_visibleCardCount + _loadMoreBatchSize).clamp(0, _cards.length) as int;
+    });
   }
 }
 
@@ -228,9 +356,16 @@ class _AmbientBackground extends StatelessWidget {
 }
 
 class _LeftRail extends StatelessWidget {
-  final VoidCallback onBack;
   final bool isAdmin;
-  const _LeftRail({required this.onBack, required this.isAdmin});
+  final _PortalSidebarItem activeItem;
+  final VoidCallback onHomeTap;
+  final VoidCallback onJournalTap;
+  const _LeftRail({
+    required this.isAdmin,
+    required this.activeItem,
+    required this.onHomeTap,
+    required this.onJournalTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -248,25 +383,22 @@ class _LeftRail extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _BrandCard(isAdmin: isAdmin, onBack: onBack),
+          _BrandCard(isAdmin: isAdmin),
           const SizedBox(height: 24),
-          const _NavTile(
+          _NavTile(
             icon: Icons.home_outlined,
             label: 'Home',
+            active: activeItem == _PortalSidebarItem.home,
+            onTap: onHomeTap,
           ),
-          const _NavTile(
+          _NavTile(
             icon: Icons.menu_book_rounded,
             label: 'Journal',
-            active: true,
+            active: activeItem == _PortalSidebarItem.journal,
+            onTap: onJournalTap,
           ),
-          const _NavTile(
-            icon: Icons.chat_bubble_outline_rounded,
-            label: 'Chat',
-          ),
-          const _NavTile(
-            icon: Icons.settings_outlined,
-            label: 'Settings',
-          ),
+          const SizedBox(height: 8),
+          const _ThemeModeButton(),
           const Spacer(),
           const _LogoutButton(),
         ],
@@ -277,8 +409,7 @@ class _LeftRail extends StatelessWidget {
 
 class _BrandCard extends StatelessWidget {
   final bool isAdmin;
-  final VoidCallback onBack;
-  const _BrandCard({required this.isAdmin, required this.onBack});
+  const _BrandCard({required this.isAdmin});
 
   @override
   Widget build(BuildContext context) {
@@ -354,12 +485,36 @@ class _BrandCard extends StatelessWidget {
               ],
             ),
           ),
-          IconButton(
-            onPressed: onBack,
-            visualDensity: VisualDensity.compact,
-            icon: const Icon(Icons.close_rounded, color: Color(0xFF94A3B8)),
-          ),
         ],
+      ),
+    );
+  }
+}
+
+class _ThemeModeButton extends StatelessWidget {
+  const _ThemeModeButton();
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: themeModeController.toggleLightDark,
+        style: OutlinedButton.styleFrom(
+          side: const BorderSide(color: Color(0xFFE1E7F5)),
+          foregroundColor: const Color(0xFF0F172A),
+          backgroundColor: Colors.white.withValues(alpha: 0.72),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          textStyle: const TextStyle(fontWeight: FontWeight.w800),
+        ),
+        icon: Icon(
+          isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+          size: 18,
+        ),
+        label: Text(isDark ? 'Light Mode' : 'Dark Mode'),
       ),
     );
   }
@@ -397,9 +552,11 @@ class _NavTile extends StatelessWidget {
   final IconData icon;
   final String label;
   final bool active;
+  final VoidCallback onTap;
   const _NavTile({
     required this.icon,
     required this.label,
+    required this.onTap,
     this.active = false,
   });
 
@@ -412,7 +569,7 @@ class _NavTile extends StatelessWidget {
         color: active ? const Color(0xFFDCE8FF) : Colors.transparent,
       ),
       child: ListTile(
-        onTap: () {},
+        onTap: onTap,
         minLeadingWidth: 24,
         horizontalTitleGap: 12,
         dense: true,
@@ -435,12 +592,723 @@ class _NavTile extends StatelessWidget {
   }
 }
 
+class _JournalReflectionPage extends StatefulWidget {
+  const _JournalReflectionPage();
+
+  @override
+  State<_JournalReflectionPage> createState() => _JournalReflectionPageState();
+}
+
+class _JournalReflectionPageState extends State<_JournalReflectionPage> {
+  final TextEditingController _reflectionController = TextEditingController();
+  static const _homeSurface = Color(0xFFF4F6FB);
+  static const _homePanel = Color(0xFFFDFDFF);
+  static const _homeBorder = Color(0xFFDDE3EF);
+
+  static const List<_WisdomFeedItemData> _wisdomFeed = [
+    _WisdomFeedItemData(
+      timestamp: 'Yesterday • 10:42 PM',
+      quote:
+          '"You noticed a pattern of seeking validation in stressful environments. This awareness is the first step toward internal stability."',
+      tags: ['Self-Regulation', 'Work Harmony'],
+      accent: Color(0xFF6EA8FF),
+      icon: Icons.auto_awesome_rounded,
+    ),
+    _WisdomFeedItemData(
+      timestamp: 'May 12 • Evening',
+      quote:
+          '"Your description of the ocean breeze suggests that sensory-based grounding techniques are highly effective for you."',
+      tags: ['Grounding'],
+      accent: Color(0xFFB17CFF),
+      icon: Icons.psychology_alt_rounded,
+    ),
+    _WisdomFeedItemData(
+      timestamp: 'May 10 • Post-session',
+      quote:
+          '"Growth is often quiet. You\'ve consistently mentioned patience three times this week. A shift is occurring."',
+      tags: ['Patience', 'Growth'],
+      accent: Color(0xFF47C98A),
+      icon: Icons.spa_rounded,
+    ),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _persistDestination();
+  }
+
+  @override
+  void dispose() {
+    _reflectionController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _persistDestination() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_portalDestinationKey, _portalDestinationJournal);
+  }
+
+  String _firstName() {
+    final user = FirebaseAuthManager().currentUser;
+    final displayName = user?.displayName?.trim() ?? '';
+    if (displayName.isNotEmpty) {
+      return displayName.split(RegExp(r'\s+')).first;
+    }
+
+    final email = user?.email?.trim() ?? '';
+    if (email.contains('@')) {
+      final localPart = email.split('@').first;
+      if (localPart.isNotEmpty) {
+        return localPart[0].toUpperCase() + localPart.substring(1);
+      }
+    }
+
+    return 'Sarah';
+  }
+
+  String _greeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  }
+
+  Future<void> _openHome() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_portalDestinationKey, _portalDestinationHome);
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const JournalPortalPage()),
+    );
+  }
+
+  void _archiveReflection() {
+    final hasText = _reflectionController.text.trim().isNotEmpty;
+    if (!hasText) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Reflection archived. Your wisdom feed will continue adapting.'),
+      ),
+    );
+    setState(() => _reflectionController.clear());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final width = MediaQuery.sizeOf(context).width;
+    final showLeftRail = width >= 1200;
+    final isAdmin = AdminAccess.isAdminEmail(FirebaseAuthManager().currentUser?.email);
+
+    return Scaffold(
+      backgroundColor: _homeSurface,
+      body: SafeArea(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (showLeftRail)
+              _LeftRail(
+                isAdmin: isAdmin,
+                activeItem: _PortalSidebarItem.journal,
+                onHomeTap: () {
+                  _openHome();
+                },
+                onJournalTap: () {},
+              ),
+            Expanded(
+              child: _JournalReflectionPane(
+                showCompactHeader: !showLeftRail,
+                greeting: '${_greeting()}, ${_firstName()}.',
+                controller: _reflectionController,
+                wisdomFeed: _wisdomFeed,
+                onArchive: _archiveReflection,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _JournalReflectionPane extends StatefulWidget {
+  final bool showCompactHeader;
+  final String greeting;
+  final TextEditingController controller;
+  final List<_WisdomFeedItemData> wisdomFeed;
+  final VoidCallback onArchive;
+
+  const _JournalReflectionPane({
+    required this.showCompactHeader,
+    required this.greeting,
+    required this.controller,
+    required this.wisdomFeed,
+    required this.onArchive,
+  });
+
+  @override
+  State<_JournalReflectionPane> createState() => _JournalReflectionPaneState();
+}
+
+class _JournalReflectionPaneState extends State<_JournalReflectionPane> {
+  bool get _hasText => widget.controller.text.trim().isNotEmpty;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_handleTextChanged);
+  }
+
+  @override
+  void didUpdateWidget(covariant _JournalReflectionPane oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_handleTextChanged);
+      widget.controller.addListener(_handleTextChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_handleTextChanged);
+    super.dispose();
+  }
+
+  void _handleTextChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: _JournalReflectionPageState._homeSurface,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final showSplitLayout = constraints.maxWidth >= 1120;
+
+          if (showSplitLayout) {
+            return Row(
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      widget.showCompactHeader ? 20 : 56,
+                      widget.showCompactHeader ? 18 : 40,
+                      48,
+                      30,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (widget.showCompactHeader) ...[
+                          const _CompactPortalHeader(),
+                          const SizedBox(height: 26),
+                        ],
+                        _JournalIntro(greeting: widget.greeting),
+                        const SizedBox(height: 28),
+                        Expanded(
+                          child: _ReflectionEditor(controller: widget.controller),
+                        ),
+                        const SizedBox(height: 24),
+                        _ReflectionActions(
+                          enabled: _hasText,
+                          onArchive: widget.onArchive,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Container(
+                  width: 1,
+                  color: const Color(0xFFE1E7F5),
+                ),
+                SizedBox(
+                  width: 430,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(34, 36, 32, 22),
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child: _WisdomFeedColumn(items: widget.wisdomFeed),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }
+
+          return SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: EdgeInsets.fromLTRB(
+              widget.showCompactHeader ? 16 : 24,
+              widget.showCompactHeader ? 16 : 24,
+              widget.showCompactHeader ? 16 : 24,
+              28,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (widget.showCompactHeader) ...[
+                  const _CompactPortalHeader(),
+                  const SizedBox(height: 24),
+                ],
+                _JournalIntro(greeting: widget.greeting),
+                const SizedBox(height: 24),
+                SizedBox(
+                  height: 480,
+                  child: _ReflectionEditor(controller: widget.controller),
+                ),
+                const SizedBox(height: 22),
+                _ReflectionActions(
+                  enabled: _hasText,
+                  onArchive: widget.onArchive,
+                ),
+                const SizedBox(height: 30),
+                _WisdomFeedColumn(items: widget.wisdomFeed),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _CompactPortalHeader extends StatelessWidget {
+  const _CompactPortalHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        IconButton(
+          onPressed: () => Navigator.of(context).maybePop(),
+          icon: const Icon(Icons.arrow_back_rounded),
+          style: IconButton.styleFrom(
+            backgroundColor: Colors.white,
+            foregroundColor: const Color(0xFF1A2131),
+          ),
+          tooltip: 'Back',
+        ),
+        const SizedBox(width: 10),
+        const Text(
+          'Therapii Portal',
+          style: TextStyle(
+            color: Color(0xFF1A2131),
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _JournalIntro extends StatelessWidget {
+  final String greeting;
+  const _JournalIntro({required this.greeting});
+
+  @override
+  Widget build(BuildContext context) {
+    final width = MediaQuery.sizeOf(context).width;
+    final greetingSize = width < 700 ? 42.0 : 64.0;
+    final promptSize = width < 700 ? 22.0 : 28.0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          greeting,
+          style: TextStyle(
+            color: Color(0xFF1E293B),
+            fontFamily: 'Satoshi',
+            fontSize: greetingSize,
+            height: 0.92,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -2.4,
+          ),
+        ),
+        const SizedBox(height: 18),
+        Text(
+          '"What are you carrying with you tonight?"',
+          style: TextStyle(
+            color: Color(0xFF9CA3AF),
+            fontFamily: 'Satoshi',
+            fontStyle: FontStyle.italic,
+            fontSize: promptSize,
+            fontWeight: FontWeight.w500,
+            height: 1.24,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ReflectionEditor extends StatelessWidget {
+  final TextEditingController controller;
+  const _ReflectionEditor({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    final hasText = controller.text.trim().isNotEmpty;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: _JournalReflectionPageState._homePanel,
+        borderRadius: BorderRadius.circular(36),
+        border: Border.all(color: _JournalReflectionPageState._homeBorder),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x120B1324),
+            blurRadius: 24,
+            offset: Offset(0, 14),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(28, 26, 28, 26),
+        child: Stack(
+          children: [
+            TextField(
+              controller: controller,
+              expands: true,
+              minLines: null,
+              maxLines: null,
+              textCapitalization: TextCapitalization.sentences,
+              style: const TextStyle(
+                color: Color(0xFF334155),
+                fontSize: 21,
+                height: 1.65,
+              ),
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                isCollapsed: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+            if (!hasText)
+              const IgnorePointer(
+                child: Padding(
+                  padding: EdgeInsets.only(top: 6),
+                  child: Text(
+                    'Begin typing to release...',
+                    style: TextStyle(
+                      color: Color(0xFFD1D5DB),
+                      fontFamily: 'Satoshi',
+                      fontSize: 23,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ReflectionActions extends StatelessWidget {
+  final bool enabled;
+  final VoidCallback onArchive;
+
+  const _ReflectionActions({
+    required this.enabled,
+    required this.onArchive,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isCompact = MediaQuery.sizeOf(context).width < 760;
+
+    final actionButtons = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: const [
+        _ActionCircleButton(icon: Icons.mic_none_rounded),
+        SizedBox(width: 16),
+        _ActionCircleButton(icon: Icons.image_outlined),
+      ],
+    );
+
+    final archiveButton = FilledButton(
+      onPressed: enabled ? onArchive : null,
+      style: FilledButton.styleFrom(
+        backgroundColor: const Color(0xFF1F2937),
+        disabledBackgroundColor: const Color(0xFFCBD5E1),
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+        textStyle: const TextStyle(
+          fontWeight: FontWeight.w600,
+          fontSize: 16,
+        ),
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('Archive Reflection'),
+          SizedBox(width: 10),
+          Icon(Icons.north_east_rounded, size: 18),
+        ],
+      ),
+    );
+
+    if (isCompact) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          actionButtons,
+          const SizedBox(height: 18),
+          archiveButton,
+        ],
+      );
+    }
+
+    return Row(
+      children: [
+        actionButtons,
+        const Spacer(),
+        archiveButton,
+      ],
+    );
+  }
+}
+
+class _ActionCircleButton extends StatelessWidget {
+  final IconData icon;
+  const _ActionCircleButton({required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 64,
+      height: 64,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        border: Border.all(color: _JournalReflectionPageState._homeBorder),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x100B1324),
+            blurRadius: 14,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Icon(icon, color: const Color(0xFF9CA3AF), size: 28),
+    );
+  }
+}
+
+class _WisdomFeedColumn extends StatelessWidget {
+  final List<_WisdomFeedItemData> items;
+  const _WisdomFeedColumn({required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: const [
+            Expanded(
+              child: Text(
+                'WISDOM FEED',
+                style: TextStyle(
+                  color: Color(0xFF94A3B8),
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12,
+                  letterSpacing: 3,
+                ),
+              ),
+            ),
+            Text(
+              'UPDATED',
+              style: TextStyle(
+                color: Color(0xFFB0B8C4),
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+              ),
+            ),
+            SizedBox(width: 8),
+            Icon(Icons.circle, color: Color(0xFF8BB5FF), size: 10),
+          ],
+        ),
+        const SizedBox(height: 24),
+        for (var i = 0; i < items.length; i++) ...[
+          _WisdomFeedCard(item: items[i]),
+          if (i < items.length - 1) const SizedBox(height: 26),
+        ],
+        const SizedBox(height: 28),
+        const _AnalysisCard(),
+      ],
+    );
+  }
+}
+
+class _WisdomFeedCard extends StatelessWidget {
+  final _WisdomFeedItemData item;
+  const _WisdomFeedCard({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
+      decoration: BoxDecoration(
+        color: _JournalReflectionPageState._homePanel,
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: _JournalReflectionPageState._homeBorder),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0D0B1324),
+            blurRadius: 18,
+            offset: Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  item.timestamp.toUpperCase(),
+                  style: const TextStyle(
+                    color: Color(0xFFA0A8B5),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 11,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ),
+              Icon(item.icon, color: item.accent, size: 20),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Text(
+            item.quote,
+            style: const TextStyle(
+              color: Color(0xFF475569),
+              fontFamily: 'Satoshi',
+              fontStyle: FontStyle.italic,
+              fontWeight: FontWeight.w500,
+              fontSize: 20,
+              height: 1.65,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              for (final tag in item.tags)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: item.accent.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(color: item.accent.withOpacity(0.12)),
+                  ),
+                  child: Text(
+                    tag.toUpperCase(),
+                    style: TextStyle(
+                      color: item.accent,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AnalysisCard extends StatelessWidget {
+  const _AnalysisCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: _JournalReflectionPageState._homePanel,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: _JournalReflectionPageState._homeBorder),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: const Color(0xFFE9F1FF),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(Icons.insights_rounded, color: Color(0xFF5C8EFF)),
+          ),
+          const SizedBox(width: 16),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Full Analysis',
+                  style: TextStyle(
+                    color: Color(0xFF1F2937),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  '7-day emotional report',
+                  style: TextStyle(
+                    color: Color(0xFF9CA3AF),
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Icon(Icons.chevron_right_rounded, color: Color(0xFFC0C8D4), size: 28),
+        ],
+      ),
+    );
+  }
+}
+
+class _WisdomFeedItemData {
+  final String timestamp;
+  final String quote;
+  final List<String> tags;
+  final Color accent;
+  final IconData icon;
+
+  const _WisdomFeedItemData({
+    required this.timestamp,
+    required this.quote,
+    required this.tags,
+    required this.accent,
+    required this.icon,
+  });
+}
+
 class _FeedPane extends StatelessWidget {
   final bool showCompactHeader;
   final List<String> topics;
   final int selectedTopicIndex;
   final ValueChanged<int> onTopicSelected;
   final List<_FeedCardData> cards;
+  final bool hasMoreArticles;
+  final VoidCallback onLoadMore;
 
   const _FeedPane({
     required this.showCompactHeader,
@@ -448,6 +1316,8 @@ class _FeedPane extends StatelessWidget {
     required this.selectedTopicIndex,
     required this.onTopicSelected,
     required this.cards,
+    required this.hasMoreArticles,
+    required this.onLoadMore,
   });
 
   @override
@@ -557,24 +1427,25 @@ class _FeedPane extends StatelessWidget {
             ),
           ),
         ),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 30),
-            child: Center(
-              child: OutlinedButton(
-                onPressed: () {},
-                style: OutlinedButton.styleFrom(
-                  backgroundColor: Colors.white.withOpacity(0.92),
-                  foregroundColor: const Color(0xFF4B5565),
-                  side: const BorderSide(color: Color(0xFFD8DDE8)),
-                  textStyle: const TextStyle(fontWeight: FontWeight.w700),
-                  padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 14),
+        if (hasMoreArticles)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 30),
+              child: Center(
+                child: OutlinedButton(
+                  onPressed: onLoadMore,
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor: Colors.white.withOpacity(0.92),
+                    foregroundColor: const Color(0xFF4B5565),
+                    side: const BorderSide(color: Color(0xFFD8DDE8)),
+                    textStyle: const TextStyle(fontWeight: FontWeight.w700),
+                    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 14),
+                  ),
+                  child: const Text('Load More Articles'),
                 ),
-                child: const Text('Load More Articles'),
               ),
             ),
           ),
-        ),
       ],
     );
   }

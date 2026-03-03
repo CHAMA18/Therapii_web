@@ -81,7 +81,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
         ? const MyPatientsPage()
         : (onboardingCompleted ? const PatientDashboardPage() : const PatientOnboardingFlowPage());
 
-    final resolvedDestination = widget.openJournalPortalAfterVerification && !isTherapist
+    final resolvedDestination = widget.openJournalPortalAfterVerification
         ? const JournalPortalPage()
         : destination;
 
