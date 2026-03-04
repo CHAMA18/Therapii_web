@@ -57,6 +57,24 @@ class AiConversationService {
     return ref.id;
   }
 
+  Future<String> saveJournalReflection({
+    required String patientId,
+    required String summary,
+    List<AiMessagePart> transcript = const <AiMessagePart>[],
+  }) async {
+    final ref = _col().doc();
+    await ref.set({
+      'patient_id': patientId,
+      'therapist_id': '',
+      'summary': summary,
+      'created_at': Timestamp.fromDate(DateTime.now()),
+      'transcript': transcript.map((e) => e.toJson()).toList(growable: false),
+      'share_with_therapist': false,
+      'source': 'journal_reflection',
+    });
+    return ref.id;
+  }
+
   Stream<List<AiConversationSummary>> streamTherapistSummaries({
     required String therapistId,
     int limit = 20,
@@ -123,5 +141,24 @@ class AiConversationService {
       'therapist_feedback': feedback,
       'feedback_updated_at': Timestamp.fromDate(DateTime.now()),
     });
+  }
+
+  Future<void> deletePatientSummary({
+    required String patientId,
+    required String summaryId,
+  }) async {
+    final ref = _col().doc(summaryId);
+    final snapshot = await ref.get();
+    if (!snapshot.exists) {
+      return;
+    }
+
+    final data = snapshot.data() ?? const <String, dynamic>{};
+    final ownerId = (data['patient_id'] ?? '').toString();
+    if (ownerId != patientId) {
+      throw StateError('This summary does not belong to the current patient.');
+    }
+
+    await ref.delete();
   }
 }

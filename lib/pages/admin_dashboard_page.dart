@@ -495,41 +495,48 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           _buildNavBar(theme, isDark, primaryColor),
           // Main Content
           Expanded(
-            child: RefreshIndicator(
-              onRefresh: () async {
-                await _loadCounts();
-                await _loadLandingContent();
-              },
-              child: SingleChildScrollView(
-                controller: _scrollController,
-                physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                child: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Header Section
-                        _buildHeader(theme, isDark, primaryColor),
-                        // Action Cards Grid
-                        _buildActionCardsGrid(theme, isDark, primaryColor),
-                        const SizedBox(height: 48),
-                        // Pending Approvals Table
-                        _buildPendingApprovalsTable(theme, isDark, primaryColor),
-                        const SizedBox(height: 48),
-                        // Analytics & Activity Row
-                        _buildAnalyticsActivityRow(theme, isDark, primaryColor),
-                        const SizedBox(height: 48),
-                        // System Status Section
-                        _buildSystemStatusSection(theme, isDark, primaryColor),
-                        const SizedBox(height: 48),
-                        // Footer
-                        _buildFooter(theme, isDark),
-                      ],
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    await _loadCounts();
+                    await _loadLandingContent();
+                  },
+                  child: SingleChildScrollView(
+                    controller: _scrollController,
+                    physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                      child: Center(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(minHeight: constraints.maxHeight - 48),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Header Section
+                                _buildHeader(theme, isDark, primaryColor),
+                                // Action Cards Grid
+                                _buildActionCardsGrid(theme, isDark, primaryColor),
+                                const SizedBox(height: 48),
+                                // Pending Approvals Table
+                                _buildPendingApprovalsTable(theme, isDark, primaryColor),
+                                const SizedBox(height: 48),
+                                // Analytics & Activity Row
+                                _buildAnalyticsActivityRow(theme, isDark, primaryColor),
+                                const SizedBox(height: 48),
+                                // Footer
+                                _buildFooter(theme, isDark),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
           ),
         ],
@@ -1868,186 +1875,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     );
   }
 
-  Widget _buildSystemStatusSection(ThemeData theme, bool isDark, Color primaryColor) {
-    final statusItems = [
-      _SystemStatus(
-        name: 'Firebase Services',
-        status: 'Operational',
-        isHealthy: true,
-        icon: Icons.cloud_outlined,
-      ),
-      _SystemStatus(
-        name: 'Authentication',
-        status: 'Operational',
-        isHealthy: true,
-        icon: Icons.lock_outlined,
-      ),
-      _SystemStatus(
-        name: 'AI Processing',
-        status: 'Operational',
-        isHealthy: true,
-        icon: Icons.psychology_outlined,
-      ),
-      _SystemStatus(
-        name: 'Email Service',
-        status: 'Operational',
-        isHealthy: true,
-        icon: Icons.email_outlined,
-      ),
-    ];
-
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1e293b).withValues(alpha: 0.3) : Colors.white,
-        borderRadius: BorderRadius.circular(32),
-        border: Border.all(
-          color: isDark ? const Color(0xFF1e293b) : const Color(0xFFe2e8f0),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(32),
-            child: Row(
-              children: [
-                Icon(Icons.monitor_heart_outlined, color: primaryColor, size: 24),
-                const SizedBox(width: 12),
-                Text(
-                  'System Status',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : const Color(0xFF0f172a),
-                  ),
-                ),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF10b981).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.check_circle, color: Color(0xFF10b981), size: 14),
-                      SizedBox(width: 6),
-                      Text(
-                        'All Systems Operational',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF10b981),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(32, 0, 32, 32),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final crossAxisCount = constraints.maxWidth > 800 ? 4 : (constraints.maxWidth > 500 ? 2 : 1);
-                
-                return GridView.count(
-                  crossAxisCount: crossAxisCount,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  childAspectRatio: crossAxisCount == 1 ? 4 : 2.2,
-                  children: statusItems.map((item) => _buildStatusCard(item, isDark)).toList(),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatusCard(_SystemStatus item, bool isDark) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF334155).withValues(alpha: 0.3) : const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFe2e8f0),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: item.isHealthy
-                  ? const Color(0xFF10b981).withValues(alpha: 0.1)
-                  : const Color(0xFFef4444).withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              item.icon,
-              color: item.isHealthy ? const Color(0xFF10b981) : const Color(0xFFef4444),
-              size: 22,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  item.name,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white : const Color(0xFF0f172a),
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Row(
-                  children: [
-                    Container(
-                      width: 6,
-                      height: 6,
-                      decoration: BoxDecoration(
-                        color: item.isHealthy ? const Color(0xFF10b981) : const Color(0xFFef4444),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      item.status,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: item.isHealthy ? const Color(0xFF10b981) : const Color(0xFFef4444),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildFooter(ThemeData theme, bool isDark) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 24),
@@ -2507,18 +2334,4 @@ class _AnalyticCard extends StatelessWidget {
       ),
     );
   }
-}
-
-class _SystemStatus {
-  final String name;
-  final String status;
-  final bool isHealthy;
-  final IconData icon;
-
-  const _SystemStatus({
-    required this.name,
-    required this.status,
-    required this.isHealthy,
-    required this.icon,
-  });
 }

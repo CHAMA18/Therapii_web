@@ -20,6 +20,7 @@ import 'package:therapii/services/therapist_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await _bootstrapFirebase();
+  await themeModeController.load();
 
   // Make runtime errors visible on web builds instead of a blank screen.
   ErrorWidget.builder = (FlutterErrorDetails details) {

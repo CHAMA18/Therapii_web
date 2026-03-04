@@ -1,4 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_tts/flutter_tts.dart';
+import 'package:therapii/auth/firebase_auth_manager.dart';
 
 // Palette constants shared across the page.
 const Color _ink = Color(0xFF0F172A);
@@ -34,18 +37,25 @@ class JournalArticlePage extends StatefulWidget {
 
 class _JournalArticlePageState extends State<JournalArticlePage> {
   final ScrollController _scrollController = ScrollController();
+  final FlutterTts _flutterTts = FlutterTts();
   double _progress = 0;
+  bool _isFavorite = false;
+  bool _isSavingFavorite = false;
+  bool _isSpeaking = false;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_handleScroll);
+    _initializeTts();
+    _loadFavoriteState();
   }
 
   @override
   void dispose() {
     _scrollController.removeListener(_handleScroll);
     _scrollController.dispose();
+    _flutterTts.stop();
     super.dispose();
   }
 
@@ -55,6 +65,125 @@ class _JournalArticlePageState extends State<JournalArticlePage> {
     final next = max == 0 ? 0.0 : offset / max;
     if (next != _progress) {
       setState(() => _progress = next.toDouble());
+    }
+  }
+
+  Future<void> _initializeTts() async {
+    await _flutterTts.setLanguage('en-US');
+    await _flutterTts.setSpeechRate(0.45);
+    await _flutterTts.setVolume(1.0);
+    await _flutterTts.setPitch(1.0);
+    _flutterTts.setStartHandler(() {
+      if (mounted) setState(() => _isSpeaking = true);
+    });
+    _flutterTts.setCompletionHandler(() {
+      if (mounted) setState(() => _isSpeaking = false);
+    });
+    _flutterTts.setCancelHandler(() {
+      if (mounted) setState(() => _isSpeaking = false);
+    });
+    _flutterTts.setErrorHandler((_) {
+      if (mounted) setState(() => _isSpeaking = false);
+    });
+  }
+
+  String get _articleId {
+    final normalized = widget.title.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '-');
+    return normalized.replaceAll(RegExp(r'^-+|-+$'), '');
+  }
+
+  DocumentReference<Map<String, dynamic>>? get _favoriteDoc {
+    final user = FirebaseAuthManager().currentUser;
+    final userId = user?.uid;
+    if (userId == null || userId.isEmpty) return null;
+    return FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('favorite_journal_articles')
+        .doc(_articleId);
+  }
+
+  Future<void> _loadFavoriteState() async {
+    final doc = _favoriteDoc;
+    if (doc == null) return;
+    final snapshot = await doc.get();
+    if (!mounted) return;
+    setState(() => _isFavorite = snapshot.exists);
+  }
+
+  Future<void> _toggleFavorite() async {
+    final doc = _favoriteDoc;
+    if (doc == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please sign in to save favorites.')),
+      );
+      return;
+    }
+    if (_isSavingFavorite) return;
+
+    setState(() => _isSavingFavorite = true);
+    try {
+      if (_isFavorite) {
+        await doc.delete();
+      } else {
+        await doc.set({
+          'title': widget.title,
+          'category': widget.category,
+          'subtitle': widget.subtitle,
+          'read_time': widget.readTime,
+          'image_url': widget.imageUrl,
+          'author_name': widget.authorName,
+          'author_role': widget.authorRole,
+          'published_date': widget.publishedDate,
+          'saved_at': FieldValue.serverTimestamp(),
+        });
+      }
+      if (!mounted) return;
+      setState(() => _isFavorite = !_isFavorite);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_isFavorite ? 'Saved to favorites.' : 'Removed from favorites.'),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to update favorites right now.')),
+      );
+    } finally {
+      if (mounted) setState(() => _isSavingFavorite = false);
+    }
+  }
+
+  String get _speakableArticleText => [
+        widget.title,
+        widget.subtitle,
+        'By ${widget.authorName}, ${widget.authorRole}.',
+        'We often conceptualize letting go as an act of dropping something like releasing a heavy stone from our hands. However, psychological research suggests that the process is far more active and nuanced.',
+        'The human brain is wired for attachment. From an evolutionary perspective, holding onto memories, relationships, and familiar patterns even painful ones provided safety.',
+        'The Zeigarnik Effect and Emotional Closure. Russian psychologist Bluma Zeigarnik discovered that people remember uncompleted or interrupted tasks better than completed ones.',
+        'Forgiveness is giving up the hope that the past could have been any different.',
+        'Acceptance does not mean agreement. It simply means acknowledging the reality of the situation without the emotional resistance that causes suffering.',
+        'Practical Steps for Release. Start by identifying the physical sensations associated with the emotion you are holding.',
+      ].join(' ');
+
+  Future<void> _toggleReadAloud() async {
+    try {
+      if (_isSpeaking) {
+        await _flutterTts.stop();
+        if (mounted) {
+          setState(() => _isSpeaking = false);
+        }
+        return;
+      }
+      await _flutterTts.stop();
+      await _flutterTts.speak(_speakableArticleText);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isSpeaking = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to read this article aloud right now.')),
+      );
     }
   }
 
@@ -77,7 +206,17 @@ class _JournalArticlePageState extends State<JournalArticlePage> {
             ],
           ),
           _ReadingProgress(progress: _progress),
-          _FloatingActions(),
+          _FloatingActions(
+            isFavorite: _isFavorite,
+            isSavingFavorite: _isSavingFavorite,
+            isSpeaking: _isSpeaking,
+            onFavoriteTap: () {
+              _toggleFavorite();
+            },
+            onReadAloudTap: () {
+              _toggleReadAloud();
+            },
+          ),
         ],
       ),
     );
@@ -191,6 +330,20 @@ class _ReadingProgress extends StatelessWidget {
 }
 
 class _FloatingActions extends StatelessWidget {
+  final bool isFavorite;
+  final bool isSavingFavorite;
+  final bool isSpeaking;
+  final VoidCallback onFavoriteTap;
+  final VoidCallback onReadAloudTap;
+
+  const _FloatingActions({
+    required this.isFavorite,
+    required this.isSavingFavorite,
+    required this.isSpeaking,
+    required this.onFavoriteTap,
+    required this.onReadAloudTap,
+  });
+
   @override
   Widget build(BuildContext context) {
     return Positioned(
@@ -199,9 +352,15 @@ class _FloatingActions extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _GlassButton(icon: Icons.bookmark_add_outlined, onTap: () {}),
+          _GlassButton(
+            icon: isFavorite ? Icons.bookmark_added_rounded : Icons.bookmark_add_outlined,
+            onTap: isSavingFavorite ? () {} : onFavoriteTap,
+          ),
           const SizedBox(height: 10),
-          _GlassButton(icon: Icons.headphones_rounded, onTap: () {}),
+          _GlassButton(
+            icon: isSpeaking ? Icons.stop_circle_outlined : Icons.headphones_rounded,
+            onTap: onReadAloudTap,
+          ),
           const SizedBox(height: 10),
           _GlassButton(icon: Icons.ios_share_rounded, onTap: () {}),
         ],

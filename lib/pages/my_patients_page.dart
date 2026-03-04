@@ -511,17 +511,18 @@ class _MyPatientsPageState extends State<MyPatientsPage> {
     final contentMaxWidth = screenWidth >= 1400 ? 980.0 : 900.0;
     final appBarDivider = theme.colorScheme.outline.withValues(alpha: 0.12);
     final onSurface = theme.colorScheme.onSurface;
+    final scaffoldColor = theme.scaffoldBackgroundColor;
     final therapistName = _therapist?.fullName.isNotEmpty == true ? _therapist!.fullName : 'Therapist';
     final therapistInitial = (_therapist?.firstName ?? therapistName)[0].toUpperCase();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FB),
+      backgroundColor: scaffoldColor,
       appBar: AppBar(
         titleSpacing: 0,
         centerTitle: false,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
-        backgroundColor: const Color(0xFFF5F7FB),
+        backgroundColor: scaffoldColor,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
           tooltip: 'Back',
@@ -746,7 +747,7 @@ class _TherapistAvatarChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: primary.withValues(alpha: 0.14),
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 2),
+        border: Border.all(color: theme.colorScheme.surface, width: 2),
       ),
       child: Center(
         child: Text(
@@ -869,7 +870,7 @@ class _PatientTile extends StatelessWidget {
         onTap: onViewDetails,
         child: Ink(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: colorScheme.surface,
             borderRadius: borderRadius,
             border: Border.all(color: borderColor),
           ),
@@ -879,7 +880,7 @@ class _PatientTile extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 22,
-                  backgroundColor: const Color(0xFFF1F4FA),
+                  backgroundColor: colorScheme.surfaceContainerHighest,
                   child: Icon(Icons.person, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8)),
                 ),
                 const SizedBox(width: 14),
@@ -1064,10 +1065,10 @@ class _VoiceCheckinTile extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(children: [
-              const CircleAvatar(
+              CircleAvatar(
                 radius: 24,
-                backgroundColor: Color(0xFFE9EAED),
-                child: Icon(Icons.mic, color: Colors.grey),
+                backgroundColor: colorScheme.surfaceContainerHighest,
+                child: Icon(Icons.mic, color: colorScheme.onSurfaceVariant),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -1556,7 +1557,7 @@ class _ActivePatientsCard extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: scheme.surface,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: scheme.outline.withValues(alpha: 0.1)),
                 ),
@@ -1662,7 +1663,7 @@ class _PendingInvitesCard extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: scheme.surface,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: scheme.outline.withValues(alpha: 0.1)),
                 ),
@@ -1740,7 +1741,7 @@ class _PremiumInviteTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(18),
-        color: Colors.white,
+        color: scheme.surface,
         border: Border.all(
           color: isUrgent && showCode
               ? Colors.amber.withValues(alpha: 0.35)
@@ -1752,7 +1753,7 @@ class _PremiumInviteTile extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 22,
-            backgroundColor: const Color(0xFFF1F4FA),
+            backgroundColor: scheme.surfaceContainerHighest,
             child: Text(
               invitation.patientFirstName.isNotEmpty
                   ? invitation.patientFirstName[0].toUpperCase()

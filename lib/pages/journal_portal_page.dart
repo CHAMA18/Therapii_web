@@ -1,15 +1,238 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:therapii/auth/firebase_auth_manager.dart';
+import 'package:therapii/models/ai_conversation_summary.dart';
+import 'package:therapii/pages/admin_dashboard_page.dart';
 import 'package:therapii/pages/journal_article_page.dart';
+import 'package:therapii/pages/my_patients_page.dart';
+import 'package:therapii/pages/patient_dashboard_page.dart';
+import 'package:therapii/pages/patient_onboarding_flow_page.dart';
+import 'package:therapii/services/ai_conversation_service.dart';
+import 'package:therapii/services/therapist_service.dart';
+import 'package:therapii/services/user_service.dart';
 import 'package:therapii/theme_mode_controller.dart';
 import 'package:therapii/utils/admin_access.dart';
 
-enum _PortalSidebarItem { home, journal }
+enum _PortalSidebarItem { home, journal, favorites }
 
 const _portalDestinationKey = 'journal_portal_destination';
 const _portalDestinationHome = 'home';
 const _portalDestinationJournal = 'journal';
+const _portalDestinationFavorites = 'favorites';
+const _portalSidebarWidthKey = 'journal_portal_sidebar_width';
+const _defaultPortalSidebarWidth = 276.0;
+const _minPortalSidebarWidth = 248.0;
+const _maxPortalSidebarWidth = 360.0;
+
+double _clampPortalSidebarWidth(double width) {
+  final clamped = width.clamp(_minPortalSidebarWidth, _maxPortalSidebarWidth);
+  return (clamped as num).toDouble();
+}
+
+Future<double> _loadPortalSidebarWidth() async {
+  final prefs = await SharedPreferences.getInstance();
+  final storedWidth = prefs.getDouble(_portalSidebarWidthKey) ?? _defaultPortalSidebarWidth;
+  return _clampPortalSidebarWidth(storedWidth);
+}
+
+Future<void> _persistPortalSidebarWidth(double width) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setDouble(_portalSidebarWidthKey, _clampPortalSidebarWidth(width));
+}
+
+Route<void> _buildPortalSwitchRoute(Widget page) {
+  return PageRouteBuilder<void>(
+    transitionDuration: const Duration(milliseconds: 300),
+    reverseTransitionDuration: const Duration(milliseconds: 220),
+    pageBuilder: (context, animation, secondaryAnimation) => page,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      final curved = CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.easeInCubic,
+      );
+
+      return FadeTransition(
+        opacity: Tween<double>(begin: 0.55, end: 1).animate(curved),
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0.035, 0),
+            end: Offset.zero,
+          ).animate(curved),
+          child: child,
+        ),
+      );
+    },
+  );
+}
+
+Future<void> _switchToTherapiiSession(BuildContext context) async {
+  final user = FirebaseAuthManager().currentUser;
+  if (user == null) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please sign in again to switch into your Therapii session.')),
+      );
+    }
+    return;
+  }
+
+  try {
+    Widget destination;
+    final email = user.email ?? '';
+
+    if (AdminAccess.isAdminEmail(email)) {
+      destination = const AdminDashboardPage();
+    } else {
+      final profile = await UserService().getUser(user.uid);
+      final therapistProfile = await TherapistService().getTherapistByUserId(user.uid);
+      final isTherapist = profile?.isTherapist == true || therapistProfile != null;
+
+      destination = isTherapist
+          ? const MyPatientsPage()
+          : ((profile?.patientOnboardingCompleted ?? false)
+              ? const PatientDashboardPage()
+              : const PatientOnboardingFlowPage());
+    }
+
+    if (!context.mounted) return;
+    Navigator.of(context).pushReplacement(_buildPortalSwitchRoute(destination));
+  } catch (_) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Unable to switch to your Therapii session right now.')),
+    );
+  }
+}
+
+class _PortalPalette {
+  final bool isDark;
+  final Color scaffold;
+  final Color panel;
+  final Color panelStrong;
+  final Color panelSoft;
+  final Color border;
+  final Color divider;
+  final Color textPrimary;
+  final Color textSecondary;
+  final Color textMuted;
+  final Color railTop;
+  final Color railBottom;
+  final Color railBorder;
+  final Color navActiveBackground;
+  final Color navActiveText;
+  final Color navInactiveIcon;
+  final Color navInactiveText;
+  final Color controlBackground;
+  final Color controlForeground;
+  final Color controlBorder;
+  final Color shadow;
+  final Color handle;
+  final Color ambientPrimary;
+  final Color ambientSecondary;
+  final Color subtleTint;
+  final Color analysisIconBackground;
+  final Color loadMoreBackground;
+
+  const _PortalPalette({
+    required this.isDark,
+    required this.scaffold,
+    required this.panel,
+    required this.panelStrong,
+    required this.panelSoft,
+    required this.border,
+    required this.divider,
+    required this.textPrimary,
+    required this.textSecondary,
+    required this.textMuted,
+    required this.railTop,
+    required this.railBottom,
+    required this.railBorder,
+    required this.navActiveBackground,
+    required this.navActiveText,
+    required this.navInactiveIcon,
+    required this.navInactiveText,
+    required this.controlBackground,
+    required this.controlForeground,
+    required this.controlBorder,
+    required this.shadow,
+    required this.handle,
+    required this.ambientPrimary,
+    required this.ambientSecondary,
+    required this.subtleTint,
+    required this.analysisIconBackground,
+    required this.loadMoreBackground,
+  });
+
+  factory _PortalPalette.of(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
+    if (isDark) {
+      return _PortalPalette(
+        isDark: true,
+        scaffold: const Color(0xFF0B1220),
+        panel: const Color(0xFF111A2B),
+        panelStrong: const Color(0xFF0F172A),
+        panelSoft: const Color(0xFF162134),
+        border: const Color(0xFF243146),
+        divider: const Color(0xFF223047),
+        textPrimary: scheme.onSurface,
+        textSecondary: const Color(0xFFC4CEE0),
+        textMuted: const Color(0xFF90A0B8),
+        railTop: const Color(0xFF0D1523),
+        railBottom: const Color(0xFF0A1320),
+        railBorder: const Color(0xFF233148),
+        navActiveBackground: scheme.primary.withValues(alpha: 0.22),
+        navActiveText: const Color(0xFF83B4FF),
+        navInactiveIcon: const Color(0xFF96A3B9),
+        navInactiveText: const Color(0xFFC0CADB),
+        controlBackground: const Color(0xFF141F31),
+        controlForeground: scheme.onSurface,
+        controlBorder: const Color(0xFF2A3952),
+        shadow: Colors.black.withValues(alpha: 0.3),
+        handle: const Color(0xFF2E405E),
+        ambientPrimary: const Color(0x441754CF),
+        ambientSecondary: const Color(0x221856B5),
+        subtleTint: const Color(0x221754CF),
+        analysisIconBackground: const Color(0xFF1A2942),
+        loadMoreBackground: const Color(0xFF131D2E),
+      );
+    }
+
+    return const _PortalPalette(
+      isDark: false,
+      scaffold: Color(0xFFF4F6FB),
+      panel: Color(0xFFFDFDFF),
+      panelStrong: Colors.white,
+      panelSoft: Color(0xFFF7F9FF),
+      border: Color(0xFFDDE3EF),
+      divider: Color(0xFFE1E7F5),
+      textPrimary: Color(0xFF111726),
+      textSecondary: Color(0xFF6E7482),
+      textMuted: Color(0xFF94A3B8),
+      railTop: Color(0xFFF7F9FF),
+      railBottom: Color(0xFFF0F4FF),
+      railBorder: Color(0xFFE1E7F5),
+      navActiveBackground: Color(0xFFDCE8FF),
+      navActiveText: Color(0xFF1754CF),
+      navInactiveIcon: Color(0xFF697386),
+      navInactiveText: Color(0xFF283245),
+      controlBackground: Colors.white,
+      controlForeground: Color(0xFF0F172A),
+      controlBorder: Color(0xFFE1E7F5),
+      shadow: Color(0x140B1324),
+      handle: Color(0xFFD7E1F2),
+      ambientPrimary: Color(0x331754CF),
+      ambientSecondary: Color(0x191856B5),
+      subtleTint: Color(0xFFE9F1FF),
+      analysisIconBackground: Color(0xFFE9F1FF),
+      loadMoreBackground: Colors.white,
+    );
+  }
+}
 
 class JournalPortalPage extends StatefulWidget {
   const JournalPortalPage({super.key});
@@ -139,30 +362,10 @@ class _JournalPortalPageState extends State<JournalPortalPage> {
     ),
   ];
 
-  final List<_SavedArticleData> _savedArticles = const [
-    _SavedArticleData(
-      title: 'Navigating Grief in Modern Times',
-      readTime: '6 min read',
-      imageUrl:
-          'https://images.unsplash.com/photo-1472396961693-142e6e269027?auto=format&fit=crop&w=600&q=80',
-    ),
-    _SavedArticleData(
-      title: 'The Power of Routine',
-      readTime: '5 min read',
-      imageUrl:
-          'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=600&q=80',
-    ),
-    _SavedArticleData(
-      title: 'Meditation 101',
-      readTime: '8 min read',
-      imageUrl:
-          'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=600&q=80',
-    ),
-  ];
-
   int _selectedTopicIndex = 0;
   int _visibleCardCount = _initialVisibleCardCount;
   bool _isRestoringDestination = true;
+  double _leftRailWidth = _defaultPortalSidebarWidth;
 
   @override
   void initState() {
@@ -173,6 +376,8 @@ class _JournalPortalPageState extends State<JournalPortalPage> {
   Future<void> _restoreDestination() async {
     final prefs = await SharedPreferences.getInstance();
     final destination = prefs.getString(_portalDestinationKey) ?? _portalDestinationHome;
+    final sidebarWidth =
+        _clampPortalSidebarWidth(prefs.getDouble(_portalSidebarWidthKey) ?? _defaultPortalSidebarWidth);
 
     if (!mounted) return;
 
@@ -186,16 +391,29 @@ class _JournalPortalPageState extends State<JournalPortalPage> {
       return;
     }
 
+    if (destination == _portalDestinationFavorites) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const _FavoritesPage()),
+        );
+      });
+      return;
+    }
+
     await prefs.setString(_portalDestinationKey, _portalDestinationHome);
     if (!mounted) return;
-    setState(() => _isRestoringDestination = false);
+    setState(() {
+      _leftRailWidth = sidebarWidth;
+      _isRestoringDestination = false;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     if (_isRestoringDestination) {
-      return const Scaffold(
-        backgroundColor: Color(0xFFF4F6FB),
+      return Scaffold(
+        backgroundColor: _PortalPalette.of(context).scaffold,
         body: Center(
           child: CircularProgressIndicator(),
         ),
@@ -207,8 +425,10 @@ class _JournalPortalPageState extends State<JournalPortalPage> {
     final showRightRail = width >= 1480;
     final isAdmin = AdminAccess.isAdminEmail(FirebaseAuthManager().currentUser?.email);
 
+    final palette = _PortalPalette.of(context);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FB),
+      backgroundColor: palette.scaffold,
       body: SafeArea(
         child: Stack(
           children: [
@@ -219,11 +439,18 @@ class _JournalPortalPageState extends State<JournalPortalPage> {
                 if (showLeftRail)
                   _LeftRail(
                     isAdmin: isAdmin,
+                    width: _leftRailWidth,
                     activeItem: _PortalSidebarItem.home,
                     onHomeTap: () {},
                     onJournalTap: () {
                       _openJournal();
                     },
+                    onFavoritesTap: () {
+                      _openFavorites();
+                    },
+                    onSwitchSessionTap: () => _switchToTherapiiSession(context),
+                    onResizeBy: _resizeSidebarBy,
+                    onResizeEnd: _saveSidebarWidth,
                   ),
                 Expanded(
                   child: _FeedPane(
@@ -238,7 +465,7 @@ class _JournalPortalPageState extends State<JournalPortalPage> {
                     onLoadMore: _loadMoreArticles,
                   ),
                 ),
-                if (showRightRail) _RightRail(savedItems: _savedArticles),
+                if (showRightRail) const _RightRail(),
               ],
             ),
             if (!showLeftRail) ...[
@@ -271,7 +498,7 @@ class _JournalPortalPageState extends State<JournalPortalPage> {
                       if (context.mounted) Navigator.of(context).maybePop();
                     },
                     style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFF0F172A),
+                      backgroundColor: palette.panelStrong,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -298,6 +525,15 @@ class _JournalPortalPageState extends State<JournalPortalPage> {
     );
   }
 
+  Future<void> _openFavorites() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_portalDestinationKey, _portalDestinationFavorites);
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const _FavoritesPage()),
+    );
+  }
+
   List<_FeedCardData> get _visibleCards {
     final upperBound = _visibleCardCount.clamp(0, _cards.length) as int;
     return _cards.take(upperBound).toList(growable: false);
@@ -309,6 +545,16 @@ class _JournalPortalPageState extends State<JournalPortalPage> {
       _visibleCardCount = (_visibleCardCount + _loadMoreBatchSize).clamp(0, _cards.length) as int;
     });
   }
+
+  void _resizeSidebarBy(double delta) {
+    setState(() {
+      _leftRailWidth = _clampPortalSidebarWidth(_leftRailWidth + delta);
+    });
+  }
+
+  void _saveSidebarWidth() {
+    _persistPortalSidebarWidth(_leftRailWidth);
+  }
 }
 
 class _AmbientBackground extends StatelessWidget {
@@ -316,6 +562,8 @@ class _AmbientBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = _PortalPalette.of(context);
+
     return IgnorePointer(
       child: Stack(
         children: [
@@ -325,12 +573,9 @@ class _AmbientBackground extends StatelessWidget {
             child: Container(
               width: 360,
               height: 360,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [Color(0x331754CF), Color(0x001754CF)],
-                  radius: 0.85,
-                ),
+                color: palette.ambientPrimary,
               ),
             ),
           ),
@@ -340,12 +585,9 @@ class _AmbientBackground extends StatelessWidget {
             child: Container(
               width: 300,
               height: 300,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [Color(0x191856B5), Color(0x001856B5)],
-                  radius: 0.9,
-                ),
+                color: palette.ambientSecondary,
               ),
             ),
           ),
@@ -357,50 +599,103 @@ class _AmbientBackground extends StatelessWidget {
 
 class _LeftRail extends StatelessWidget {
   final bool isAdmin;
+  final double width;
   final _PortalSidebarItem activeItem;
   final VoidCallback onHomeTap;
   final VoidCallback onJournalTap;
+  final VoidCallback onFavoritesTap;
+  final Future<void> Function() onSwitchSessionTap;
+  final ValueChanged<double> onResizeBy;
+  final VoidCallback onResizeEnd;
   const _LeftRail({
     required this.isAdmin,
+    required this.width,
     required this.activeItem,
     required this.onHomeTap,
     required this.onJournalTap,
+    required this.onFavoritesTap,
+    required this.onSwitchSessionTap,
+    required this.onResizeBy,
+    required this.onResizeEnd,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 276,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFFF7F9FF), Color(0xFFF0F4FF)],
-        ),
-        border: Border(right: BorderSide(color: Color(0xFFE1E7F5))),
-      ),
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    final palette = _PortalPalette.of(context);
+
+    return SizedBox(
+      width: width,
+      child: Stack(
         children: [
-          _BrandCard(isAdmin: isAdmin),
-          const SizedBox(height: 24),
-          _NavTile(
-            icon: Icons.home_outlined,
-            label: 'Home',
-            active: activeItem == _PortalSidebarItem.home,
-            onTap: onHomeTap,
+          Container(
+            decoration: BoxDecoration(
+              color: palette.railTop,
+              border: Border(right: BorderSide(color: palette.railBorder)),
+            ),
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _BrandCard(isAdmin: isAdmin),
+                const SizedBox(height: 24),
+                _NavTile(
+                  icon: Icons.home_outlined,
+                  label: 'Home',
+                  active: activeItem == _PortalSidebarItem.home,
+                  onTap: onHomeTap,
+                ),
+                _NavTile(
+                  icon: Icons.menu_book_rounded,
+                  label: 'Journal',
+                  active: activeItem == _PortalSidebarItem.journal,
+                  onTap: onJournalTap,
+                ),
+                _NavTile(
+                  icon: Icons.bookmark_outline_rounded,
+                  label: 'Favorites',
+                  active: activeItem == _PortalSidebarItem.favorites,
+                  onTap: onFavoritesTap,
+                ),
+                const SizedBox(height: 14),
+                _SessionSwitchCard(onTap: onSwitchSessionTap),
+                const Spacer(),
+                const _ThemeModeButton(),
+                const SizedBox(height: 10),
+                const _LogoutButton(),
+              ],
+            ),
           ),
-          _NavTile(
-            icon: Icons.menu_book_rounded,
-            label: 'Journal',
-            active: activeItem == _PortalSidebarItem.journal,
-            onTap: onJournalTap,
+          Positioned(
+            top: 0,
+            right: 0,
+            bottom: 0,
+            child: MouseRegion(
+              cursor: SystemMouseCursors.resizeLeftRight,
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onHorizontalDragUpdate: (details) {
+                  onResizeBy(details.delta.dx);
+                },
+                onHorizontalDragEnd: (_) {
+                  onResizeEnd();
+                },
+                child: SizedBox(
+                  width: 18,
+                  child: Center(
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      width: 4,
+                      height: 72,
+                      decoration: BoxDecoration(
+                        color: palette.handle,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
-          const SizedBox(height: 8),
-          const _ThemeModeButton(),
-          const Spacer(),
-          const _LogoutButton(),
         ],
       ),
     );
@@ -413,14 +708,16 @@ class _BrandCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = _PortalPalette.of(context);
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: palette.panelStrong,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE5EAF5)),
+        border: Border.all(color: palette.border),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 18, offset: const Offset(0, 12)),
+          BoxShadow(color: palette.shadow, blurRadius: 18, offset: const Offset(0, 12)),
         ],
       ),
       child: Row(
@@ -440,12 +737,12 @@ class _BrandCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Therapii Portal',
                   style: TextStyle(
                     fontWeight: FontWeight.w900,
                     fontSize: 18,
-                    color: Color(0xFF0F172A),
+                    color: palette.textPrimary,
                     letterSpacing: -0.2,
                   ),
                 ),
@@ -454,10 +751,10 @@ class _BrandCard extends StatelessWidget {
                   children: [
                     Text(
                       isAdmin ? 'Admin Account' : 'Free Member',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 12,
-                        color: Color(0xFF64748B),
+                        color: palette.textSecondary,
                       ),
                     ),
                     if (isAdmin) ...[
@@ -497,15 +794,16 @@ class _ThemeModeButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final palette = _PortalPalette.of(context);
 
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton.icon(
         onPressed: themeModeController.toggleLightDark,
         style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: Color(0xFFE1E7F5)),
-          foregroundColor: const Color(0xFF0F172A),
-          backgroundColor: Colors.white.withValues(alpha: 0.72),
+          side: BorderSide(color: palette.controlBorder),
+          foregroundColor: palette.controlForeground,
+          backgroundColor: palette.controlBackground.withValues(alpha: palette.isDark ? 1 : 0.72),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           textStyle: const TextStyle(fontWeight: FontWeight.w800),
@@ -520,11 +818,206 @@ class _ThemeModeButton extends StatelessWidget {
   }
 }
 
+class _SessionSwitchCard extends StatefulWidget {
+  final Future<void> Function() onTap;
+
+  const _SessionSwitchCard({required this.onTap});
+
+  @override
+  State<_SessionSwitchCard> createState() => _SessionSwitchCardState();
+}
+
+class _SessionSwitchCardState extends State<_SessionSwitchCard> {
+  bool _hovered = false;
+  bool _pressed = false;
+  bool _loading = false;
+
+  Future<void> _handleTap() async {
+    if (_loading) return;
+    setState(() => _loading = true);
+    try {
+      await widget.onTap();
+    } finally {
+      if (mounted) {
+        setState(() => _loading = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = _PortalPalette.of(context);
+    final isElevated = _hovered || _pressed || _loading;
+    final cardColor = palette.isDark ? const Color(0xFF13213A) : const Color(0xFFF0F5FF);
+    final borderColor = palette.isDark ? const Color(0xFF2A4269) : const Color(0xFFCFE0FF);
+    final iconBackground = palette.isDark ? const Color(0xFF1E3A6B) : const Color(0xFFDCE8FF);
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedScale(
+        scale: _pressed ? 0.985 : 1,
+        duration: const Duration(milliseconds: 160),
+        curve: Curves.easeOutCubic,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          margin: const EdgeInsets.only(bottom: 14),
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: borderColor, width: 1.15),
+            boxShadow: [
+              BoxShadow(
+                color: palette.shadow.withValues(
+                  alpha: isElevated ? (palette.isDark ? 0.42 : 0.14) : (palette.isDark ? 0.28 : 0.08),
+                ),
+                blurRadius: isElevated ? 24 : 14,
+                offset: Offset(0, isElevated ? 14 : 8),
+                spreadRadius: isElevated ? 0 : -2,
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(22),
+            child: InkWell(
+              onTap: _handleTap,
+              borderRadius: BorderRadius.circular(22),
+              splashColor: const Color(0x221754CF),
+              highlightColor: Colors.transparent,
+              onHighlightChanged: (value) => setState(() => _pressed = value),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: palette.panelStrong.withValues(alpha: palette.isDark ? 0.2 : 0.7),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(color: palette.border.withValues(alpha: palette.isDark ? 0.8 : 1)),
+                      ),
+                      child: Text(
+                        'THERAPII SESSION',
+                        style: TextStyle(
+                          color: palette.navActiveText,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.55,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: iconBackground,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: const Icon(
+                            Icons.swap_horiz_rounded,
+                            color: Color(0xFF1754CF),
+                            size: 22,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Switch to Therapii',
+                                style: TextStyle(
+                                  color: palette.textPrimary,
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w900,
+                                  height: 1.05,
+                                  letterSpacing: -0.2,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                'Return to your live support space, messages, and guided session tools.',
+                                style: TextStyle(
+                                  color: palette.textSecondary,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  height: 1.42,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: palette.panelStrong.withValues(alpha: palette.isDark ? 0.22 : 0.76),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: palette.border.withValues(alpha: palette.isDark ? 0.85 : 1)),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              _loading ? 'Opening workspace...' : 'Open session workspace',
+                              style: TextStyle(
+                                color: palette.textPrimary,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 180),
+                            child: _loading
+                                ? SizedBox(
+                                    key: const ValueKey('loading'),
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(palette.navActiveText),
+                                    ),
+                                  )
+                                : Icon(
+                                    Icons.arrow_forward_rounded,
+                                    key: const ValueKey('arrow'),
+                                    color: palette.navActiveText,
+                                    size: 18,
+                                  ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _LogoutButton extends StatelessWidget {
   const _LogoutButton();
 
   @override
   Widget build(BuildContext context) {
+    final palette = _PortalPalette.of(context);
+
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton.icon(
@@ -535,8 +1028,9 @@ class _LogoutButton extends StatelessWidget {
           if (context.mounted) Navigator.of(context).maybePop();
         },
         style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: Color(0xFFE1E7F5)),
-          foregroundColor: const Color(0xFF0F172A),
+          side: BorderSide(color: palette.controlBorder),
+          foregroundColor: palette.controlForeground,
+          backgroundColor: palette.controlBackground,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           textStyle: const TextStyle(fontWeight: FontWeight.w800),
@@ -562,11 +1056,13 @@ class _NavTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = _PortalPalette.of(context);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(14),
-        color: active ? const Color(0xFFDCE8FF) : Colors.transparent,
+        color: active ? palette.navActiveBackground : Colors.transparent,
       ),
       child: ListTile(
         onTap: onTap,
@@ -576,7 +1072,7 @@ class _NavTile extends StatelessWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
         leading: Icon(
           icon,
-          color: active ? const Color(0xFF1754CF) : const Color(0xFF697386),
+          color: active ? palette.navActiveText : palette.navInactiveIcon,
           size: 22,
         ),
         title: Text(
@@ -584,7 +1080,7 @@ class _NavTile extends StatelessWidget {
           style: TextStyle(
             fontWeight: active ? FontWeight.w700 : FontWeight.w600,
             fontSize: 15,
-            color: active ? const Color(0xFF1754CF) : const Color(0xFF283245),
+            color: active ? palette.navActiveText : palette.navInactiveText,
           ),
         ),
       ),
@@ -601,41 +1097,15 @@ class _JournalReflectionPage extends StatefulWidget {
 
 class _JournalReflectionPageState extends State<_JournalReflectionPage> {
   final TextEditingController _reflectionController = TextEditingController();
-  static const _homeSurface = Color(0xFFF4F6FB);
-  static const _homePanel = Color(0xFFFDFDFF);
-  static const _homeBorder = Color(0xFFDDE3EF);
-
-  static const List<_WisdomFeedItemData> _wisdomFeed = [
-    _WisdomFeedItemData(
-      timestamp: 'Yesterday • 10:42 PM',
-      quote:
-          '"You noticed a pattern of seeking validation in stressful environments. This awareness is the first step toward internal stability."',
-      tags: ['Self-Regulation', 'Work Harmony'],
-      accent: Color(0xFF6EA8FF),
-      icon: Icons.auto_awesome_rounded,
-    ),
-    _WisdomFeedItemData(
-      timestamp: 'May 12 • Evening',
-      quote:
-          '"Your description of the ocean breeze suggests that sensory-based grounding techniques are highly effective for you."',
-      tags: ['Grounding'],
-      accent: Color(0xFFB17CFF),
-      icon: Icons.psychology_alt_rounded,
-    ),
-    _WisdomFeedItemData(
-      timestamp: 'May 10 • Post-session',
-      quote:
-          '"Growth is often quiet. You\'ve consistently mentioned patience three times this week. A shift is occurring."',
-      tags: ['Patience', 'Growth'],
-      accent: Color(0xFF47C98A),
-      icon: Icons.spa_rounded,
-    ),
-  ];
+  final AiConversationService _aiService = AiConversationService();
+  bool _isArchiving = false;
+  double _leftRailWidth = _defaultPortalSidebarWidth;
 
   @override
   void initState() {
     super.initState();
     _persistDestination();
+    _restoreSidebarWidth();
   }
 
   @override
@@ -647,6 +1117,14 @@ class _JournalReflectionPageState extends State<_JournalReflectionPage> {
   Future<void> _persistDestination() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_portalDestinationKey, _portalDestinationJournal);
+  }
+
+  Future<void> _restoreSidebarWidth() async {
+    final width = await _loadPortalSidebarWidth();
+    if (!mounted) return;
+    setState(() {
+      _leftRailWidth = width;
+    });
   }
 
   String _firstName() {
@@ -683,16 +1161,55 @@ class _JournalReflectionPageState extends State<_JournalReflectionPage> {
     );
   }
 
-  void _archiveReflection() {
-    final hasText = _reflectionController.text.trim().isNotEmpty;
-    if (!hasText) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Reflection archived. Your wisdom feed will continue adapting.'),
-      ),
+  Future<void> _openFavorites() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_portalDestinationKey, _portalDestinationFavorites);
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const _FavoritesPage()),
     );
-    setState(() => _reflectionController.clear());
+  }
+
+  Future<void> _archiveReflection() async {
+    final reflection = _reflectionController.text.trim();
+    if (reflection.isEmpty || _isArchiving) return;
+
+    final currentUser = FirebaseAuthManager().currentUser;
+    final patientId = currentUser?.uid;
+    if (patientId == null || patientId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to archive this reflection right now. Please sign in again.'),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isArchiving = true);
+    try {
+      await _aiService.saveJournalReflection(
+        patientId: patientId,
+        summary: reflection,
+      );
+      if (!mounted) return;
+      _reflectionController.clear();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Reflection archived to your wisdom feed.'),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to archive reflection right now. Please try again.'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isArchiving = false);
+      }
+    }
   }
 
   @override
@@ -701,8 +1218,10 @@ class _JournalReflectionPageState extends State<_JournalReflectionPage> {
     final showLeftRail = width >= 1200;
     final isAdmin = AdminAccess.isAdminEmail(FirebaseAuthManager().currentUser?.email);
 
+    final palette = _PortalPalette.of(context);
+
     return Scaffold(
-      backgroundColor: _homeSurface,
+      backgroundColor: palette.scaffold,
       body: SafeArea(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -710,23 +1229,502 @@ class _JournalReflectionPageState extends State<_JournalReflectionPage> {
             if (showLeftRail)
               _LeftRail(
                 isAdmin: isAdmin,
+                width: _leftRailWidth,
                 activeItem: _PortalSidebarItem.journal,
                 onHomeTap: () {
                   _openHome();
                 },
                 onJournalTap: () {},
+                onFavoritesTap: () {
+                  _openFavorites();
+                },
+                onSwitchSessionTap: () => _switchToTherapiiSession(context),
+                onResizeBy: _resizeSidebarBy,
+                onResizeEnd: _saveSidebarWidth,
               ),
             Expanded(
               child: _JournalReflectionPane(
                 showCompactHeader: !showLeftRail,
                 greeting: '${_greeting()}, ${_firstName()}.',
                 controller: _reflectionController,
-                wisdomFeed: _wisdomFeed,
-                onArchive: _archiveReflection,
+                isArchiving: _isArchiving,
+                onArchive: () {
+                  _archiveReflection();
+                },
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _resizeSidebarBy(double delta) {
+    setState(() {
+      _leftRailWidth = _clampPortalSidebarWidth(_leftRailWidth + delta);
+    });
+  }
+
+  void _saveSidebarWidth() {
+    _persistPortalSidebarWidth(_leftRailWidth);
+  }
+}
+
+class _FavoritesPage extends StatefulWidget {
+  const _FavoritesPage();
+
+  @override
+  State<_FavoritesPage> createState() => _FavoritesPageState();
+}
+
+class _FavoritesPageState extends State<_FavoritesPage> {
+  double _leftRailWidth = _defaultPortalSidebarWidth;
+
+  @override
+  void initState() {
+    super.initState();
+    _persistDestination();
+    _restoreSidebarWidth();
+  }
+
+  Future<void> _persistDestination() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_portalDestinationKey, _portalDestinationFavorites);
+  }
+
+  Future<void> _restoreSidebarWidth() async {
+    final width = await _loadPortalSidebarWidth();
+    if (!mounted) return;
+    setState(() {
+      _leftRailWidth = width;
+    });
+  }
+
+  Future<void> _openHome() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_portalDestinationKey, _portalDestinationHome);
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const JournalPortalPage()),
+    );
+  }
+
+  Future<void> _openJournal() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_portalDestinationKey, _portalDestinationJournal);
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const _JournalReflectionPage()),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final width = MediaQuery.sizeOf(context).width;
+    final showLeftRail = width >= 1100;
+    final isAdmin = AdminAccess.isAdminEmail(FirebaseAuthManager().currentUser?.email);
+
+    return Scaffold(
+      backgroundColor: _PortalPalette.of(context).scaffold,
+      body: SafeArea(
+        child: Stack(
+          children: [
+            const _AmbientBackground(),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (showLeftRail)
+                  _LeftRail(
+                    isAdmin: isAdmin,
+                    width: _leftRailWidth,
+                    activeItem: _PortalSidebarItem.favorites,
+                    onHomeTap: () {
+                      _openHome();
+                    },
+                    onJournalTap: () {
+                      _openJournal();
+                    },
+                    onFavoritesTap: () {},
+                    onSwitchSessionTap: () => _switchToTherapiiSession(context),
+                    onResizeBy: _resizeSidebarBy,
+                    onResizeEnd: _saveSidebarWidth,
+                  ),
+                Expanded(
+                  child: _FavoritesPane(showCompactHeader: !showLeftRail),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _resizeSidebarBy(double delta) {
+    setState(() {
+      _leftRailWidth = _clampPortalSidebarWidth(_leftRailWidth + delta);
+    });
+  }
+
+  void _saveSidebarWidth() {
+    _persistPortalSidebarWidth(_leftRailWidth);
+  }
+}
+
+class _FavoritesPane extends StatelessWidget {
+  final bool showCompactHeader;
+
+  const _FavoritesPane({required this.showCompactHeader});
+
+  Query<Map<String, dynamic>>? get _favoritesQuery {
+    final userId = FirebaseAuthManager().currentUser?.uid;
+    if (userId == null || userId.isEmpty) return null;
+    return FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('favorite_journal_articles')
+        .orderBy('saved_at', descending: true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final query = _favoritesQuery;
+    final horizontalPadding = showCompactHeader ? 16.0 : 30.0;
+    final palette = _PortalPalette.of(context);
+
+    return CustomScrollView(
+      physics: const BouncingScrollPhysics(),
+      slivers: [
+        SliverPadding(
+          padding: EdgeInsets.fromLTRB(horizontalPadding, showCompactHeader ? 12 : 24, horizontalPadding, 24),
+          sliver: SliverToBoxAdapter(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 980),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (showCompactHeader) ...[
+                      const _CompactPortalHeader(),
+                      const SizedBox(height: 22),
+                    ],
+                    Text(
+                      'Favorites',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 38,
+                        height: 1.02,
+                        color: palette.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Everything you save from the journal feed appears here automatically.',
+                      style: TextStyle(
+                        color: palette.textSecondary,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    if (query == null)
+                      const _FavoriteStateCard(
+                        icon: Icons.person_off_rounded,
+                        title: 'Sign in to view favorites',
+                        message: 'Your saved journal articles are stored in Firebase and tied to your account.',
+                      )
+                    else
+                      StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                        stream: query.snapshots(),
+                        builder: (context, snapshot) {
+                          final items = snapshot.hasData
+                              ? snapshot.data!.docs
+                                  .map(_FavoriteArticleData.fromDoc)
+                                  .toList(growable: false)
+                              : const <_FavoriteArticleData>[];
+
+                          if (snapshot.connectionState == ConnectionState.waiting && items.isEmpty) {
+                            return const _FavoriteStateCard(
+                              icon: Icons.hourglass_top_rounded,
+                              title: 'Loading favorites',
+                              message: 'Saved journal articles from Firebase are being prepared.',
+                            );
+                          }
+
+                          if (snapshot.hasError) {
+                            return const _FavoriteStateCard(
+                              icon: Icons.cloud_off_rounded,
+                              title: 'Unable to load favorites',
+                              message: 'We could not read your saved journal articles from Firebase right now.',
+                            );
+                          }
+
+                          if (items.isEmpty) {
+                            return const _FavoriteStateCard(
+                              icon: Icons.bookmark_outline_rounded,
+                              title: 'No favorites yet',
+                              message: 'Tap the save icon on any journal article and it will appear here.',
+                            );
+                          }
+
+                          return _FavoriteGrid(items: items);
+                        },
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _FavoriteGrid extends StatelessWidget {
+  final List<_FavoriteArticleData> items;
+
+  const _FavoriteGrid({required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final useTwoColumns = constraints.maxWidth >= 820;
+        if (!useTwoColumns) {
+          return Column(
+            children: [
+              for (var i = 0; i < items.length; i++) ...[
+                _FavoriteArticleCard(item: items[i]),
+                if (i < items.length - 1) const SizedBox(height: 16),
+              ],
+            ],
+          );
+        }
+
+        final left = <_FavoriteArticleData>[];
+        final right = <_FavoriteArticleData>[];
+        for (var i = 0; i < items.length; i++) {
+          (i.isEven ? left : right).add(items[i]);
+        }
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: _FavoriteColumn(items: left)),
+            const SizedBox(width: 16),
+            Expanded(child: _FavoriteColumn(items: right)),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _FavoriteColumn extends StatelessWidget {
+  final List<_FavoriteArticleData> items;
+
+  const _FavoriteColumn({required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        for (var i = 0; i < items.length; i++) ...[
+          _FavoriteArticleCard(item: items[i]),
+          if (i < items.length - 1) const SizedBox(height: 16),
+        ],
+      ],
+    );
+  }
+}
+
+class _FavoriteArticleCard extends StatelessWidget {
+  final _FavoriteArticleData item;
+
+  const _FavoriteArticleCard({required this.item});
+
+  void _openArticle(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => JournalArticlePage(
+          title: item.title,
+          category: item.category,
+          subtitle: item.subtitle,
+          readTime: item.readTime,
+          imageUrl: item.imageUrl,
+          authorName: item.authorName,
+          authorRole: item.authorRole,
+          publishedDate: item.publishedDate,
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = _PortalPalette.of(context);
+
+    return Material(
+      color: palette.panelStrong.withOpacity(palette.isDark ? 1 : 0.95),
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: () => _openArticle(context),
+        borderRadius: BorderRadius.circular(18),
+        child: Ink(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: palette.border),
+            boxShadow: [
+              BoxShadow(
+                color: palette.shadow,
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                height: 210,
+                width: double.infinity,
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(17),
+                    topRight: Radius.circular(17),
+                  ),
+                  child: Image.network(
+                    item.imageUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(color: palette.panelSoft),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            item.category,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF1754CF),
+                              letterSpacing: 0.4,
+                            ),
+                          ),
+                        ),
+                        if (item.savedLabel != null)
+                          Text(
+                            item.savedLabel!,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: palette.textMuted,
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      item.title,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: palette.textPrimary,
+                        height: 1.16,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      item.subtitle,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: palette.textSecondary,
+                        height: 1.38,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Divider(height: 1, color: palette.divider),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Text(
+                          item.readTime,
+                          style: TextStyle(
+                            color: palette.textMuted,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const Spacer(),
+                        const Icon(Icons.bookmark_rounded, size: 20, color: Color(0xFF1754CF)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FavoriteStateCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String message;
+
+  const _FavoriteStateCard({
+    required this.icon,
+    required this.title,
+    required this.message,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = _PortalPalette.of(context);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
+      decoration: BoxDecoration(
+        color: palette.panelStrong.withOpacity(palette.isDark ? 1 : 0.96),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: palette.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: palette.textMuted, size: 20),
+          const SizedBox(height: 16),
+          Text(
+            title,
+            style: TextStyle(
+              color: palette.textPrimary,
+              fontWeight: FontWeight.w800,
+              fontSize: 18,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            message,
+            style: TextStyle(
+              color: palette.textSecondary,
+              fontWeight: FontWeight.w500,
+              fontSize: 15,
+              height: 1.5,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -736,14 +1734,14 @@ class _JournalReflectionPane extends StatefulWidget {
   final bool showCompactHeader;
   final String greeting;
   final TextEditingController controller;
-  final List<_WisdomFeedItemData> wisdomFeed;
+  final bool isArchiving;
   final VoidCallback onArchive;
 
   const _JournalReflectionPane({
     required this.showCompactHeader,
     required this.greeting,
     required this.controller,
-    required this.wisdomFeed,
+    required this.isArchiving,
     required this.onArchive,
   });
 
@@ -781,8 +1779,10 @@ class _JournalReflectionPaneState extends State<_JournalReflectionPane> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = _PortalPalette.of(context);
+
     return Container(
-      color: _JournalReflectionPageState._homeSurface,
+      color: palette.scaffold,
       child: LayoutBuilder(
         builder: (context, constraints) {
           final showSplitLayout = constraints.maxWidth >= 1120;
@@ -813,6 +1813,7 @@ class _JournalReflectionPaneState extends State<_JournalReflectionPane> {
                         const SizedBox(height: 24),
                         _ReflectionActions(
                           enabled: _hasText,
+                          isArchiving: widget.isArchiving,
                           onArchive: widget.onArchive,
                         ),
                       ],
@@ -821,7 +1822,7 @@ class _JournalReflectionPaneState extends State<_JournalReflectionPane> {
                 ),
                 Container(
                   width: 1,
-                  color: const Color(0xFFE1E7F5),
+                  color: palette.divider,
                 ),
                 SizedBox(
                   width: 430,
@@ -829,7 +1830,7 @@ class _JournalReflectionPaneState extends State<_JournalReflectionPane> {
                     padding: const EdgeInsets.fromLTRB(34, 36, 32, 22),
                     child: SingleChildScrollView(
                       physics: const BouncingScrollPhysics(),
-                      child: _WisdomFeedColumn(items: widget.wisdomFeed),
+                      child: const _WisdomFeedColumn(),
                     ),
                   ),
                 ),
@@ -861,10 +1862,11 @@ class _JournalReflectionPaneState extends State<_JournalReflectionPane> {
                 const SizedBox(height: 22),
                 _ReflectionActions(
                   enabled: _hasText,
+                  isArchiving: widget.isArchiving,
                   onArchive: widget.onArchive,
                 ),
                 const SizedBox(height: 30),
-                _WisdomFeedColumn(items: widget.wisdomFeed),
+                const _WisdomFeedColumn(),
               ],
             ),
           );
@@ -879,22 +1881,24 @@ class _CompactPortalHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = _PortalPalette.of(context);
+
     return Row(
       children: [
         IconButton(
           onPressed: () => Navigator.of(context).maybePop(),
           icon: const Icon(Icons.arrow_back_rounded),
           style: IconButton.styleFrom(
-            backgroundColor: Colors.white,
-            foregroundColor: const Color(0xFF1A2131),
+            backgroundColor: palette.controlBackground,
+            foregroundColor: palette.controlForeground,
           ),
           tooltip: 'Back',
         ),
         const SizedBox(width: 10),
-        const Text(
+        Text(
           'Therapii Portal',
           style: TextStyle(
-            color: Color(0xFF1A2131),
+            color: palette.textPrimary,
             fontWeight: FontWeight.w700,
             fontSize: 18,
           ),
@@ -913,6 +1917,7 @@ class _JournalIntro extends StatelessWidget {
     final width = MediaQuery.sizeOf(context).width;
     final greetingSize = width < 700 ? 42.0 : 64.0;
     final promptSize = width < 700 ? 22.0 : 28.0;
+    final palette = _PortalPalette.of(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -920,7 +1925,7 @@ class _JournalIntro extends StatelessWidget {
         Text(
           greeting,
           style: TextStyle(
-            color: Color(0xFF1E293B),
+            color: palette.textPrimary,
             fontFamily: 'Satoshi',
             fontSize: greetingSize,
             height: 0.92,
@@ -932,7 +1937,7 @@ class _JournalIntro extends StatelessWidget {
         Text(
           '"What are you carrying with you tonight?"',
           style: TextStyle(
-            color: Color(0xFF9CA3AF),
+            color: palette.textMuted,
             fontFamily: 'Satoshi',
             fontStyle: FontStyle.italic,
             fontSize: promptSize,
@@ -952,15 +1957,16 @@ class _ReflectionEditor extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasText = controller.text.trim().isNotEmpty;
+    final palette = _PortalPalette.of(context);
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: _JournalReflectionPageState._homePanel,
+        color: palette.panel,
         borderRadius: BorderRadius.circular(36),
-        border: Border.all(color: _JournalReflectionPageState._homeBorder),
-        boxShadow: const [
+        border: Border.all(color: palette.border),
+        boxShadow: [
           BoxShadow(
-            color: Color(0x120B1324),
+            color: palette.shadow,
             blurRadius: 24,
             offset: Offset(0, 14),
           ),
@@ -976,8 +1982,8 @@ class _ReflectionEditor extends StatelessWidget {
               minLines: null,
               maxLines: null,
               textCapitalization: TextCapitalization.sentences,
-              style: const TextStyle(
-                color: Color(0xFF334155),
+              style: TextStyle(
+                color: palette.textSecondary,
                 fontSize: 21,
                 height: 1.65,
               ),
@@ -988,13 +1994,13 @@ class _ReflectionEditor extends StatelessWidget {
               ),
             ),
             if (!hasText)
-              const IgnorePointer(
+              IgnorePointer(
                 child: Padding(
                   padding: EdgeInsets.only(top: 6),
                   child: Text(
                     'Begin typing to release...',
                     style: TextStyle(
-                      color: Color(0xFFD1D5DB),
+                      color: palette.textMuted.withValues(alpha: 0.55),
                       fontFamily: 'Satoshi',
                       fontSize: 23,
                       fontWeight: FontWeight.w500,
@@ -1011,16 +2017,19 @@ class _ReflectionEditor extends StatelessWidget {
 
 class _ReflectionActions extends StatelessWidget {
   final bool enabled;
+  final bool isArchiving;
   final VoidCallback onArchive;
 
   const _ReflectionActions({
     required this.enabled,
+    required this.isArchiving,
     required this.onArchive,
   });
 
   @override
   Widget build(BuildContext context) {
     final isCompact = MediaQuery.sizeOf(context).width < 760;
+    final palette = _PortalPalette.of(context);
 
     final actionButtons = Row(
       mainAxisSize: MainAxisSize.min,
@@ -1032,10 +2041,10 @@ class _ReflectionActions extends StatelessWidget {
     );
 
     final archiveButton = FilledButton(
-      onPressed: enabled ? onArchive : null,
+      onPressed: enabled && !isArchiving ? onArchive : null,
       style: FilledButton.styleFrom(
-        backgroundColor: const Color(0xFF1F2937),
-        disabledBackgroundColor: const Color(0xFFCBD5E1),
+        backgroundColor: palette.panelStrong,
+        disabledBackgroundColor: palette.controlBorder,
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
@@ -1044,12 +2053,19 @@ class _ReflectionActions extends StatelessWidget {
           fontSize: 16,
         ),
       ),
-      child: const Row(
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('Archive Reflection'),
-          SizedBox(width: 10),
-          Icon(Icons.north_east_rounded, size: 18),
+          Text(isArchiving ? 'Archiving...' : 'Archive Reflection'),
+          const SizedBox(width: 10),
+          if (isArchiving)
+            const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white),
+            )
+          else
+            const Icon(Icons.north_east_rounded, size: 18),
         ],
       ),
     );
@@ -1081,88 +2097,284 @@ class _ActionCircleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = _PortalPalette.of(context);
+
     return Container(
       width: 64,
       height: 64,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: palette.controlBackground,
         shape: BoxShape.circle,
-        border: Border.all(color: _JournalReflectionPageState._homeBorder),
-        boxShadow: const [
+        border: Border.all(color: palette.border),
+        boxShadow: [
           BoxShadow(
-            color: Color(0x100B1324),
+            color: palette.shadow,
             blurRadius: 14,
             offset: Offset(0, 8),
           ),
         ],
       ),
-      child: Icon(icon, color: const Color(0xFF9CA3AF), size: 28),
+      child: Icon(icon, color: palette.textMuted, size: 28),
     );
   }
 }
 
-class _WisdomFeedColumn extends StatelessWidget {
-  final List<_WisdomFeedItemData> items;
-  const _WisdomFeedColumn({required this.items});
+class _WisdomFeedColumn extends StatefulWidget {
+  const _WisdomFeedColumn();
+
+  @override
+  State<_WisdomFeedColumn> createState() => _WisdomFeedColumnState();
+}
+
+class _WisdomFeedColumnState extends State<_WisdomFeedColumn> {
+  static final AiConversationService _aiService = AiConversationService();
+  final Set<String> _deletingIds = <String>{};
+
+  Future<void> _deleteItem(_WisdomFeedItemData item) async {
+    final currentUser = FirebaseAuthManager().currentUser;
+    final patientId = currentUser?.uid;
+    if (patientId == null || patientId.isEmpty || _deletingIds.contains(item.id)) {
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) {
+            return AlertDialog(
+              title: const Text('Delete wisdom note?'),
+              content: const Text(
+                'This note will be permanently removed from your wisdom feed.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(true),
+                  child: const Text('Delete'),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
+
+    if (!confirmed || !mounted) return;
+
+    setState(() {
+      _deletingIds.add(item.id);
+    });
+
+    try {
+      await _aiService.deletePatientSummary(
+        patientId: patientId,
+        summaryId: item.id,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Wisdom note deleted.')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to delete this wisdom note right now.')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _deletingIds.remove(item.id);
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: const [
-            Expanded(
-              child: Text(
-                'WISDOM FEED',
-                style: TextStyle(
-                  color: Color(0xFF94A3B8),
-                  fontWeight: FontWeight.w800,
-                  fontSize: 12,
-                  letterSpacing: 3,
-                ),
-              ),
-            ),
-            Text(
-              'UPDATED',
-              style: TextStyle(
-                color: Color(0xFFB0B8C4),
-                fontWeight: FontWeight.w600,
-                fontSize: 12,
-              ),
-            ),
-            SizedBox(width: 8),
-            Icon(Icons.circle, color: Color(0xFF8BB5FF), size: 10),
-          ],
-        ),
-        const SizedBox(height: 24),
-        for (var i = 0; i < items.length; i++) ...[
-          _WisdomFeedCard(item: items[i]),
-          if (i < items.length - 1) const SizedBox(height: 26),
+    final currentUser = FirebaseAuthManager().currentUser;
+    final patientId = currentUser?.uid;
+
+    if (patientId == null || patientId.isEmpty) {
+      return const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _WisdomFeedHeader(),
+          SizedBox(height: 24),
+          _WisdomFeedStateCard(
+            icon: Icons.person_off_rounded,
+            title: 'Unable to identify your account',
+            message: 'Sign in again to load your wisdom notes from Firestore.',
+          ),
+          SizedBox(height: 28),
+          _AnalysisCard(),
         ],
-        const SizedBox(height: 28),
-        const _AnalysisCard(),
+      );
+    }
+
+    return StreamBuilder<List<AiConversationSummary>>(
+      stream: _aiService.streamPatientSummaries(patientId: patientId, limit: 20),
+      builder: (context, snapshot) {
+        final items = snapshot.hasData
+            ? snapshot.data!
+                .map(_WisdomFeedItemData.fromSummary)
+                .toList(growable: true)
+            : <_WisdomFeedItemData>[];
+        items.sort((a, b) => b.sortDate.compareTo(a.sortDate));
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const _WisdomFeedHeader(),
+            const SizedBox(height: 24),
+            if (snapshot.connectionState == ConnectionState.waiting && items.isEmpty)
+              const _WisdomFeedStateCard(
+                icon: Icons.hourglass_top_rounded,
+                title: 'Loading wisdom notes',
+                message: 'Saved notes from Firestore will appear here as soon as they are available.',
+              )
+            else if (snapshot.hasError)
+              const _WisdomFeedStateCard(
+                icon: Icons.cloud_off_rounded,
+                title: 'Unable to load wisdom notes',
+                message: 'We could not load your Firestore-backed wisdom notes right now.',
+              )
+            else if (items.isEmpty)
+              const _WisdomFeedStateCard(
+                icon: Icons.auto_awesome_motion_rounded,
+                title: 'No wisdom notes yet',
+                message: 'Your saved wisdom notes will appear here once summaries are written to Firestore.',
+              )
+            else
+              for (var i = 0; i < items.length; i++) ...[
+                _WisdomFeedCard(
+                  item: items[i],
+                  isDeleting: _deletingIds.contains(items[i].id),
+                  onDelete: () {
+                    _deleteItem(items[i]);
+                  },
+                ),
+                if (i < items.length - 1) const SizedBox(height: 26),
+              ],
+            const SizedBox(height: 28),
+            const _AnalysisCard(),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _WisdomFeedHeader extends StatelessWidget {
+  const _WisdomFeedHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = _PortalPalette.of(context);
+
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            'WISDOM FEED',
+            style: TextStyle(
+              color: palette.textMuted,
+              fontWeight: FontWeight.w800,
+              fontSize: 12,
+              letterSpacing: 3,
+            ),
+          ),
+        ),
+        Text(
+          'UPDATED',
+          style: TextStyle(
+            color: palette.textMuted.withValues(alpha: 0.8),
+            fontWeight: FontWeight.w600,
+            fontSize: 12,
+          ),
+        ),
+        SizedBox(width: 8),
+        const Icon(Icons.circle, color: Color(0xFF8BB5FF), size: 10),
       ],
+    );
+  }
+}
+
+class _WisdomFeedStateCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String message;
+
+  const _WisdomFeedStateCard({
+    required this.icon,
+    required this.title,
+    required this.message,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = _PortalPalette.of(context);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
+      decoration: BoxDecoration(
+        color: palette.panel,
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: palette.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: palette.textMuted, size: 20),
+          const SizedBox(height: 16),
+          Text(
+            title,
+            style: TextStyle(
+              color: palette.textPrimary,
+              fontWeight: FontWeight.w800,
+              fontSize: 18,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            message,
+            style: TextStyle(
+              color: palette.textSecondary,
+              fontWeight: FontWeight.w500,
+              fontSize: 15,
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
 class _WisdomFeedCard extends StatelessWidget {
   final _WisdomFeedItemData item;
-  const _WisdomFeedCard({required this.item});
+  final bool isDeleting;
+  final VoidCallback onDelete;
+  const _WisdomFeedCard({
+    required this.item,
+    required this.isDeleting,
+    required this.onDelete,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final palette = _PortalPalette.of(context);
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
       decoration: BoxDecoration(
-        color: _JournalReflectionPageState._homePanel,
+        color: palette.panel,
         borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: _JournalReflectionPageState._homeBorder),
-        boxShadow: const [
+        border: Border.all(color: palette.border),
+        boxShadow: [
           BoxShadow(
-            color: Color(0x0D0B1324),
+            color: palette.shadow,
             blurRadius: 18,
             offset: Offset(0, 10),
           ),
@@ -1176,22 +2388,50 @@ class _WisdomFeedCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   item.timestamp.toUpperCase(),
-                  style: const TextStyle(
-                    color: Color(0xFFA0A8B5),
+                  style: TextStyle(
+                    color: palette.textMuted,
                     fontWeight: FontWeight.w800,
                     fontSize: 11,
                     letterSpacing: 1.2,
                   ),
                 ),
               ),
-              Icon(item.icon, color: item.accent, size: 20),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(item.icon, color: item.accent, size: 20),
+                  const SizedBox(width: 6),
+                  IconButton(
+                    onPressed: isDeleting ? null : onDelete,
+                    tooltip: 'Delete note',
+                    style: IconButton.styleFrom(
+                      backgroundColor: item.accent.withValues(alpha: palette.isDark ? 0.16 : 0.1),
+                      foregroundColor: item.accent,
+                      disabledBackgroundColor: palette.controlBorder,
+                      disabledForegroundColor: palette.textMuted,
+                      minimumSize: const Size(34, 34),
+                      padding: EdgeInsets.zero,
+                    ),
+                    icon: isDeleting
+                        ? SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: palette.textMuted,
+                            ),
+                          )
+                        : const Icon(Icons.delete_outline_rounded, size: 18),
+                  ),
+                ],
+              ),
             ],
           ),
           const SizedBox(height: 20),
           Text(
             item.quote,
-            style: const TextStyle(
-              color: Color(0xFF475569),
+            style: TextStyle(
+              color: palette.textSecondary,
               fontFamily: 'Satoshi',
               fontStyle: FontStyle.italic,
               fontWeight: FontWeight.w500,
@@ -1199,30 +2439,32 @@ class _WisdomFeedCard extends StatelessWidget {
               height: 1.65,
             ),
           ),
-          const SizedBox(height: 20),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: [
-              for (final tag in item.tags)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: item.accent.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(color: item.accent.withOpacity(0.12)),
-                  ),
-                  child: Text(
-                    tag.toUpperCase(),
-                    style: TextStyle(
-                      color: item.accent,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 12,
+          if (item.tags.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                for (final tag in item.tags)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: item.accent.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(color: item.accent.withOpacity(0.12)),
+                    ),
+                    child: Text(
+                      tag.toUpperCase(),
+                      style: TextStyle(
+                        color: item.accent,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                      ),
                     ),
                   ),
-                ),
-            ],
-          ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -1234,13 +2476,15 @@ class _AnalysisCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = _PortalPalette.of(context);
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: _JournalReflectionPageState._homePanel,
+        color: palette.panel,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: _JournalReflectionPageState._homeBorder),
+        border: Border.all(color: palette.border),
       ),
       child: Row(
         children: [
@@ -1248,20 +2492,20 @@ class _AnalysisCard extends StatelessWidget {
             width: 46,
             height: 46,
             decoration: BoxDecoration(
-              color: const Color(0xFFE9F1FF),
+              color: palette.analysisIconBackground,
               borderRadius: BorderRadius.circular(14),
             ),
             child: const Icon(Icons.insights_rounded, color: Color(0xFF5C8EFF)),
           ),
           const SizedBox(width: 16),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Full Analysis',
                   style: TextStyle(
-                    color: Color(0xFF1F2937),
+                    color: palette.textPrimary,
                     fontWeight: FontWeight.w800,
                     fontSize: 16,
                   ),
@@ -1270,7 +2514,7 @@ class _AnalysisCard extends StatelessWidget {
                 Text(
                   '7-day emotional report',
                   style: TextStyle(
-                    color: Color(0xFF9CA3AF),
+                    color: palette.textMuted,
                     fontWeight: FontWeight.w500,
                     fontSize: 14,
                   ),
@@ -1286,19 +2530,106 @@ class _AnalysisCard extends StatelessWidget {
 }
 
 class _WisdomFeedItemData {
+  final String id;
   final String timestamp;
   final String quote;
   final List<String> tags;
   final Color accent;
   final IconData icon;
+  final DateTime sortDate;
 
   const _WisdomFeedItemData({
+    required this.id,
     required this.timestamp,
     required this.quote,
     required this.tags,
     required this.accent,
     required this.icon,
+    required this.sortDate,
   });
+
+  factory _WisdomFeedItemData.fromSummary(AiConversationSummary summary) {
+    final tags = _extractTags(summary.summary);
+    return _WisdomFeedItemData(
+      id: summary.id,
+      timestamp: _formatTimestamp(summary.createdAt),
+      quote: _normalizeQuote(summary.summary),
+      tags: tags,
+      accent: _accentForSummary(summary.summary),
+      icon: _iconForSummary(summary.summary),
+      sortDate: summary.createdAt,
+    );
+  }
+
+  static String _normalizeQuote(String text) {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return '"No summary available."';
+    return trimmed.startsWith('"') ? trimmed : '"$trimmed"';
+  }
+
+  static String _formatTimestamp(DateTime dateTime) {
+    const monthLabels = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    final month = monthLabels[dateTime.month - 1];
+    final hour = dateTime.hour % 12 == 0 ? 12 : dateTime.hour % 12;
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+    final meridiem = dateTime.hour >= 12 ? 'PM' : 'AM';
+    return '$month ${dateTime.day} • $hour:$minute $meridiem';
+  }
+
+  static List<String> _extractTags(String summary) {
+    final normalized = summary.toLowerCase();
+    final tags = <String>[];
+    final keywordMap = <String, String>{
+      'ground': 'Grounding',
+      'sleep': 'Sleep',
+      'anx': 'Anxiety',
+      'work': 'Work Harmony',
+      'relationship': 'Relationships',
+      'regulat': 'Self-Regulation',
+      'growth': 'Growth',
+      'patience': 'Patience',
+      'mindful': 'Mindfulness',
+      'calm': 'Calm',
+    };
+
+    for (final entry in keywordMap.entries) {
+      if (normalized.contains(entry.key)) {
+        tags.add(entry.value);
+      }
+      if (tags.length == 2) break;
+    }
+
+    return tags;
+  }
+
+  static Color _accentForSummary(String summary) {
+    final normalized = summary.toLowerCase();
+    if (normalized.contains('ground')) return const Color(0xFFB17CFF);
+    if (normalized.contains('growth') || normalized.contains('patience')) {
+      return const Color(0xFF47C98A);
+    }
+    return const Color(0xFF6EA8FF);
+  }
+
+  static IconData _iconForSummary(String summary) {
+    final normalized = summary.toLowerCase();
+    if (normalized.contains('ground')) return Icons.psychology_alt_rounded;
+    if (normalized.contains('growth') || normalized.contains('patience')) return Icons.spa_rounded;
+    return Icons.auto_awesome_rounded;
+  }
 }
 
 class _FeedPane extends StatelessWidget {
@@ -1325,6 +2656,7 @@ class _FeedPane extends StatelessWidget {
     final horizontalPadding = showCompactHeader ? 16.0 : 30.0;
     final mediaWidth = MediaQuery.sizeOf(context).width;
     final titleSize = mediaWidth < 600 ? 28.0 : 38.0;
+    final palette = _PortalPalette.of(context);
 
     return CustomScrollView(
       physics: const BouncingScrollPhysics(),
@@ -1345,16 +2677,16 @@ class _FeedPane extends StatelessWidget {
                             onPressed: () => Navigator.of(context).maybePop(),
                             icon: const Icon(Icons.arrow_back_rounded),
                             style: IconButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: const Color(0xFF1A2131),
+                              backgroundColor: palette.controlBackground,
+                              foregroundColor: palette.controlForeground,
                             ),
                             tooltip: 'Back',
                           ),
                           const SizedBox(width: 10),
-                          const Text(
+                          Text(
                             'Therapii Portal',
                             style: TextStyle(
-                              color: Color(0xFF1A2131),
+                              color: palette.textPrimary,
                               fontWeight: FontWeight.w700,
                               fontSize: 18,
                             ),
@@ -1369,14 +2701,14 @@ class _FeedPane extends StatelessWidget {
                         fontWeight: FontWeight.w800,
                         fontSize: titleSize,
                         height: 1.02,
-                        color: const Color(0xFF111726),
+                        color: palette.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 6),
-                    const Text(
+                    Text(
                       'Curated insights for your mental wellbeing',
                       style: TextStyle(
-                        color: Color(0xFF6E7482),
+                        color: palette.textSecondary,
                         fontWeight: FontWeight.w500,
                         fontSize: 15,
                       ),
@@ -1395,7 +2727,7 @@ class _FeedPane extends StatelessWidget {
             minHeight: 88,
             maxHeight: 88,
             child: Container(
-              color: const Color(0xFFF4F6FB).withOpacity(0.97),
+              color: palette.scaffold.withOpacity(palette.isDark ? 0.98 : 0.97),
               alignment: Alignment.center,
               padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
               child: ConstrainedBox(
@@ -1435,9 +2767,9 @@ class _FeedPane extends StatelessWidget {
                 child: OutlinedButton(
                   onPressed: onLoadMore,
                   style: OutlinedButton.styleFrom(
-                    backgroundColor: Colors.white.withOpacity(0.92),
-                    foregroundColor: const Color(0xFF4B5565),
-                    side: const BorderSide(color: Color(0xFFD8DDE8)),
+                    backgroundColor: palette.loadMoreBackground.withOpacity(palette.isDark ? 1 : 0.92),
+                    foregroundColor: palette.textSecondary,
+                    side: BorderSide(color: palette.border),
                     textStyle: const TextStyle(fontWeight: FontWeight.w700),
                     padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 14),
                   ),
@@ -1473,23 +2805,13 @@ class _FeaturedHeroCard extends StatelessWidget {
               errorBuilder: (_, __, ___) {
                 return const DecoratedBox(
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFF0D1F44), Color(0xFF394866)],
-                    ),
+                    color: Color(0xFF0D1F44),
                   ),
                 );
               },
             ),
             Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [Color(0xD9000000), Color(0x70000000), Color(0x00000000)],
-                ),
-              ),
+              decoration: const BoxDecoration(color: Color(0x8A000000)),
             ),
             Positioned(
               right: -20,
@@ -1499,10 +2821,7 @@ class _FeaturedHeroCard extends StatelessWidget {
                 height: 190,
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [Color(0x40FFFFFF), Color(0x00FFFFFF)],
-                    radius: 0.9,
-                  ),
+                  color: Color(0x20FFFFFF),
                 ),
               ),
             ),
@@ -1607,24 +2926,14 @@ class _TopicPillState extends State<_TopicPill> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = _PortalPalette.of(context);
     final selected = widget.selected;
-    final bgGradient = selected
-        ? const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF2E67DD), Color(0xFF1546B9)],
-          )
-        : LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              const Color(0xFFFFFFFF).withOpacity(_hovered ? 1 : 0.96),
-              const Color(0xFFF2F5FB).withOpacity(_hovered ? 1 : 0.92),
-            ],
-          );
+    final bgColor = selected
+        ? const Color(0xFF2E67DD)
+        : (palette.isDark ? palette.panelStrong : Colors.white).withOpacity(_hovered ? 1 : 0.96);
     final borderColor = selected
         ? const Color(0xAAFFFFFF)
-        : (_hovered ? const Color(0xFFC7D0E2) : const Color(0xFFD8DDE8));
+        : (_hovered ? palette.controlBorder : palette.border);
     final shadow = selected
         ? <BoxShadow>[
             const BoxShadow(
@@ -1641,16 +2950,17 @@ class _TopicPillState extends State<_TopicPill> {
           ]
         : <BoxShadow>[
             BoxShadow(
-              color: const Color(0xFF1B2436).withOpacity(_hovered ? 0.08 : 0.05),
+              color: Colors.black.withOpacity(palette.isDark ? (_hovered ? 0.24 : 0.18) : (_hovered ? 0.08 : 0.05)),
               blurRadius: _hovered ? 14 : 10,
               offset: Offset(0, _hovered ? 6 : 4),
             ),
-            const BoxShadow(
-              color: Color(0xCCFFFFFF),
-              blurRadius: 0,
-              spreadRadius: 1,
-              offset: Offset(0, 1),
-            ),
+            if (!palette.isDark)
+              const BoxShadow(
+                color: Color(0xCCFFFFFF),
+                blurRadius: 0,
+                spreadRadius: 1,
+                offset: Offset(0, 1),
+              ),
           ];
     final scale = _pressed ? 0.98 : (_hovered ? 1.01 : 1.0);
 
@@ -1667,7 +2977,7 @@ class _TopicPillState extends State<_TopicPill> {
           curve: Curves.easeOutCubic,
           constraints: const BoxConstraints(minHeight: 54),
           decoration: BoxDecoration(
-            gradient: bgGradient,
+            color: bgColor,
             borderRadius: BorderRadius.circular(999),
             border: Border.all(color: borderColor, width: selected ? 1.2 : 1.0),
             boxShadow: shadow,
@@ -1712,7 +3022,7 @@ class _TopicPillState extends State<_TopicPill> {
                     Text(
                       widget.label,
                       style: TextStyle(
-                        color: selected ? Colors.white : const Color(0xFF4A5568),
+                        color: selected ? Colors.white : palette.textSecondary,
                         fontWeight: FontWeight.w700,
                         fontSize: 16,
                         letterSpacing: 0.1,
@@ -1802,8 +3112,10 @@ class _FeedArticleCard extends StatelessWidget {
       return _QuoteCard(data: data);
     }
 
+    final palette = _PortalPalette.of(context);
+
     return Material(
-      color: Colors.white.withOpacity(0.95),
+      color: palette.panelStrong.withOpacity(palette.isDark ? 1 : 0.95),
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
         onTap: () {
@@ -1827,10 +3139,10 @@ class _FeedArticleCard extends StatelessWidget {
         child: Ink(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const Color(0xFFDDE1EC)),
+            border: Border.all(color: palette.border),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF0B1324).withOpacity(0.04),
+                color: palette.shadow,
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
@@ -1854,7 +3166,7 @@ class _FeedArticleCard extends StatelessWidget {
                         Image.network(
                           data.imageUrl!,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(color: const Color(0xFFCBD5E1)),
+                          errorBuilder: (_, __, ___) => Container(color: palette.panelSoft),
                         ),
                         if (data.personalized)
                           Positioned(
@@ -1863,7 +3175,7 @@ class _FeedArticleCard extends StatelessWidget {
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.9),
+                                color: palette.panelStrong.withOpacity(0.9),
                                 borderRadius: BorderRadius.circular(999),
                               ),
                               child: Row(
@@ -1906,38 +3218,38 @@ class _FeedArticleCard extends StatelessWidget {
                     const SizedBox(height: 8),
                     Text(
                       data.title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF151B2A),
+                        color: palette.textPrimary,
                         height: 1.16,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       data.subtitle,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w500,
-                        color: Color(0xFF6B7280),
+                        color: palette.textSecondary,
                         height: 1.38,
                       ),
                     ),
                     const SizedBox(height: 14),
-                    const Divider(height: 1, color: Color(0xFFE6EAF2)),
+                    Divider(height: 1, color: palette.divider),
                     const SizedBox(height: 10),
                     Row(
                       children: [
                         Text(
                           data.readTime,
-                          style: const TextStyle(
-                            color: Color(0xFF8A91A2),
+                          style: TextStyle(
+                            color: palette.textMuted,
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
                         const Spacer(),
-                        Icon(Icons.bookmark_border_rounded, size: 20, color: Colors.black.withOpacity(0.45)),
+                        Icon(Icons.bookmark_border_rounded, size: 20, color: palette.textMuted),
                       ],
                     ),
                   ],
@@ -1957,15 +3269,13 @@ class _QuoteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = _PortalPalette.of(context);
+
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFDDE1EC)),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFEAF0FF), Color(0xFFDCE6FF), Color(0xFFF4F7FF)],
-        ),
+        border: Border.all(color: palette.border),
+        color: palette.isDark ? const Color(0xFF142033) : const Color(0xFFEAF0FF),
       ),
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -1975,38 +3285,38 @@ class _QuoteCard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             data.title,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'serif',
               fontSize: 28,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF111A2B),
+              color: palette.textPrimary,
               height: 1.24,
             ),
           ),
           const SizedBox(height: 10),
           Text(
             '- ${data.subtitle}',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF5C667A),
+              color: palette.textSecondary,
             ),
           ),
           const SizedBox(height: 16),
-          const Divider(height: 1, color: Color(0xFFD3DCEE)),
+          Divider(height: 1, color: palette.divider),
           const SizedBox(height: 10),
           Row(
             children: [
               Text(
                 data.readTime,
-                style: const TextStyle(
-                  color: Color(0xFF8A91A2),
+                style: TextStyle(
+                  color: palette.textMuted,
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                 ),
               ),
               const Spacer(),
-              Icon(Icons.share_rounded, size: 20, color: Colors.black.withOpacity(0.45)),
+              Icon(Icons.share_rounded, size: 20, color: palette.textMuted),
             ],
           ),
         ],
@@ -2016,16 +3326,29 @@ class _QuoteCard extends StatelessWidget {
 }
 
 class _RightRail extends StatelessWidget {
-  final List<_SavedArticleData> savedItems;
-  const _RightRail({required this.savedItems});
+  const _RightRail();
+
+  Query<Map<String, dynamic>>? get _favoritesQuery {
+    final userId = FirebaseAuthManager().currentUser?.uid;
+    if (userId == null || userId.isEmpty) return null;
+    return FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('favorite_journal_articles')
+        .orderBy('saved_at', descending: true)
+        .limit(3);
+  }
 
   @override
   Widget build(BuildContext context) {
+    final query = _favoritesQuery;
+    final palette = _PortalPalette.of(context);
+
     return Container(
       width: 320,
-      decoration: const BoxDecoration(
-        color: Color(0xFFFDFDFF),
-        border: Border(left: BorderSide(color: Color(0xFFE3E6F0))),
+      decoration: BoxDecoration(
+        color: palette.panel,
+        border: Border(left: BorderSide(color: palette.border)),
       ),
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(18, 20, 18, 20),
@@ -2036,12 +3359,12 @@ class _RightRail extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: palette.panelStrong,
                 borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: const Color(0xFFDDE1EC)),
+                border: Border.all(color: palette.border),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
+                    color: palette.shadow,
                     blurRadius: 14,
                     offset: const Offset(0, 7),
                   ),
@@ -2052,17 +3375,24 @@ class _RightRail extends StatelessWidget {
             const SizedBox(height: 20),
             Row(
               children: [
-                const Text(
-                  'Saved for Later',
+                Text(
+                  'Favorites',
                   style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFF121A2A),
+                    color: palette.textPrimary,
                   ),
                 ),
                 const Spacer(),
                 TextButton(
-                  onPressed: () {},
+                  onPressed: () async {
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.setString(_portalDestinationKey, _portalDestinationFavorites);
+                    if (!context.mounted) return;
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: (_) => const _FavoritesPage()),
+                    );
+                  },
                   child: const Text(
                     'View All',
                     style: TextStyle(
@@ -2075,38 +3405,74 @@ class _RightRail extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 6),
-            for (var i = 0; i < savedItems.length; i++) ...[
-              _SavedItemTile(item: savedItems[i]),
-              if (i < savedItems.length - 1) const SizedBox(height: 12),
-            ],
+            if (query == null)
+              const _MiniStateTile(
+                title: 'Sign in to sync favorites',
+                subtitle: 'Saved journal articles will appear here.',
+              )
+            else
+              StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                stream: query.snapshots(),
+                builder: (context, snapshot) {
+                  final items = snapshot.hasData
+                      ? snapshot.data!.docs.map(_FavoriteArticleData.fromDoc).toList(growable: false)
+                      : const <_FavoriteArticleData>[];
+
+                  if (snapshot.connectionState == ConnectionState.waiting && items.isEmpty) {
+                    return const _MiniStateTile(
+                      title: 'Loading favorites',
+                      subtitle: 'Fetching your saved articles.',
+                    );
+                  }
+
+                  if (snapshot.hasError) {
+                    return const _MiniStateTile(
+                      title: 'Favorites unavailable',
+                      subtitle: 'We could not load saved articles right now.',
+                    );
+                  }
+
+                  if (items.isEmpty) {
+                    return const _MiniStateTile(
+                      title: 'Nothing saved yet',
+                      subtitle: 'Use the save icon on any article to pin it here.',
+                    );
+                  }
+
+                  return Column(
+                    children: [
+                      for (var i = 0; i < items.length; i++) ...[
+                        _SavedItemTile(item: items[i]),
+                        if (i < items.length - 1) const SizedBox(height: 12),
+                      ],
+                    ],
+                  );
+                },
+              ),
             const SizedBox(height: 20),
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(18),
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0x261754CF), Color(0x101754CF)],
-                ),
+                color: palette.isDark ? const Color(0x331754CF) : const Color(0x261754CF),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Premium Session',
                     style: TextStyle(
                       fontWeight: FontWeight.w800,
                       fontSize: 16,
-                      color: Color(0xFF121A2A),
+                      color: palette.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     'Unlock audio guided meditations for deeper focus.',
                     style: TextStyle(
-                      color: Color(0xFF4C5567),
+                      color: palette.textSecondary,
                       fontWeight: FontWeight.w500,
                       fontSize: 13,
                       height: 1.4,
@@ -2116,7 +3482,7 @@ class _RightRail extends StatelessWidget {
                   FilledButton(
                     onPressed: () {},
                     style: FilledButton.styleFrom(
-                      backgroundColor: Colors.white,
+                      backgroundColor: palette.panelStrong,
                       foregroundColor: const Color(0xFF1754CF),
                       textStyle: const TextStyle(fontWeight: FontWeight.w800),
                     ),
@@ -2140,15 +3506,16 @@ class _WeeklyProgressWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final percentage = (progress * 100).round();
+    final palette = _PortalPalette.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Weekly Progress',
           style: TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w800,
-            color: Color(0xFF131B2C),
+            color: palette.textPrimary,
           ),
         ),
         const SizedBox(height: 14),
@@ -2166,26 +3533,26 @@ class _WeeklyProgressWidget extends StatelessWidget {
                     value: progress,
                     strokeWidth: 11,
                     strokeCap: StrokeCap.round,
-                    backgroundColor: const Color(0xFFE4E8F1),
+                    backgroundColor: palette.controlBorder,
                     color: const Color(0xFF1754CF),
                   ),
                 ),
                 Container(
                   width: 90,
                   height: 90,
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.white,
+                    color: palette.panelStrong,
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
                         '$percentage%',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.w800,
-                          color: Color(0xFF131B2C),
+                          color: palette.textPrimary,
                         ),
                       ),
                       const Text(
@@ -2208,10 +3575,10 @@ class _WeeklyProgressWidget extends StatelessWidget {
         Center(
           child: Text(
             '$minutesRead mins read this week',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF5F6778),
+              color: palette.textSecondary,
             ),
           ),
         ),
@@ -2221,22 +3588,39 @@ class _WeeklyProgressWidget extends StatelessWidget {
 }
 
 class _SavedItemTile extends StatelessWidget {
-  final _SavedArticleData item;
+  final _FavoriteArticleData item;
   const _SavedItemTile({required this.item});
 
   @override
   Widget build(BuildContext context) {
+    final palette = _PortalPalette.of(context);
+
     return Material(
-      color: Colors.white,
+      color: palette.panelStrong,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
-        onTap: () {},
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => JournalArticlePage(
+                title: item.title,
+                category: item.category,
+                subtitle: item.subtitle,
+                readTime: item.readTime,
+                imageUrl: item.imageUrl,
+                authorName: item.authorName,
+                authorRole: item.authorRole,
+                publishedDate: item.publishedDate,
+              ),
+            ),
+          );
+        },
         borderRadius: BorderRadius.circular(14),
         child: Ink(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFFDDE1EC)),
+            border: Border.all(color: palette.border),
           ),
           child: Row(
             children: [
@@ -2248,7 +3632,7 @@ class _SavedItemTile extends StatelessWidget {
                   child: Image.network(
                     item.imageUrl,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(color: const Color(0xFFE4E7EF)),
+                    errorBuilder: (_, __, ___) => Container(color: palette.panelSoft),
                   ),
                 ),
               ),
@@ -2261,20 +3645,20 @@ class _SavedItemTile extends StatelessWidget {
                       item.title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF1A2234),
+                        color: palette.textPrimary,
                         height: 1.25,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       item.readTime,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF7B8498),
+                        color: palette.textMuted,
                       ),
                     ),
                   ],
@@ -2283,6 +3667,54 @@ class _SavedItemTile extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _MiniStateTile extends StatelessWidget {
+  final String title;
+  final String subtitle;
+
+  const _MiniStateTile({
+    required this.title,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = _PortalPalette.of(context);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: palette.panelStrong,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: palette.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+              color: palette.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: palette.textMuted,
+              height: 1.4,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -2353,14 +3785,76 @@ class _FeedCardData {
         isQuoteCard = true;
 }
 
-class _SavedArticleData {
+class _FavoriteArticleData {
+  final String id;
   final String title;
+  final String category;
+  final String subtitle;
   final String readTime;
   final String imageUrl;
+  final String authorName;
+  final String authorRole;
+  final String publishedDate;
+  final DateTime? savedAt;
 
-  const _SavedArticleData({
+  const _FavoriteArticleData({
+    required this.id,
     required this.title,
+    required this.category,
+    required this.subtitle,
     required this.readTime,
     required this.imageUrl,
+    required this.authorName,
+    required this.authorRole,
+    required this.publishedDate,
+    required this.savedAt,
   });
+
+  factory _FavoriteArticleData.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final data = doc.data() ?? const <String, dynamic>{};
+    return _FavoriteArticleData(
+      id: doc.id,
+      title: (data['title'] as String?)?.trim().isNotEmpty == true
+          ? (data['title'] as String).trim()
+          : 'Untitled article',
+      category: (data['category'] as String?)?.trim().isNotEmpty == true
+          ? (data['category'] as String).trim()
+          : 'Journal',
+      subtitle: (data['subtitle'] as String?)?.trim().isNotEmpty == true
+          ? (data['subtitle'] as String).trim()
+          : 'Saved from your journal portal.',
+      readTime: (data['read_time'] as String?)?.trim().isNotEmpty == true
+          ? (data['read_time'] as String).trim()
+          : 'Saved article',
+      imageUrl: (data['image_url'] as String?)?.trim().isNotEmpty == true
+          ? (data['image_url'] as String).trim()
+          : 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80',
+      authorName: (data['author_name'] as String?)?.trim().isNotEmpty == true
+          ? (data['author_name'] as String).trim()
+          : 'Therapii Editorial',
+      authorRole: (data['author_role'] as String?)?.trim().isNotEmpty == true
+          ? (data['author_role'] as String).trim()
+          : 'Journal Team',
+      publishedDate: (data['published_date'] as String?)?.trim().isNotEmpty == true
+          ? (data['published_date'] as String).trim()
+          : 'Recently saved',
+      savedAt: (data['saved_at'] as Timestamp?)?.toDate(),
+    );
+  }
+
+  String? get savedLabel {
+    final date = savedAt;
+    if (date == null) return null;
+    final now = DateTime.now();
+    final difference = now.difference(date);
+    if (difference.inDays <= 0) {
+      if (difference.inHours <= 0) {
+        final minutes = difference.inMinutes.clamp(1, 59);
+        return '$minutes min ago';
+      }
+      return '${difference.inHours}h ago';
+    }
+    if (difference.inDays == 1) return 'Yesterday';
+    return '${difference.inDays}d ago';
+  }
 }

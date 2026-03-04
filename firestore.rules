@@ -44,6 +44,11 @@ service cloud.firestore {
       // Clients create/update/delete only their own user doc
       allow create: if isSelf(userId);
       allow update, delete: if isSelf(userId);
+
+      // Per-user saved journal articles
+      match /favorite_journal_articles/{articleId} {
+        allow read, write: if isSelf(userId);
+      }
     }
 
     // Therapists directory profiles

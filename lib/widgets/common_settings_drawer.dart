@@ -8,6 +8,8 @@ import 'package:therapii/pages/admin_settings_page.dart';
 import 'package:therapii/pages/auth_welcome_page.dart';
 import 'package:therapii/pages/billing_page.dart';
 import 'package:therapii/pages/edit_profile_page.dart';
+import 'package:therapii/pages/journal_admin_studio_page.dart';
+import 'package:therapii/pages/journal_portal_page.dart';
 import 'package:therapii/theme_mode_controller.dart';
 import 'package:therapii/utils/admin_access.dart';
 
@@ -34,6 +36,32 @@ Future<void> showSettingsPopup(BuildContext context) async {
   );
 }
 
+Route<void> _buildWorkspaceSwitchRoute(Widget page) {
+  return PageRouteBuilder<void>(
+    transitionDuration: const Duration(milliseconds: 320),
+    reverseTransitionDuration: const Duration(milliseconds: 220),
+    pageBuilder: (context, animation, secondaryAnimation) => page,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      final curved = CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.easeInCubic,
+      );
+
+      return FadeTransition(
+        opacity: Tween<double>(begin: 0.58, end: 1).animate(curved),
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0.028, 0),
+            end: Offset.zero,
+          ).animate(curved),
+          child: child,
+        ),
+      );
+    },
+  );
+}
+
 class _SettingsPopupContent extends StatefulWidget {
   const _SettingsPopupContent();
 
@@ -45,6 +73,7 @@ class _SettingsPopupContentState extends State<_SettingsPopupContent> {
   bool _isLoadingSubscription = true;
   bool _isPaidUser = false;
   String _planName = 'Free Plan';
+  bool _isSwitchingJournal = false;
 
   @override
   void initState() {
@@ -84,6 +113,18 @@ class _SettingsPopupContentState extends State<_SettingsPopupContent> {
   bool _isAdmin() {
     final user = FirebaseAuthManager().currentUser;
     return AdminAccess.isAdminEmail(user?.email);
+  }
+
+  Future<void> _openJournalWorkspace() async {
+    if (_isSwitchingJournal) return;
+
+    setState(() => _isSwitchingJournal = true);
+    final navigator = Navigator.of(context, rootNavigator: true);
+    final destination = _isAdmin() ? const JournalAdminStudioPage() : const JournalPortalPage();
+
+    navigator.pop();
+    await Future<void>.delayed(const Duration(milliseconds: 40));
+    await navigator.pushReplacement(_buildWorkspaceSwitchRoute(destination));
   }
 
   String _displayName() {
@@ -202,6 +243,21 @@ class _SettingsPopupContentState extends State<_SettingsPopupContent> {
                                         MaterialPageRoute(builder: (_) => const EditProfilePage()),
                                       );
                                     },
+                                  ),
+                                  const SizedBox(height: 18),
+                                  Text(
+                                    'WORKSPACES',
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      color: scheme.onSurface.withValues(alpha: 0.6),
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 1.1,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  _WorkspaceSwitchCard(
+                                    isAdmin: isAdmin,
+                                    isLoading: _isSwitchingJournal,
+                                    onTap: _openJournalWorkspace,
                                   ),
                                   const SizedBox(height: 18),
                                   Text(
@@ -478,6 +534,193 @@ class _SettingsCard extends StatelessWidget {
                 color: scheme.onSurface.withValues(alpha: 0.35),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _WorkspaceSwitchCard extends StatefulWidget {
+  final bool isAdmin;
+  final bool isLoading;
+  final Future<void> Function() onTap;
+
+  const _WorkspaceSwitchCard({
+    required this.isAdmin,
+    required this.isLoading,
+    required this.onTap,
+  });
+
+  @override
+  State<_WorkspaceSwitchCard> createState() => _WorkspaceSwitchCardState();
+}
+
+class _WorkspaceSwitchCardState extends State<_WorkspaceSwitchCard> {
+  bool _hovered = false;
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final elevated = _hovered || _pressed || widget.isLoading;
+
+    final shellColor = isDark ? const Color(0xFF0F1D38) : const Color(0xFFEEF4FF);
+    final borderColor = isDark ? const Color(0xFF28426F) : const Color(0xFFC9DAFF);
+    final badgeColor = isDark ? const Color(0xFF18335B) : Colors.white.withValues(alpha: 0.86);
+    final badgeBorder = isDark ? const Color(0xFF335486) : const Color(0xFFD6E3FF);
+    final iconColor = scheme.primary;
+    final title = widget.isAdmin ? 'Switch to Journal Studio' : 'Switch to Journal';
+    final subtitle = widget.isAdmin
+        ? 'Open the publishing studio, analytics, and editorial controls.'
+        : 'Open your journal workspace for reflections, favorites, and reading flow.';
+    final footer = widget.isLoading ? 'Opening journal workspace...' : 'Open journal session';
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedScale(
+        scale: _pressed ? 0.987 : 1,
+        duration: const Duration(milliseconds: 160),
+        curve: Curves.easeOutCubic,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          decoration: BoxDecoration(
+            color: shellColor,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: borderColor, width: 1.15),
+            boxShadow: [
+              BoxShadow(
+                color: scheme.primary.withValues(alpha: elevated ? (isDark ? 0.22 : 0.14) : (isDark ? 0.12 : 0.08)),
+                blurRadius: elevated ? 26 : 18,
+                offset: Offset(0, elevated ? 16 : 10),
+                spreadRadius: elevated ? 0 : -4,
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(24),
+            child: InkWell(
+              onTap: widget.onTap,
+              borderRadius: BorderRadius.circular(24),
+              splashColor: scheme.primary.withValues(alpha: 0.12),
+              highlightColor: Colors.transparent,
+              onHighlightChanged: (value) => setState(() => _pressed = value),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: badgeColor,
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(color: badgeBorder),
+                      ),
+                      child: Text(
+                        'JOURNAL SESSION',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: scheme.primary,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.7,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            color: iconColor.withValues(alpha: isDark ? 0.2 : 0.14),
+                          ),
+                          child: Icon(
+                            widget.isAdmin ? Icons.auto_stories_rounded : Icons.menu_book_rounded,
+                            color: iconColor,
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                title,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w900,
+                                  height: 1.05,
+                                  letterSpacing: -0.2,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                subtitle,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: scheme.onSurface.withValues(alpha: 0.68),
+                                  height: 1.42,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(18),
+                        color: scheme.surface.withValues(alpha: isDark ? 0.18 : 0.7),
+                        border: Border.all(color: scheme.outline.withValues(alpha: 0.1)),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              footer,
+                              style: theme.textTheme.labelLarge?.copyWith(
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 180),
+                            child: widget.isLoading
+                                ? SizedBox(
+                                    key: const ValueKey('spinner'),
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(scheme.primary),
+                                    ),
+                                  )
+                                : Icon(
+                                    Icons.arrow_forward_rounded,
+                                    key: const ValueKey('arrow'),
+                                    color: scheme.primary,
+                                    size: 18,
+                                  ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ),
