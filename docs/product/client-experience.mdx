@@ -1,0 +1,78 @@
+---
+title: Client Experience
+description: Dashboard, support, therapist connection, chat, voice, and billing features for clients.
+---
+
+# Client Experience
+
+## Main client workspace
+
+The main client experience is implemented in `lib/pages/patient_dashboard_page.dart`.
+
+Despite the filename, this is the active client-facing workspace.
+
+Core capabilities:
+
+- load the authenticated client profile
+- resolve connected therapists from accepted invitations
+- display therapist-specific AI naming and context
+- launch patient-therapist chat
+- launch AI therapist chat
+- open support center
+- open billing and plans
+
+## Connected therapist model
+
+Clients can be connected to multiple therapists through accepted invitation records. The dashboard resolves therapist profiles and lets the user operate within the current therapist context.
+
+Dependencies used in the dashboard:
+
+- `UserService`
+- `InvitationService`
+- `ChatService`
+- Firestore reads from `users` and `therapists`
+
+## Communication surfaces
+
+### Human chat
+
+- `patient_chat_page.dart`
+- backed by `ChatService`
+- stores conversations and nested messages in Firestore
+
+### AI-assisted conversation
+
+- `ai_therapist_chat_page.dart`
+- integrates with AI workflows configured elsewhere in the platform
+
+### Voice conversation
+
+- `patient_voice_conversation_page.dart`
+- works alongside voice check-in and audio handling services
+
+## Billing
+
+Client billing lives in `lib/pages/billing_page.dart`.
+
+The page:
+
+- fetches Stripe billing details through callable functions
+- fetches invoices
+- opens Stripe checkout
+- redeems billing codes
+- reflects plan information including admin-granted special access
+
+## Support and settings
+
+Supporting client-facing utilities include:
+
+- `support_center_page.dart`
+- shared settings and drawer components in `lib/widgets/common_settings_drawer.dart`
+
+## Failure cases to watch
+
+- missing client profile
+- unverified email
+- invitation linkage failures
+- Firestore permission issues
+- stale plan data until callable billing functions are deployed or refreshed

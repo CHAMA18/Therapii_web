@@ -1,0 +1,66 @@
+---
+title: Firebase and Functions
+description: Firebase services used by the app and the responsibilities of Cloud Functions.
+---
+
+# Firebase and Functions
+
+## Firebase services in use
+
+- Firebase Authentication
+- Cloud Firestore
+- Firebase Storage
+- Firebase Cloud Functions
+
+## Cloud Functions responsibilities
+
+`functions/index.js` contains the privileged backend operations that should not run directly in the client.
+
+Key categories:
+
+### Invitations and email
+
+- create invitation codes
+- persist invitation records
+- send invitation emails with Resend
+
+### Billing
+
+- create Stripe checkout sessions
+- fetch billing details
+- fetch invoices
+- redeem billing codes
+- reflect access grants created by admins
+
+### AI and admin-configured integrations
+
+- OpenAI-backed flows
+- environment or Firestore-loaded admin configuration
+
+## Secrets and configuration
+
+The backend expects secrets through the Functions runtime, especially:
+
+- `STRIPE_SECRET_KEY`
+- `OPENAI_API_KEY`
+
+The repository also includes guidance in:
+
+- `functions/SECRETS_SETUP.md`
+
+## Security model
+
+The client is trusted only for operations permitted by Firestore rules.
+
+Privileged actions that require:
+
+- secret keys
+- service-to-service API calls
+- cross-user billing access
+- centralized email delivery
+
+are routed through callable Cloud Functions instead.
+
+## Important implementation note
+
+The current function source includes places where secrets are expected to come from environment variables, but the codebase should continue to avoid introducing new hardcoded secrets. Any exposed secret should be rotated immediately.

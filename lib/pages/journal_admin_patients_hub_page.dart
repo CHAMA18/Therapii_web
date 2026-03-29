@@ -5,6 +5,7 @@ import 'package:therapii/pages/journal_admin_dashboard_page.dart';
 import 'package:therapii/pages/journal_admin_settings_page.dart';
 import 'package:therapii/pages/journal_admin_studio_page.dart';
 import 'package:therapii/pages/journal_admin_team_hub_page.dart';
+import 'package:therapii/services/app_page_state_service.dart';
 import 'package:therapii/widgets/journal_admin_sidebar.dart';
 
 class JournalAdminPatientsHubPage extends StatelessWidget {
@@ -44,17 +45,20 @@ class JournalAdminPatientsHubPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF6F7F8),
-      body: SafeArea(
-        child: Row(
-          children: [
-            JournalAdminSidebar(
-              activeItem: JournalAdminSidebarItem.patients,
-              onNavigate: (item) => _onSidebarNavigate(context, item),
-            ),
-            const Expanded(child: _PatientsHubContent()),
-          ],
+    return RememberAppPage(
+      pageId: AppPageId.journalAdminPatientsHub,
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF6F7F8),
+        body: SafeArea(
+          child: Row(
+            children: [
+              JournalAdminSidebar(
+                activeItem: JournalAdminSidebarItem.patients,
+                onNavigate: (item) => _onSidebarNavigate(context, item),
+              ),
+              const Expanded(child: _PatientsHubContent()),
+            ],
+          ),
         ),
       ),
     );
@@ -169,8 +173,10 @@ class _PatientsHeader extends StatelessWidget {
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFF2B8CEE),
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
               icon: const Icon(Icons.group_add_rounded, size: 18),
               label: const Text(
@@ -257,7 +263,8 @@ class _SearchAndFiltersBar extends StatelessWidget {
             ),
             if (withArrow) ...[
               const SizedBox(width: 6),
-              const Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: Color(0xFF94A3B8)),
+              const Icon(Icons.keyboard_arrow_down_rounded,
+                  size: 18, color: Color(0xFF94A3B8)),
             ],
           ],
         ),
@@ -285,8 +292,10 @@ class _SearchAndFiltersBar extends StatelessWidget {
             child: const TextField(
               decoration: InputDecoration(
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                prefixIcon: Icon(Icons.search_rounded, color: Color(0xFF94A3B8)),
+                contentPadding:
+                    EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                prefixIcon:
+                    Icon(Icons.search_rounded, color: Color(0xFF94A3B8)),
                 hintText: 'Search patients by name, ID or therapist...',
                 hintStyle: TextStyle(
                   fontSize: 14,
@@ -308,7 +317,8 @@ class _SearchAndFiltersBar extends StatelessWidget {
                   children: [
                     filterChip('All Statuses'),
                     filterChip('All Therapists'),
-                    filterChip('More Filters', withArrow: false, leading: Icons.tune_rounded),
+                    filterChip('More Filters',
+                        withArrow: false, leading: Icons.tune_rounded),
                   ],
                 ),
               ],
@@ -323,7 +333,8 @@ class _SearchAndFiltersBar extends StatelessWidget {
               const SizedBox(width: 10),
               filterChip('All Therapists'),
               const SizedBox(width: 10),
-              filterChip('More Filters', withArrow: false, leading: Icons.tune_rounded),
+              filterChip('More Filters',
+                  withArrow: false, leading: Icons.tune_rounded),
             ],
           );
         },
@@ -349,7 +360,8 @@ class _PatientsTable extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           const minWidth = 960.0;
-          final tableWidth = constraints.maxWidth > minWidth ? constraints.maxWidth : minWidth;
+          final tableWidth =
+              constraints.maxWidth > minWidth ? constraints.maxWidth : minWidth;
 
           return SingleChildScrollView(
             scrollDirection: Axis.horizontal,
@@ -358,10 +370,12 @@ class _PatientsTable extends StatelessWidget {
               child: Column(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 14),
                     decoration: const BoxDecoration(
                       color: Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                      borderRadius:
+                          BorderRadius.vertical(top: Radius.circular(16)),
                     ),
                     child: const Row(
                       children: [
@@ -376,7 +390,8 @@ class _PatientsTable extends StatelessWidget {
                   ),
                   ...rows.map((row) => _PatientDataRow(data: row)),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 14),
                     decoration: const BoxDecoration(
                       border: Border(top: BorderSide(color: Color(0xFFE8EDF4))),
                     ),
@@ -483,7 +498,9 @@ class _PatientDataRow extends StatelessWidget {
                   backgroundColor: data.avatarColor,
                   child: Icon(
                     Icons.person_outline_rounded,
-                    color: data.name == 'Marcus J. (Test Account)' ? const Color(0xFF9CA3AF) : const Color(0xFF64748B),
+                    color: data.name == 'Marcus J. (Test Account)'
+                        ? const Color(0xFF9CA3AF)
+                        : const Color(0xFF64748B),
                     size: 20,
                   ),
                 ),
@@ -503,7 +520,8 @@ class _PatientDataRow extends StatelessWidget {
                       ),
                       const SizedBox(height: 5),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
                           color: data.statusBg,
                           borderRadius: BorderRadius.circular(999),
@@ -542,7 +560,8 @@ class _PatientDataRow extends StatelessWidget {
                 CircleAvatar(
                   radius: 12,
                   backgroundColor: data.therapistTone,
-                  child: const Icon(Icons.person_outline_rounded, size: 13, color: Color(0xFF94A3B8)),
+                  child: const Icon(Icons.person_outline_rounded,
+                      size: 13, color: Color(0xFF94A3B8)),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
@@ -552,8 +571,12 @@ class _PatientDataRow extends StatelessWidget {
                       fontSize: 14,
                       height: 1.5,
                       fontWeight: FontWeight.w600,
-                      color: data.therapist.contains('Pending') ? const Color(0xFF94A3B8) : const Color(0xFF334155),
-                      fontStyle: data.therapist.contains('Pending') ? FontStyle.italic : FontStyle.normal,
+                      color: data.therapist.contains('Pending')
+                          ? const Color(0xFF94A3B8)
+                          : const Color(0xFF334155),
+                      fontStyle: data.therapist.contains('Pending')
+                          ? FontStyle.italic
+                          : FontStyle.normal,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -568,7 +591,8 @@ class _PatientDataRow extends StatelessWidget {
                 Container(
                   width: 10,
                   height: 10,
-                  decoration: BoxDecoration(color: data.sentimentColor, shape: BoxShape.circle),
+                  decoration: BoxDecoration(
+                      color: data.sentimentColor, shape: BoxShape.circle),
                 ),
                 const SizedBox(width: 8),
                 Text(
@@ -576,7 +600,9 @@ class _PatientDataRow extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: data.sentiment == 'Neutral' ? const Color(0xFF94A3B8) : data.sentimentColor,
+                    color: data.sentiment == 'Neutral'
+                        ? const Color(0xFF94A3B8)
+                        : data.sentimentColor,
                   ),
                 ),
               ],
@@ -614,8 +640,13 @@ class _PatientDataRow extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _actionIcon(Icons.account_circle_outlined),
-                _actionIcon(data.riskAction ? Icons.priority_high_rounded : Icons.chat_bubble_outline_rounded,
-                    color: data.riskAction ? const Color(0xFFEF476F) : const Color(0xFF64748B)),
+                _actionIcon(
+                    data.riskAction
+                        ? Icons.priority_high_rounded
+                        : Icons.chat_bubble_outline_rounded,
+                    color: data.riskAction
+                        ? const Color(0xFFEF476F)
+                        : const Color(0xFF64748B)),
                 _actionIcon(Icons.show_chart_rounded),
               ],
             ),
@@ -802,7 +833,8 @@ class _PatientsHubSidebar extends StatelessWidget {
     if (trimmed.isEmpty) return 'DA';
     final parts = trimmed.split(RegExp(r'\s+'));
     if (parts.length == 1) return parts.first.characters.first.toUpperCase();
-    return (parts.first.characters.first + parts.last.characters.first).toUpperCase();
+    return (parts.first.characters.first + parts.last.characters.first)
+        .toUpperCase();
   }
 
   String? _safePhotoUrl() {
@@ -840,7 +872,8 @@ class _PatientsHubSidebar extends StatelessWidget {
                     color: const Color(0xFF2B8CEE).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.self_improvement_rounded, color: Color(0xFF2B8CEE), size: 20),
+                  child: const Icon(Icons.self_improvement_rounded,
+                      color: Color(0xFF2B8CEE), size: 20),
                 ),
                 const SizedBox(width: 10),
                 const Expanded(
@@ -869,7 +902,8 @@ class _PatientsHubSidebar extends StatelessWidget {
                     label: 'Dashboard',
                     onTap: () {
                       Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(builder: (_) => const JournalAdminDashboardPage()),
+                        MaterialPageRoute(
+                            builder: (_) => const JournalAdminDashboardPage()),
                       );
                     },
                   ),
@@ -878,7 +912,8 @@ class _PatientsHubSidebar extends StatelessWidget {
                     label: 'Articles',
                     onTap: () {
                       Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(builder: (_) => const JournalAdminStudioPage()),
+                        MaterialPageRoute(
+                            builder: (_) => const JournalAdminStudioPage()),
                       );
                     },
                   ),
@@ -889,7 +924,8 @@ class _PatientsHubSidebar extends StatelessWidget {
                     label: 'Team',
                     onTap: () {
                       Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(builder: (_) => const JournalAdminTeamHubPage()),
+                        MaterialPageRoute(
+                            builder: (_) => const JournalAdminTeamHubPage()),
                       );
                     },
                   ),
@@ -905,7 +941,8 @@ class _PatientsHubSidebar extends StatelessWidget {
                     label: 'Analytics',
                     onTap: () {
                       Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(builder: (_) => const JournalAdminAnalyticsPage()),
+                        MaterialPageRoute(
+                            builder: (_) => const JournalAdminAnalyticsPage()),
                       );
                     },
                   ),
@@ -914,7 +951,8 @@ class _PatientsHubSidebar extends StatelessWidget {
                     label: 'Settings',
                     onTap: () {
                       Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(builder: (_) => const JournalAdminSettingsPage()),
+                        MaterialPageRoute(
+                            builder: (_) => const JournalAdminSettingsPage()),
                       );
                     },
                   ),
@@ -974,9 +1012,11 @@ class _PatientsHubSidebar extends StatelessWidget {
                 ),
                 IconButton(
                   onPressed: () => Navigator.of(context).maybePop(),
-                  icon: const Icon(Icons.logout_rounded, color: Color(0xFF64748B), size: 20),
+                  icon: const Icon(Icons.logout_rounded,
+                      color: Color(0xFF64748B), size: 20),
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                  constraints:
+                      const BoxConstraints(minWidth: 28, minHeight: 28),
                 ),
               ],
             ),

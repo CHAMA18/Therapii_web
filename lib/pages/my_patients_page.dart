@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:therapii/auth/firebase_auth_manager.dart';
-import 'package:therapii/pages/auth_welcome_page.dart';
+import 'package:therapii/pages/landing_page.dart';
 import 'package:therapii/pages/listen_page.dart';
 import 'package:therapii/pages/new_patient_info_page.dart';
 import 'package:therapii/pages/therapist_details_page.dart';
@@ -21,6 +21,7 @@ import 'package:therapii/pages/ai_summary_detail_page.dart';
 import 'package:therapii/services/voice_checkin_service.dart';
 import 'package:therapii/models/voice_checkin.dart';
 import 'package:therapii/pages/voice_checkin_detail_page.dart';
+import 'package:therapii/services/app_page_state_service.dart';
 import 'package:therapii/widgets/therapist_approval_gate.dart';
 import 'package:therapii/theme_mode_controller.dart';
 
@@ -59,7 +60,20 @@ class _MyPatientsPageState extends State<MyPatientsPage> {
   }
 
   String _formatMonthDay(DateTime date) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
     final monthLabel = months[date.month - 1];
     return '$monthLabel ${date.day}';
   }
@@ -173,13 +187,14 @@ class _MyPatientsPageState extends State<MyPatientsPage> {
             decoration: BoxDecoration(
               color: theme.colorScheme.surface,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: theme.colorScheme.outline.withOpacity(0.2)),
+              border:
+                  Border.all(color: theme.colorScheme.outline.withOpacity(0.2)),
             ),
             child: Text(
               'No active AI conversations yet.',
               style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.7),
-                  ),
+                color: theme.colorScheme.onSurface.withOpacity(0.7),
+              ),
             ),
           );
         }
@@ -221,10 +236,15 @@ class _MyPatientsPageState extends State<MyPatientsPage> {
     final patientLookup = {for (final p in _activePatients) p.id: p};
 
     return StreamBuilder<List<AiConversationSummary>>(
-      stream: _aiService.streamTherapistSummaries(therapistId: therapistId, limit: 20),
+      stream: _aiService.streamTherapistSummaries(
+          therapistId: therapistId, limit: 20),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Column(children: const [ShimmerListTile(), SizedBox(height: 12), ShimmerListTile()]);
+          return Column(children: const [
+            ShimmerListTile(),
+            SizedBox(height: 12),
+            ShimmerListTile()
+          ]);
         }
         if (snapshot.hasError) {
           final theme = Theme.of(context);
@@ -248,10 +268,12 @@ class _MyPatientsPageState extends State<MyPatientsPage> {
             decoration: BoxDecoration(
               color: theme.colorScheme.surface,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: theme.colorScheme.outline.withOpacity(0.2)),
+              border:
+                  Border.all(color: theme.colorScheme.outline.withOpacity(0.2)),
             ),
             child: Text('No AI summaries yet.',
-                style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.7))),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurface.withOpacity(0.7))),
           );
         }
 
@@ -264,7 +286,8 @@ class _MyPatientsPageState extends State<MyPatientsPage> {
             dateLabel: _formatMonthDay(s.createdAt),
             snippet: _truncate(s.summary, max: 70),
             onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => AiSummaryDetailPage(summary: s)),
+              MaterialPageRoute(
+                  builder: (_) => AiSummaryDetailPage(summary: s)),
             ),
           ));
           if (i != items.length - 1) tiles.add(const SizedBox(height: 12));
@@ -285,7 +308,11 @@ class _MyPatientsPageState extends State<MyPatientsPage> {
       stream: svc.streamTherapistCheckins(therapistId: therapistId, limit: 20),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Column(children: const [ShimmerListTile(), SizedBox(height: 12), ShimmerListTile()]);
+          return Column(children: const [
+            ShimmerListTile(),
+            SizedBox(height: 12),
+            ShimmerListTile()
+          ]);
         }
         if (snapshot.hasError) {
           final theme = Theme.of(context);
@@ -296,7 +323,8 @@ class _MyPatientsPageState extends State<MyPatientsPage> {
               color: theme.colorScheme.errorContainer,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Text('Failed to load voice check-ins. Please try again later.',
+            child: Text(
+                'Failed to load voice check-ins. Please try again later.',
                 style: TextStyle(color: theme.colorScheme.onErrorContainer)),
           );
         }
@@ -309,10 +337,12 @@ class _MyPatientsPageState extends State<MyPatientsPage> {
             decoration: BoxDecoration(
               color: theme.colorScheme.surface,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: theme.colorScheme.outline.withOpacity(0.2)),
+              border:
+                  Border.all(color: theme.colorScheme.outline.withOpacity(0.2)),
             ),
             child: Text('No voice check-ins yet.',
-                style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.7))),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurface.withOpacity(0.7))),
           );
         }
 
@@ -364,22 +394,30 @@ class _MyPatientsPageState extends State<MyPatientsPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete invitation?'),
-        content: const Text('This will remove the invitation permanently. This action cannot be undone.'),
+        content: const Text(
+            'This will remove the invitation permanently. This action cannot be undone.'),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Delete')),
+          TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Delete')),
         ],
       ),
     );
     if (confirm != true) return;
     try {
-      await _invitationService.deleteInvitation(invitationId: inv.id, therapistId: me.uid);
+      await _invitationService.deleteInvitation(
+          invitationId: inv.id, therapistId: me.uid);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invitation deleted')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Invitation deleted')));
       await _loadData();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to delete: $e')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Failed to delete: $e')));
     }
   }
 
@@ -397,7 +435,7 @@ class _MyPatientsPageState extends State<MyPatientsPage> {
       if (me == null) {
         if (!mounted) return;
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const AuthWelcomePage(initialTab: AuthTab.login)),
+          MaterialPageRoute(builder: (_) => const LandingPage()),
           (route) => false,
         );
         return;
@@ -405,9 +443,14 @@ class _MyPatientsPageState extends State<MyPatientsPage> {
 
       final therapistId = me.uid;
 
-      final therapistSnapshot = await FirebaseFirestore.instance.collection('therapists').doc(therapistId).get();
+      final therapistSnapshot = await FirebaseFirestore.instance
+          .collection('therapists')
+          .doc(therapistId)
+          .get();
       final therapistData = therapistSnapshot.data() ?? <String, dynamic>{};
-      final status = (therapistData['approval_status'] as String?)?.toLowerCase() ?? 'pending';
+      final status =
+          (therapistData['approval_status'] as String?)?.toLowerCase() ??
+              'pending';
       final timestamp = (therapistData['approval_requested_at'] as Timestamp? ??
               therapistData['updated_at'] as Timestamp? ??
               therapistData['created_at'] as Timestamp?)
@@ -438,8 +481,10 @@ class _MyPatientsPageState extends State<MyPatientsPage> {
         return;
       }
 
-      final invites = await _invitationService.getTherapistInvitations(therapistId);
-      final accepted = invites.where((i) => i.isUsed && i.patientId != null).toList();
+      final invites =
+          await _invitationService.getTherapistInvitations(therapistId);
+      final accepted =
+          invites.where((i) => i.isUsed && i.patientId != null).toList();
       final pending = invites.where((i) => !i.isUsed).toList();
 
       final patientIds = accepted.map((e) => e.patientId!).toSet().toList();
@@ -487,7 +532,7 @@ class _MyPatientsPageState extends State<MyPatientsPage> {
       await FirebaseAuthManager().signOut();
       if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const AuthWelcomePage(initialTab: AuthTab.login)),
+        MaterialPageRoute(builder: (_) => const LandingPage()),
         (route) => false,
       );
     } catch (e) {
@@ -505,178 +550,206 @@ class _MyPatientsPageState extends State<MyPatientsPage> {
     const int maxVisiblePatients = 10;
     final bool hasMorePatients = _activePatients.length > maxVisiblePatients;
     final List<AppUser.User> patientsToDisplay =
-        _showAllPatients || !hasMorePatients ? _activePatients : _activePatients.take(maxVisiblePatients).toList();
+        _showAllPatients || !hasMorePatients
+            ? _activePatients
+            : _activePatients.take(maxVisiblePatients).toList();
     final screenWidth = MediaQuery.sizeOf(context).width;
-    final horizontalPadding = screenWidth >= 1200 ? 40.0 : screenWidth >= 900 ? 28.0 : 16.0;
+    final horizontalPadding = screenWidth >= 1200
+        ? 40.0
+        : screenWidth >= 900
+            ? 28.0
+            : 16.0;
     final contentMaxWidth = screenWidth >= 1400 ? 980.0 : 900.0;
     final appBarDivider = theme.colorScheme.outline.withValues(alpha: 0.12);
     final onSurface = theme.colorScheme.onSurface;
     final scaffoldColor = theme.scaffoldBackgroundColor;
-    final therapistName = _therapist?.fullName.isNotEmpty == true ? _therapist!.fullName : 'Therapist';
-    final therapistInitial = (_therapist?.firstName ?? therapistName)[0].toUpperCase();
+    final therapistName = _therapist?.fullName.isNotEmpty == true
+        ? _therapist!.fullName
+        : 'Therapist';
+    final therapistInitial =
+        (_therapist?.firstName ?? therapistName)[0].toUpperCase();
 
-    return Scaffold(
-      backgroundColor: scaffoldColor,
-      appBar: AppBar(
-        titleSpacing: 0,
-        centerTitle: false,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
+    return RememberAppPage(
+      pageId: AppPageId.myPatients,
+      child: Scaffold(
         backgroundColor: scaffoldColor,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          tooltip: 'Back',
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Text(
-          'My Patients',
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: onSurface,
+        appBar: AppBar(
+          titleSpacing: 0,
+          centerTitle: false,
+          elevation: 0,
+          surfaceTintColor: Colors.transparent,
+          backgroundColor: scaffoldColor,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded),
+            tooltip: 'Back',
+            onPressed: () => Navigator.of(context).pop(),
           ),
-        ),
-        scrolledUnderElevation: 0,
-        actions: [
-          IconButton(
-            icon: Icon(
-              theme.brightness == Brightness.dark ? Icons.light_mode_rounded : Icons.brightness_2_rounded,
+          title: Text(
+            'My Patients',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: onSurface,
             ),
-            tooltip: 'Toggle theme',
-            onPressed: themeModeController.toggleLightDark,
           ),
-          IconButton(
-            icon: const Icon(Icons.settings_rounded),
-            tooltip: 'Settings',
-            onPressed: () => showSettingsPopup(context),
+          scrolledUnderElevation: 0,
+          actions: [
+            IconButton(
+              icon: Icon(
+                theme.brightness == Brightness.dark
+                    ? Icons.light_mode_rounded
+                    : Icons.brightness_2_rounded,
+              ),
+              tooltip: 'Toggle theme',
+              onPressed: themeModeController.toggleLightDark,
+            ),
+            IconButton(
+              icon: const Icon(Icons.settings_rounded),
+              tooltip: 'Settings',
+              onPressed: () => showSettingsPopup(context),
+            ),
+          ],
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(1),
+            child: Container(height: 1, color: appBarDivider),
           ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: appBarDivider),
         ),
-      ),
-      body: SafeArea(
-        child: Builder(builder: (innerContext) {
-          if (!_loading) {
-            final status = (_approvalStatus ?? '').toLowerCase();
-            if (status.isNotEmpty && status != 'approved') {
-              return TherapistApprovalGate(
-                status: _approvalStatus ?? 'pending',
-                requestedAt: _approvalRequestedAt,
-                refreshing: _checkingApproval,
-                signingOut: _signingOut,
-                onRefresh: _refreshApprovalStatus,
-                onUpdateProfile: _openTherapistProfileEditor,
-                onSignOut: _signOut,
-              );
+        body: SafeArea(
+          child: Builder(builder: (innerContext) {
+            if (!_loading) {
+              final status = (_approvalStatus ?? '').toLowerCase();
+              if (status.isNotEmpty && status != 'approved') {
+                return TherapistApprovalGate(
+                  status: _approvalStatus ?? 'pending',
+                  requestedAt: _approvalRequestedAt,
+                  refreshing: _checkingApproval,
+                  signingOut: _signingOut,
+                  onRefresh: _refreshApprovalStatus,
+                  onUpdateProfile: _openTherapistProfileEditor,
+                  onSignOut: _signOut,
+                );
+              }
             }
-          }
 
-          return RefreshIndicator.adaptive(
-            onRefresh: _loadData,
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-              padding: EdgeInsets.fromLTRB(horizontalPadding, 16, horizontalPadding, 28),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: contentMaxWidth),
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final isCompact = constraints.maxWidth < 640;
-                      final useStackedActions = constraints.maxWidth < 760;
-                      final actionGap = useStackedActions ? 12.0 : 16.0;
-                      final inviteTile = _HeroTile(
-                        gradient: true,
-                        title: 'Invite New Patient',
-                        subtitle: 'Share a code to securely connect.',
-                        icon: Icons.person_add_alt_1_rounded,
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const NewPatientInfoPage()),
-                        ),
-                      );
-                      final listenTile = _HeroTile(
-                        gradient: false,
-                        title: 'Listen',
-                        subtitle: 'AI summaries, transcripts and voice updates.',
-                        icon: Icons.graphic_eq_rounded,
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const ListenPage()),
-                        ),
-                      );
+            return RefreshIndicator.adaptive(
+              onRefresh: _loadData,
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(
+                    parent: AlwaysScrollableScrollPhysics()),
+                padding: EdgeInsets.fromLTRB(
+                    horizontalPadding, 16, horizontalPadding, 28),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: contentMaxWidth),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final isCompact = constraints.maxWidth < 640;
+                        final useStackedActions = constraints.maxWidth < 760;
+                        final actionGap = useStackedActions ? 12.0 : 16.0;
+                        final inviteTile = _HeroTile(
+                          gradient: true,
+                          title: 'Invite New Patient',
+                          subtitle: 'Share a code to securely connect.',
+                          icon: Icons.person_add_alt_1_rounded,
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                                builder: (_) => const NewPatientInfoPage()),
+                          ),
+                        );
+                        final listenTile = _HeroTile(
+                          gradient: false,
+                          title: 'Listen',
+                          subtitle:
+                              'AI summaries, transcripts and voice updates.',
+                          icon: Icons.graphic_eq_rounded,
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                                builder: (_) => const ListenPage()),
+                          ),
+                        );
 
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(top: 10, bottom: 24),
-                            child: isCompact
-                                ? Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      _HeaderTextBlock(
-                                        greeting: _greeting(),
-                                        therapistName: therapistName,
-                                      ),
-                                      const SizedBox(height: 16),
-                                      _TherapistAvatarChip(initial: therapistInitial),
-                                    ],
-                                  )
-                                : Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Expanded(
-                                        child: _HeaderTextBlock(
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding:
+                                  const EdgeInsets.only(top: 10, bottom: 24),
+                              child: isCompact
+                                  ? Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        _HeaderTextBlock(
                                           greeting: _greeting(),
                                           therapistName: therapistName,
                                         ),
-                                      ),
-                                      _TherapistAvatarChip(initial: therapistInitial),
-                                    ],
-                                  ),
-                          ),
-                          if (useStackedActions) ...[
-                            inviteTile,
-                            SizedBox(height: actionGap),
-                            listenTile,
-                          ] else
-                            Row(
-                              children: [
-                                Expanded(flex: 11, child: inviteTile),
-                                SizedBox(width: actionGap),
-                                Expanded(flex: 10, child: listenTile),
-                              ],
+                                        const SizedBox(height: 16),
+                                        _TherapistAvatarChip(
+                                            initial: therapistInitial),
+                                      ],
+                                    )
+                                  : Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Expanded(
+                                          child: _HeaderTextBlock(
+                                            greeting: _greeting(),
+                                            therapistName: therapistName,
+                                          ),
+                                        ),
+                                        _TherapistAvatarChip(
+                                            initial: therapistInitial),
+                                      ],
+                                    ),
                             ),
-                          const SizedBox(height: 28),
-                          _ActivePatientsCard(
-                            isLoading: _loading,
-                            error: _error,
-                            patients: patientsToDisplay,
-                            hasMorePatients: hasMorePatients,
-                            showAllPatients: _showAllPatients,
-                            onShowAll: () => setState(() => _showAllPatients = true),
-                            onManage: () => Navigator.of(context).push(
-                              MaterialPageRoute(builder: (_) => const NewPatientInfoPage()),
+                            if (useStackedActions) ...[
+                              inviteTile,
+                              SizedBox(height: actionGap),
+                              listenTile,
+                            ] else
+                              Row(
+                                children: [
+                                  Expanded(flex: 11, child: inviteTile),
+                                  SizedBox(width: actionGap),
+                                  Expanded(flex: 10, child: listenTile),
+                                ],
+                              ),
+                            const SizedBox(height: 28),
+                            _ActivePatientsCard(
+                              isLoading: _loading,
+                              error: _error,
+                              patients: patientsToDisplay,
+                              hasMorePatients: hasMorePatients,
+                              showAllPatients: _showAllPatients,
+                              onShowAll: () =>
+                                  setState(() => _showAllPatients = true),
+                              onManage: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                    builder: (_) => const NewPatientInfoPage()),
+                              ),
+                              buildPatientTile: _buildPatientTile,
                             ),
-                            buildPatientTile: _buildPatientTile,
-                          ),
-                          const SizedBox(height: 26),
-                          _PendingInvitesCard(
-                            invites: _pendingInvites,
-                            onDelete: _confirmAndDelete,
-                            onGenerateInvite: () => Navigator.of(context).push(
-                              MaterialPageRoute(builder: (_) => const NewPatientInfoPage()),
+                            const SizedBox(height: 26),
+                            _PendingInvitesCard(
+                              invites: _pendingInvites,
+                              onDelete: _confirmAndDelete,
+                              onGenerateInvite: () =>
+                                  Navigator.of(context).push(
+                                MaterialPageRoute(
+                                    builder: (_) => const NewPatientInfoPage()),
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 8),
-                        ],
-                      );
-                    },
+                            const SizedBox(height: 8),
+                          ],
+                        );
+                      },
+                    ),
                   ),
                 ),
               ),
-            ),
-          );
-        }),
+            );
+          }),
+        ),
       ),
     );
   }
@@ -785,9 +858,11 @@ class _TopNav extends StatelessWidget {
           icon: const Icon(Icons.menu),
           color: theme.colorScheme.onSurface,
           style: IconButton.styleFrom(
-            backgroundColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.6),
+            backgroundColor:
+                theme.colorScheme.surfaceContainerHighest.withOpacity(0.6),
             padding: const EdgeInsets.all(12),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
         const SizedBox(width: 12),
@@ -795,8 +870,16 @@ class _TopNav extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _HeaderTab(label: 'My Patients', selected: selected == TopNavSection.patients, color: primary, onTap: onPatientsTap),
-              _HeaderTab(label: 'Listen', selected: selected == TopNavSection.listen, color: primary, onTap: onListenTap),
+              _HeaderTab(
+                  label: 'My Patients',
+                  selected: selected == TopNavSection.patients,
+                  color: primary,
+                  onTap: onPatientsTap),
+              _HeaderTab(
+                  label: 'Listen',
+                  selected: selected == TopNavSection.listen,
+                  color: primary,
+                  onTap: onListenTap),
             ],
           ),
         ),
@@ -810,16 +893,20 @@ class _HeaderTab extends StatelessWidget {
   final bool selected;
   final Color color;
   final VoidCallback? onTap;
-  const _HeaderTab({required this.label, required this.selected, required this.color, this.onTap});
+  const _HeaderTab(
+      {required this.label,
+      required this.selected,
+      required this.color,
+      this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final inactiveColor = theme.colorScheme.onSurface.withOpacity(0.6);
     final textStyle = theme.textTheme.titleLarge?.copyWith(
-          fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-          color: selected ? color : inactiveColor,
-        );
+      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+      color: selected ? color : inactiveColor,
+    );
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -860,7 +947,8 @@ class _PatientTile extends StatelessWidget {
     final borderRadius = BorderRadius.circular(18);
     final borderColor = colorScheme.outline.withValues(alpha: 0.1);
     final blueColor = blue;
-    final subtitleStyle = theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurface.withValues(alpha: 0.5));
+    final subtitleStyle = theme.textTheme.bodySmall
+        ?.copyWith(color: colorScheme.onSurface.withValues(alpha: 0.5));
 
     return Material(
       color: Colors.transparent,
@@ -881,7 +969,9 @@ class _PatientTile extends StatelessWidget {
                 CircleAvatar(
                   radius: 22,
                   backgroundColor: colorScheme.surfaceContainerHighest,
-                  child: Icon(Icons.person, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8)),
+                  child: Icon(Icons.person,
+                      color:
+                          colorScheme.onSurfaceVariant.withValues(alpha: 0.8)),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -891,9 +981,9 @@ class _PatientTile extends StatelessWidget {
                       Text(
                         name,
                         style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              color: colorScheme.onSurface,
-                            ),
+                          fontWeight: FontWeight.w800,
+                          color: colorScheme.onSurface,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -917,10 +1007,12 @@ class _PatientTile extends StatelessWidget {
                     ],
                     IconButton(
                       onPressed: onOpenChat,
-                      icon: const Icon(Icons.chat_bubble_outline_rounded, size: 20),
+                      icon: const Icon(Icons.chat_bubble_outline_rounded,
+                          size: 20),
                       color: blueColor.withValues(alpha: 0.8),
                       padding: const EdgeInsets.all(8),
-                      constraints: const BoxConstraints(minHeight: 36, minWidth: 36),
+                      constraints:
+                          const BoxConstraints(minHeight: 36, minWidth: 36),
                       tooltip: 'Message History',
                     ),
                   ],
@@ -979,7 +1071,8 @@ class _AiConversationTile extends StatelessWidget {
                 CircleAvatar(
                   radius: 24,
                   backgroundColor: colorScheme.surfaceContainerHighest,
-                  child: Icon(Icons.smart_toy_outlined, color: colorScheme.onSurfaceVariant),
+                  child: Icon(Icons.smart_toy_outlined,
+                      color: colorScheme.onSurfaceVariant),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -989,16 +1082,16 @@ class _AiConversationTile extends StatelessWidget {
                       Text(
                         name,
                         style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: colorScheme.onSurface,
-                            ),
+                          fontWeight: FontWeight.w700,
+                          color: colorScheme.onSurface,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         subtitle,
                         style: theme.textTheme.bodySmall?.copyWith(
-                              color: colorScheme.onSurface.withOpacity(0.6),
-                            ),
+                          color: colorScheme.onSurface.withOpacity(0.6),
+                        ),
                       ),
                     ],
                   ),
@@ -1008,7 +1101,8 @@ class _AiConversationTile extends StatelessWidget {
                   _UnreadBadge(count: unreadCount),
                 ],
                 const SizedBox(width: 12),
-                Icon(Icons.arrow_forward_ios_rounded, size: 18, color: colorScheme.onSurface.withOpacity(0.6)),
+                Icon(Icons.arrow_forward_ios_rounded,
+                    size: 18, color: colorScheme.onSurface.withOpacity(0.6)),
               ],
             ),
           ),
@@ -1087,7 +1181,8 @@ class _VoiceCheckinTile extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       '$dateLabel • ${_formatDuration(duration)}',
-                      style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurface.withOpacity(0.6)),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurface.withOpacity(0.6)),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -1139,7 +1234,10 @@ class _AiSummaryTile extends StatelessWidget {
             borderRadius: borderRadius,
             border: Border.all(color: borderColor),
             boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6, offset: const Offset(0, 3)),
+              BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 6,
+                  offset: const Offset(0, 3)),
             ],
           ),
           child: Padding(
@@ -1149,23 +1247,32 @@ class _AiSummaryTile extends StatelessWidget {
                 CircleAvatar(
                   radius: 24,
                   backgroundColor: colorScheme.surfaceContainerHighest,
-                  child: Icon(Icons.notes_rounded, color: colorScheme.onSurfaceVariant),
+                  child: Icon(Icons.notes_rounded,
+                      color: colorScheme.onSurfaceVariant),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(name, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                      Text(name,
+                          style: theme.textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w700)),
                       const SizedBox(height: 2),
-                      Text(dateLabel, style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurface.withOpacity(0.6))),
+                      Text(dateLabel,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurface.withOpacity(0.6))),
                       const SizedBox(height: 6),
-                      Text(snippet, maxLines: 2, overflow: TextOverflow.ellipsis, style: theme.textTheme.bodySmall),
+                      Text(snippet,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall),
                     ],
                   ),
                 ),
                 const SizedBox(width: 12),
-                Icon(Icons.arrow_forward_ios_rounded, size: 18, color: colorScheme.onSurface.withOpacity(0.6)),
+                Icon(Icons.arrow_forward_ios_rounded,
+                    size: 18, color: colorScheme.onSurface.withOpacity(0.6)),
               ],
             ),
           ),
@@ -1191,7 +1298,10 @@ class _UnreadBadge extends StatelessWidget {
       ),
       child: Text(
         display,
-        style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onPrimary, fontSize: 12, fontWeight: FontWeight.w600),
+        style: theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.onPrimary,
+            fontSize: 12,
+            fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -1200,7 +1310,8 @@ class _UnreadBadge extends StatelessWidget {
 class _InviteTile extends StatelessWidget {
   final InvitationCode invitation;
   final VoidCallback? onDelete;
-  const _InviteTile({required this.invitation, VoidCallback? onDelete}) : onDelete = onDelete;
+  const _InviteTile({required this.invitation, VoidCallback? onDelete})
+      : onDelete = onDelete;
 
   String _remainingText(DateTime now, DateTime expiry) {
     final diff = expiry.difference(now);
@@ -1216,11 +1327,13 @@ class _InviteTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final border = RoundedRectangleBorder(borderRadius: BorderRadius.circular(14));
+    final border =
+        RoundedRectangleBorder(borderRadius: BorderRadius.circular(14));
     final borderColor = theme.colorScheme.outlineVariant.withOpacity(0.4);
     final now = DateTime.now();
     final showCode = now.isBefore(invitation.expiresAt);
-    final secondary = theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.7));
+    final secondary = theme.textTheme.bodySmall
+        ?.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.7));
 
     return Material(
       color: theme.colorScheme.surface,
@@ -1228,7 +1341,9 @@ class _InviteTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: ShapeDecoration(
-          shape: RoundedRectangleBorder(side: BorderSide(color: borderColor), borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+              side: BorderSide(color: borderColor),
+              borderRadius: BorderRadius.circular(14)),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -1236,42 +1351,49 @@ class _InviteTile extends StatelessWidget {
             CircleAvatar(
               radius: 22,
               backgroundColor: theme.colorScheme.surfaceContainerHighest,
-              child: Icon(Icons.mail_outline, color: theme.colorScheme.onSurfaceVariant),
+              child: Icon(Icons.mail_outline,
+                  color: theme.colorScheme.onSurfaceVariant),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(
-                  invitation.patientFirstName,
-                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700, color: theme.colorScheme.onSurface),
-                ),
-                const SizedBox(height: 2),
-                Text(invitation.patientEmail, style: secondary),
-                const SizedBox(height: 6),
-                if (showCode)
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          'Code: ${invitation.code}',
-                          style: theme.textTheme.labelLarge?.copyWith(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      invitation.patientFirstName,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: theme.colorScheme.onSurface),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(invitation.patientEmail, style: secondary),
+                    const SizedBox(height: 6),
+                    if (showCode)
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.primaryContainer,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              'Code: ${invitation.code}',
+                              style: theme.textTheme.labelLarge?.copyWith(
                                 fontWeight: FontWeight.w700,
                                 color: theme.colorScheme.onPrimaryContainer,
                               ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(_remainingText(now, invitation.expiresAt), style: secondary),
-                    ],
-                  )
-                else
-                  Text('Invitation expired', style: secondary),
-              ]),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(_remainingText(now, invitation.expiresAt),
+                              style: secondary),
+                        ],
+                      )
+                    else
+                      Text('Invitation expired', style: secondary),
+                  ]),
             ),
             const SizedBox(width: 8),
             Tooltip(
@@ -1300,10 +1422,15 @@ class _CornerBadge extends StatelessWidget {
         color: const Color(0xFFF09B58),
         borderRadius: const BorderRadius.only(bottomRight: Radius.circular(6)),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 4, offset: const Offset(0, 2)),
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 4,
+              offset: const Offset(0, 2)),
         ],
       ),
-      child: Text(text, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+      child: Text(text,
+          style: const TextStyle(
+              color: Colors.white, fontWeight: FontWeight.w600)),
     );
   }
 }
@@ -1335,8 +1462,12 @@ class _HeroTileState extends State<_HeroTile> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
-    final background = widget.gradient ? null : (isDark ? scheme.surfaceContainerHighest : Colors.white);
-    final borderColor = widget.gradient ? Colors.transparent : scheme.outline.withValues(alpha: 0.1);
+    final background = widget.gradient
+        ? null
+        : (isDark ? scheme.surfaceContainerHighest : Colors.white);
+    final borderColor = widget.gradient
+        ? Colors.transparent
+        : scheme.outline.withValues(alpha: 0.1);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
@@ -1388,7 +1519,8 @@ class _HeroTileState extends State<_HeroTile> {
                     ),
                     child: Icon(
                       widget.icon,
-                      color: widget.gradient ? scheme.onPrimary : scheme.primary,
+                      color:
+                          widget.gradient ? scheme.onPrimary : scheme.primary,
                       size: 22,
                     ),
                   ),
@@ -1399,7 +1531,7 @@ class _HeroTileState extends State<_HeroTile> {
                         : scheme.onSurface.withValues(alpha: 0.4),
                   ),
                 ],
-                ),
+              ),
               const SizedBox(height: 18),
               Text(
                 widget.title,
@@ -1524,7 +1656,8 @@ class _ActivePatientsCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     error!,
-                    style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onErrorContainer),
+                    style: theme.textTheme.bodyMedium
+                        ?.copyWith(color: scheme.onErrorContainer),
                   ),
                 ),
               ],
@@ -1559,7 +1692,8 @@ class _ActivePatientsCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: scheme.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: scheme.outline.withValues(alpha: 0.1)),
+                  border:
+                      Border.all(color: scheme.outline.withValues(alpha: 0.1)),
                 ),
                 child: compact
                     ? Column(
@@ -1572,7 +1706,9 @@ class _ActivePatientsCard extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 8),
-                          TextButton(onPressed: onManage, child: const Text('Invite patient')),
+                          TextButton(
+                              onPressed: onManage,
+                              child: const Text('Invite patient')),
                         ],
                       )
                     : Row(
@@ -1585,7 +1721,9 @@ class _ActivePatientsCard extends StatelessWidget {
                               ),
                             ),
                           ),
-                          TextButton(onPressed: onManage, child: const Text('Invite patient')),
+                          TextButton(
+                              onPressed: onManage,
+                              child: const Text('Invite patient')),
                         ],
                       ),
               );
@@ -1640,7 +1778,8 @@ class _PendingInvitesCard extends StatelessWidget {
                 children: [
                   Text(
                     'Pending invitations',
-                    style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800, height: 1.1),
+                    style: theme.textTheme.headlineSmall
+                        ?.copyWith(fontWeight: FontWeight.w800, height: 1.1),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -1661,11 +1800,13 @@ class _PendingInvitesCard extends StatelessWidget {
               final compact = constraints.maxWidth < 420;
               return Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
                 decoration: BoxDecoration(
                   color: scheme.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: scheme.outline.withValues(alpha: 0.1)),
+                  border:
+                      Border.all(color: scheme.outline.withValues(alpha: 0.1)),
                 ),
                 child: compact
                     ? Column(
@@ -1705,7 +1846,8 @@ class _PendingInvitesCard extends StatelessWidget {
           )
         else ...[
           for (var i = 0; i < invites.length; i++) ...[
-            _PremiumInviteTile(invitation: invites[i], onDelete: () => onDelete(invites[i])),
+            _PremiumInviteTile(
+                invitation: invites[i], onDelete: () => onDelete(invites[i])),
             if (i < invites.length - 1) const SizedBox(height: 12),
           ],
         ],
@@ -1773,7 +1915,8 @@ class _PremiumInviteTile extends StatelessWidget {
                   invitation.patientFirstName.isNotEmpty
                       ? invitation.patientFirstName
                       : invitation.patientEmail,
-                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                  style: theme.textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -1789,16 +1932,19 @@ class _PremiumInviteTile extends StatelessWidget {
                     runSpacing: 8,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
                         decoration: BoxDecoration(
                           color: scheme.primary.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: scheme.primary.withValues(alpha: 0.22)),
+                          border: Border.all(
+                              color: scheme.primary.withValues(alpha: 0.22)),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.vpn_key_rounded, size: 14, color: scheme.primary),
+                            Icon(Icons.vpn_key_rounded,
+                                size: 14, color: scheme.primary),
                             const SizedBox(width: 6),
                             Text(
                               invitation.code,
@@ -1812,7 +1958,8 @@ class _PremiumInviteTile extends StatelessWidget {
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: isUrgent
                               ? Colors.amber.withValues(alpha: 0.15)
@@ -1822,8 +1969,11 @@ class _PremiumInviteTile extends StatelessWidget {
                         child: Text(
                           _remainingText(now, invitation.expiresAt),
                           style: theme.textTheme.labelSmall?.copyWith(
-                            color: isUrgent ? Colors.amber.shade800 : scheme.onSurface.withValues(alpha: 0.55),
-                            fontWeight: isUrgent ? FontWeight.w600 : FontWeight.normal,
+                            color: isUrgent
+                                ? Colors.amber.shade800
+                                : scheme.onSurface.withValues(alpha: 0.55),
+                            fontWeight:
+                                isUrgent ? FontWeight.w600 : FontWeight.normal,
                           ),
                         ),
                       ),
@@ -1831,7 +1981,8 @@ class _PremiumInviteTile extends StatelessWidget {
                   )
                 else
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
                       color: scheme.error.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),

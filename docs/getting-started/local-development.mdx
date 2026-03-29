@@ -1,0 +1,112 @@
+---
+title: Local Development
+description: How to run, configure, and work on the Therapii application locally.
+---
+
+# Local Development
+
+## Requirements
+
+- Flutter SDK compatible with Dart `^3.6.0`
+- Node.js 20 for Firebase Functions
+- Firebase CLI for deploying rules and functions
+- Access to the Firebase project used by the app
+
+## Project layout
+
+- `lib/`: Flutter application code
+- `functions/`: Firebase Cloud Functions
+- `assets/`: fonts and image assets
+- `firestore.rules`: Firestore security model
+- `firebase.json`: Firebase project configuration
+
+## Flutter app setup
+
+Install dependencies:
+
+```bash
+flutter pub get
+```
+
+Run the app locally:
+
+```bash
+flutter run -d chrome
+```
+
+Useful quality checks:
+
+```bash
+dart format lib
+flutter analyze
+```
+
+## Functions setup
+
+Install function dependencies:
+
+```bash
+cd functions
+npm install
+```
+
+Validate backend syntax:
+
+```bash
+node --check index.js
+```
+
+## Required runtime configuration
+
+The application depends on Firebase plus several backend-managed secrets:
+
+- `STRIPE_SECRET_KEY`
+- `OPENAI_API_KEY`
+- optional email sender values
+
+The repository already includes a setup reference in `functions/SECRETS_SETUP.md`.
+
+## Main local development workflows
+
+### Frontend changes
+
+- Start from `lib/main.dart` to understand how users are routed
+- Use `lib/pages/` for feature screens
+- Use `lib/services/` when a UI change needs Firestore or integration access
+
+### Backend changes
+
+- Use `functions/index.js` for callable APIs
+- Keep client logic and privileged server logic separate
+- Update `firestore.rules` when data access rules change
+
+### Role-sensitive work
+
+Therapii has three effective access modes:
+
+- Admin
+- Therapist
+- Client
+
+Important:
+
+- The product language now uses `Client` in parts of the UI
+- Internal data and role checks still often use the historical `patient` role value
+
+Any role-related change should be reviewed in:
+
+- `lib/main.dart`
+- `lib/pages/auth_welcome_page.dart`
+- `lib/utils/admin_access.dart`
+- `firestore.rules`
+
+## Documentation preview with Mintlify
+
+This documentation site lives in `docs/`.
+
+From the docs directory, preview it locally with Mintlify:
+
+```bash
+cd docs
+npx mint dev
+```

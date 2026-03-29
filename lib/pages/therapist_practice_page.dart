@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter/material.dart';
+import 'package:therapii/auth/firebase_auth_manager.dart';
+import 'package:therapii/pages/landing_page.dart';
 import 'package:therapii/pages/therapist_therapeutic_models_page.dart';
 import 'package:therapii/widgets/primary_button.dart';
 
@@ -37,16 +39,57 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
   final List<EducationEntry> _educationEntries = [];
 
   static const List<String> _usStates = [
-    'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado',
-    'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho',
-    'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana',
-    'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota',
-    'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada',
-    'New Hampshire', 'New Jersey', 'New Mexico', 'New York',
-    'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon',
-    'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota',
-    'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington',
-    'West Virginia', 'Wisconsin', 'Wyoming', 'District of Columbia',
+    'Alabama',
+    'Alaska',
+    'Arizona',
+    'Arkansas',
+    'California',
+    'Colorado',
+    'Connecticut',
+    'Delaware',
+    'Florida',
+    'Georgia',
+    'Hawaii',
+    'Idaho',
+    'Illinois',
+    'Indiana',
+    'Iowa',
+    'Kansas',
+    'Kentucky',
+    'Louisiana',
+    'Maine',
+    'Maryland',
+    'Massachusetts',
+    'Michigan',
+    'Minnesota',
+    'Mississippi',
+    'Missouri',
+    'Montana',
+    'Nebraska',
+    'Nevada',
+    'New Hampshire',
+    'New Jersey',
+    'New Mexico',
+    'New York',
+    'North Carolina',
+    'North Dakota',
+    'Ohio',
+    'Oklahoma',
+    'Oregon',
+    'Pennsylvania',
+    'Rhode Island',
+    'South Carolina',
+    'South Dakota',
+    'Tennessee',
+    'Texas',
+    'Utah',
+    'Vermont',
+    'Virginia',
+    'Washington',
+    'West Virginia',
+    'Wisconsin',
+    'Wyoming',
+    'District of Columbia',
   ];
 
   @override
@@ -74,7 +117,10 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
     }
 
     try {
-      final doc = await FirebaseFirestore.instance.collection('therapists').doc(user.uid).get();
+      final doc = await FirebaseFirestore.instance
+          .collection('therapists')
+          .doc(user.uid)
+          .get();
       if (doc.exists) {
         final data = doc.data() ?? {};
         _fullNameController.text = data['full_name'] ?? user.displayName ?? '';
@@ -94,7 +140,8 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
         final licensures = data['licensures'] as List<dynamic>?;
         if (licensures != null) {
           for (final entry in licensures) {
-            _licensureEntries.add(LicensureEntry.fromMap(entry as Map<String, dynamic>));
+            _licensureEntries
+                .add(LicensureEntry.fromMap(entry as Map<String, dynamic>));
           }
         }
 
@@ -102,7 +149,8 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
         final educations = data['educations'] as List<dynamic>?;
         if (educations != null) {
           for (final entry in educations) {
-            _educationEntries.add(EducationEntry.fromMap(entry as Map<String, dynamic>));
+            _educationEntries
+                .add(EducationEntry.fromMap(entry as Map<String, dynamic>));
           }
         }
       } else {
@@ -143,7 +191,8 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
       debugPrint('Error picking file: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unable to pick file. Please try again.')),
+          const SnackBar(
+              content: Text('Unable to pick file. Please try again.')),
         );
       }
     }
@@ -182,13 +231,17 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
 
   Future<void> _logout() async {
     try {
-      await firebase_auth.FirebaseAuth.instance.signOut();
+      await FirebaseAuthManager().signOut();
       if (!mounted) return;
-      Navigator.of(context).popUntil((route) => route.isFirst);
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LandingPage()),
+        (route) => false,
+      );
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to log out right now. Please try again.')),
+        const SnackBar(
+            content: Text('Unable to log out right now. Please try again.')),
       );
     }
   }
@@ -231,7 +284,10 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
         'updated_at': FieldValue.serverTimestamp(),
       };
 
-      await FirebaseFirestore.instance.collection('therapists').doc(user.uid).set(
+      await FirebaseFirestore.instance
+          .collection('therapists')
+          .doc(user.uid)
+          .set(
             data,
             SetOptions(merge: true),
           );
@@ -239,7 +295,8 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
       if (!mounted) return;
       if (navigateNext) {
         Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const TherapistTherapeuticModelsPage()),
+          MaterialPageRoute(
+              builder: (_) => const TherapistTherapeuticModelsPage()),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -254,7 +311,8 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Something went wrong. Please try again.')),
+        const SnackBar(
+            content: Text('Something went wrong. Please try again.')),
       );
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -281,7 +339,8 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 960),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 40),
                     child: Form(
                       key: _formKey,
                       child: Column(
@@ -292,13 +351,15 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
                           _buildSectionCard(
                             isDark: isDark,
                             scheme: scheme,
-                            child: _buildContactSection(context, scheme, isDark),
+                            child:
+                                _buildContactSection(context, scheme, isDark),
                           ),
                           const SizedBox(height: 24),
                           _buildSectionCard(
                             isDark: isDark,
                             scheme: scheme,
-                            child: _buildVerificationSection(context, scheme, isDark),
+                            child: _buildVerificationSection(
+                                context, scheme, isDark),
                           ),
                           const SizedBox(height: 24),
                           _buildLicensureSection(context, scheme, isDark),
@@ -327,7 +388,9 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
         color: isDark ? scheme.surface : Colors.white,
         border: Border(
           bottom: BorderSide(
-            color: isDark ? scheme.outline.withValues(alpha: 0.2) : const Color(0xFFE2E8F0),
+            color: isDark
+                ? scheme.outline.withValues(alpha: 0.2)
+                : const Color(0xFFE2E8F0),
           ),
         ),
       ),
@@ -358,15 +421,26 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
                 ),
                 OutlinedButton.icon(
                   onPressed: _logout,
-                  icon: Icon(Icons.logout_rounded, size: 18, color: isDark ? scheme.onSurface : const Color(0xFF64748B)),
+                  icon: Icon(Icons.logout_rounded,
+                      size: 18,
+                      color:
+                          isDark ? scheme.onSurface : const Color(0xFF64748B)),
                   label: Text(
                     'Logout',
-                    style: TextStyle(color: isDark ? scheme.onSurface : const Color(0xFF64748B)),
+                    style: TextStyle(
+                        color: isDark
+                            ? scheme.onSurface
+                            : const Color(0xFF64748B)),
                   ),
                   style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    side: BorderSide(color: isDark ? scheme.outline.withValues(alpha: 0.4) : const Color(0xFFE2E8F0)),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                    side: BorderSide(
+                        color: isDark
+                            ? scheme.outline.withValues(alpha: 0.4)
+                            : const Color(0xFFE2E8F0)),
                   ),
                 ),
               ],
@@ -389,7 +463,10 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
             label: const Text('Back to Setup Overview'),
             style: TextButton.styleFrom(
               foregroundColor: scheme.primary,
-              textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
+              textStyle: Theme.of(context)
+                  .textTheme
+                  .labelLarge
+                  ?.copyWith(fontWeight: FontWeight.w600),
             ),
           ),
         ),
@@ -424,7 +501,10 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
       decoration: BoxDecoration(
         color: isDark ? scheme.surface : Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: isDark ? scheme.outline.withValues(alpha: 0.3) : const Color(0xFFE2E8F0)),
+        border: Border.all(
+            color: isDark
+                ? scheme.outline.withValues(alpha: 0.3)
+                : const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -437,7 +517,8 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
     );
   }
 
-  Widget _buildContactSection(BuildContext context, ColorScheme scheme, bool isDark) {
+  Widget _buildContactSection(
+      BuildContext context, ColorScheme scheme, bool isDark) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isWide = constraints.maxWidth > 600;
@@ -447,7 +528,10 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
           children: [
             Text(
               'Contact details',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+              style: Theme.of(context)
+                  .textTheme
+                  .titleLarge
+                  ?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 20),
             _buildTextField(
@@ -585,7 +669,9 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
           label,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w500,
-                color: isDark ? scheme.onSurface.withValues(alpha: 0.85) : const Color(0xFF475569),
+                color: isDark
+                    ? scheme.onSurface.withValues(alpha: 0.85)
+                    : const Color(0xFF475569),
               ),
         ),
         const SizedBox(height: 6),
@@ -594,17 +680,25 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
           keyboardType: keyboardType,
           decoration: InputDecoration(
             hintText: placeholder,
-            hintStyle: TextStyle(color: scheme.onSurface.withValues(alpha: 0.4)),
+            hintStyle:
+                TextStyle(color: scheme.onSurface.withValues(alpha: 0.4)),
             filled: true,
             fillColor: isDark ? scheme.surface : const Color(0xFFF8FAFC),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(20),
-              borderSide: BorderSide(color: isDark ? scheme.outline.withValues(alpha: 0.3) : const Color(0xFFE2E8F0)),
+              borderSide: BorderSide(
+                  color: isDark
+                      ? scheme.outline.withValues(alpha: 0.3)
+                      : const Color(0xFFE2E8F0)),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(20),
-              borderSide: BorderSide(color: isDark ? scheme.outline.withValues(alpha: 0.3) : const Color(0xFFE2E8F0)),
+              borderSide: BorderSide(
+                  color: isDark
+                      ? scheme.outline.withValues(alpha: 0.3)
+                      : const Color(0xFFE2E8F0)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(20),
@@ -631,44 +725,60 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
           label,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w500,
-                color: isDark ? scheme.onSurface.withValues(alpha: 0.8) : const Color(0xFF475569),
+                color: isDark
+                    ? scheme.onSurface.withValues(alpha: 0.8)
+                    : const Color(0xFF475569),
               ),
         ),
         const SizedBox(height: 6),
         DropdownButtonFormField<String>(
           value: value,
-          hint: Text('Select State', style: TextStyle(color: scheme.onSurface.withValues(alpha: 0.4))),
+          hint: Text('Select State',
+              style: TextStyle(color: scheme.onSurface.withValues(alpha: 0.4))),
           decoration: InputDecoration(
             filled: true,
             fillColor: isDark ? scheme.surface : const Color(0xFFF8FAFC),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(20),
-              borderSide: BorderSide(color: isDark ? scheme.outline.withValues(alpha: 0.3) : const Color(0xFFE2E8F0)),
+              borderSide: BorderSide(
+                  color: isDark
+                      ? scheme.outline.withValues(alpha: 0.3)
+                      : const Color(0xFFE2E8F0)),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(20),
-              borderSide: BorderSide(color: isDark ? scheme.outline.withValues(alpha: 0.3) : const Color(0xFFE2E8F0)),
+              borderSide: BorderSide(
+                  color: isDark
+                      ? scheme.outline.withValues(alpha: 0.3)
+                      : const Color(0xFFE2E8F0)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(20),
               borderSide: BorderSide(color: scheme.primary, width: 2),
             ),
           ),
-          items: items.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+          items: items
+              .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+              .toList(),
           onChanged: onChanged,
         ),
       ],
     );
   }
 
-  Widget _buildVerificationSection(BuildContext context, ColorScheme scheme, bool isDark) {
+  Widget _buildVerificationSection(
+      BuildContext context, ColorScheme scheme, bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Professional Verification',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          style: Theme.of(context)
+              .textTheme
+              .titleLarge
+              ?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 20),
         LayoutBuilder(
@@ -677,7 +787,8 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
             if (isWide) {
               return Row(
                 children: [
-                  Expanded(child: _buildUploadCard(
+                  Expanded(
+                      child: _buildUploadCard(
                     icon: Icons.person_rounded,
                     title: 'Profile Photo',
                     description: 'Clear headshot for your public profile',
@@ -687,7 +798,8 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
                     scheme: scheme,
                   )),
                   const SizedBox(width: 16),
-                  Expanded(child: _buildUploadCard(
+                  Expanded(
+                      child: _buildUploadCard(
                     icon: Icons.school_rounded,
                     title: 'Certificates',
                     description: 'Copy of your degree or certification',
@@ -697,7 +809,8 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
                     scheme: scheme,
                   )),
                   const SizedBox(width: 16),
-                  Expanded(child: _buildUploadCard(
+                  Expanded(
+                      child: _buildUploadCard(
                     icon: Icons.badge_rounded,
                     title: 'Government ID',
                     description: 'Passport, License, or State ID',
@@ -760,7 +873,9 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
     final hasFile = fileName != null && fileName.isNotEmpty;
     final borderColor = hasFile
         ? scheme.primary
-        : (isDark ? scheme.outline.withValues(alpha: 0.3) : const Color(0xFFE2E8F0));
+        : (isDark
+            ? scheme.outline.withValues(alpha: 0.3)
+            : const Color(0xFFE2E8F0));
 
     return Material(
       color: Colors.transparent,
@@ -816,15 +931,17 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.check_circle_rounded, color: scheme.primary, size: 16),
+                      Icon(Icons.check_circle_rounded,
+                          color: scheme.primary, size: 16),
                       const SizedBox(width: 4),
                       Flexible(
                         child: Text(
                           fileName,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: scheme.primary,
-                                fontWeight: FontWeight.w500,
-                              ),
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: scheme.primary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -846,12 +963,16 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
     );
   }
 
-  Widget _buildLicensureSection(BuildContext context, ColorScheme scheme, bool isDark) {
+  Widget _buildLicensureSection(
+      BuildContext context, ColorScheme scheme, bool isDark) {
     return Container(
       decoration: BoxDecoration(
         color: isDark ? scheme.surface : Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: isDark ? scheme.outline.withValues(alpha: 0.3) : const Color(0xFFE2E8F0)),
+        border: Border.all(
+            color: isDark
+                ? scheme.outline.withValues(alpha: 0.3)
+                : const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -872,7 +993,10 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
                     children: [
                       Text(
                         'State Licensure',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -886,7 +1010,8 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
                 ),
                 IconButton(
                   onPressed: _addLicensureEntry,
-                  icon: Icon(Icons.add_circle_outline_rounded, color: scheme.outline),
+                  icon: Icon(Icons.add_circle_outline_rounded,
+                      color: scheme.outline),
                 ),
               ],
             ),
@@ -896,14 +1021,16 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: _licensureEntries.length,
-              separatorBuilder: (_, __) => Divider(height: 1, color: scheme.outline.withValues(alpha: 0.2)),
+              separatorBuilder: (_, __) => Divider(
+                  height: 1, color: scheme.outline.withValues(alpha: 0.2)),
               itemBuilder: (context, index) {
                 final entry = _licensureEntries[index];
                 return ListTile(
                   title: Text('${entry.state} - ${entry.licenseNumber}'),
                   subtitle: Text('Expires: ${entry.expirationDate ?? 'N/A'}'),
                   trailing: IconButton(
-                    icon: Icon(Icons.delete_outline_rounded, color: scheme.error),
+                    icon:
+                        Icon(Icons.delete_outline_rounded, color: scheme.error),
                     onPressed: () => _removeLicensure(index),
                   ),
                 );
@@ -914,7 +1041,9 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
             child: TextButton.icon(
               onPressed: _addLicensureEntry,
               icon: Icon(Icons.add_rounded, size: 18, color: scheme.primary),
-              label: Text('Add State Licensure', style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w600)),
+              label: Text('Add State Licensure',
+                  style: TextStyle(
+                      color: scheme.primary, fontWeight: FontWeight.w600)),
             ),
           ),
         ],
@@ -922,12 +1051,16 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
     );
   }
 
-  Widget _buildEducationSection(BuildContext context, ColorScheme scheme, bool isDark) {
+  Widget _buildEducationSection(
+      BuildContext context, ColorScheme scheme, bool isDark) {
     return Container(
       decoration: BoxDecoration(
         color: isDark ? scheme.surface : Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: isDark ? scheme.outline.withValues(alpha: 0.3) : const Color(0xFFE2E8F0)),
+        border: Border.all(
+            color: isDark
+                ? scheme.outline.withValues(alpha: 0.3)
+                : const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -948,7 +1081,10 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
                     children: [
                       Text(
                         'Education',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -962,7 +1098,8 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
                 ),
                 IconButton(
                   onPressed: _addEducationEntry,
-                  icon: Icon(Icons.add_circle_outline_rounded, color: scheme.outline),
+                  icon: Icon(Icons.add_circle_outline_rounded,
+                      color: scheme.outline),
                 ),
               ],
             ),
@@ -972,14 +1109,16 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: _educationEntries.length,
-              separatorBuilder: (_, __) => Divider(height: 1, color: scheme.outline.withValues(alpha: 0.2)),
+              separatorBuilder: (_, __) => Divider(
+                  height: 1, color: scheme.outline.withValues(alpha: 0.2)),
               itemBuilder: (context, index) {
                 final entry = _educationEntries[index];
                 return ListTile(
                   title: Text('${entry.degree} - ${entry.institution}'),
                   subtitle: Text('Year: ${entry.graduationYear ?? 'N/A'}'),
                   trailing: IconButton(
-                    icon: Icon(Icons.delete_outline_rounded, color: scheme.error),
+                    icon:
+                        Icon(Icons.delete_outline_rounded, color: scheme.error),
                     onPressed: () => _removeEducation(index),
                   ),
                 );
@@ -990,7 +1129,9 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
             child: TextButton.icon(
               onPressed: _addEducationEntry,
               icon: Icon(Icons.add_rounded, size: 18, color: scheme.primary),
-              label: Text('Add Education', style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w600)),
+              label: Text('Add Education',
+                  style: TextStyle(
+                      color: scheme.primary, fontWeight: FontWeight.w600)),
             ),
           ),
         ],
@@ -1009,13 +1150,18 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
             return Flex(
               direction: isWide ? Axis.horizontal : Axis.vertical,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: isWide ? CrossAxisAlignment.center : CrossAxisAlignment.stretch,
+              crossAxisAlignment: isWide
+                  ? CrossAxisAlignment.center
+                  : CrossAxisAlignment.stretch,
               children: [
                 TextButton(
                   onPressed: _saving ? null : _saveDraft,
                   style: TextButton.styleFrom(
                     foregroundColor: scheme.onSurface.withValues(alpha: 0.6),
-                    textStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+                    textStyle: Theme.of(context)
+                        .textTheme
+                        .bodyLarge
+                        ?.copyWith(fontWeight: FontWeight.w600),
                   ),
                   child: const Text('Save as Draft'),
                 ),
@@ -1044,7 +1190,8 @@ class LicensureEntry {
   final String licenseNumber;
   final String? expirationDate;
 
-  LicensureEntry({required this.state, required this.licenseNumber, this.expirationDate});
+  LicensureEntry(
+      {required this.state, required this.licenseNumber, this.expirationDate});
 
   Map<String, dynamic> toMap() => {
         'state': state,
@@ -1064,7 +1211,8 @@ class EducationEntry {
   final String institution;
   final String? graduationYear;
 
-  EducationEntry({required this.degree, required this.institution, this.graduationYear});
+  EducationEntry(
+      {required this.degree, required this.institution, this.graduationYear});
 
   Map<String, dynamic> toMap() => {
         'degree': degree,
@@ -1084,7 +1232,8 @@ class LicensureDialog extends StatefulWidget {
   final List<String> states;
   final void Function(LicensureEntry entry) onSave;
 
-  const LicensureDialog({super.key, required this.states, required this.onSave});
+  const LicensureDialog(
+      {super.key, required this.states, required this.onSave});
 
   @override
   State<LicensureDialog> createState() => _LicensureDialogState();
@@ -1113,7 +1262,9 @@ class _LicensureDialogState extends State<LicensureDialog> {
             DropdownButtonFormField<String>(
               value: _selectedState,
               decoration: const InputDecoration(labelText: 'State'),
-              items: widget.states.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+              items: widget.states
+                  .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                  .toList(),
               onChanged: (val) => setState(() => _selectedState = val),
             ),
             const SizedBox(height: 16),
@@ -1124,20 +1275,26 @@ class _LicensureDialogState extends State<LicensureDialog> {
             const SizedBox(height: 16),
             TextField(
               controller: _expirationController,
-              decoration: const InputDecoration(labelText: 'Expiration Date (MM/YYYY)'),
+              decoration:
+                  const InputDecoration(labelText: 'Expiration Date (MM/YYYY)'),
             ),
           ],
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel')),
         FilledButton(
           onPressed: () {
-            if (_selectedState != null && _licenseController.text.trim().isNotEmpty) {
+            if (_selectedState != null &&
+                _licenseController.text.trim().isNotEmpty) {
               widget.onSave(LicensureEntry(
                 state: _selectedState!,
                 licenseNumber: _licenseController.text.trim(),
-                expirationDate: _expirationController.text.trim().isEmpty ? null : _expirationController.text.trim(),
+                expirationDate: _expirationController.text.trim().isEmpty
+                    ? null
+                    : _expirationController.text.trim(),
               ));
               Navigator.pop(context);
             }
@@ -1181,7 +1338,8 @@ class _EducationDialogState extends State<EducationDialog> {
           children: [
             TextField(
               controller: _degreeController,
-              decoration: const InputDecoration(labelText: 'Degree (e.g., Ph.D., M.A.)'),
+              decoration: const InputDecoration(
+                  labelText: 'Degree (e.g., Ph.D., M.A.)'),
             ),
             const SizedBox(height: 16),
             TextField(
@@ -1198,14 +1356,19 @@ class _EducationDialogState extends State<EducationDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel')),
         FilledButton(
           onPressed: () {
-            if (_degreeController.text.trim().isNotEmpty && _institutionController.text.trim().isNotEmpty) {
+            if (_degreeController.text.trim().isNotEmpty &&
+                _institutionController.text.trim().isNotEmpty) {
               widget.onSave(EducationEntry(
                 degree: _degreeController.text.trim(),
                 institution: _institutionController.text.trim(),
-                graduationYear: _yearController.text.trim().isEmpty ? null : _yearController.text.trim(),
+                graduationYear: _yearController.text.trim().isEmpty
+                    ? null
+                    : _yearController.text.trim(),
               ));
               Navigator.pop(context);
             }
@@ -1252,7 +1415,8 @@ class _DashedBorderPainter extends CustomPainter {
       while (distance < metric.length) {
         final nextDistance = distance + dashWidth;
         dashPath.addPath(
-          metric.extractPath(distance, nextDistance > metric.length ? metric.length : nextDistance),
+          metric.extractPath(distance,
+              nextDistance > metric.length ? metric.length : nextDistance),
           Offset.zero,
         );
         distance = nextDistance + dashSpace;

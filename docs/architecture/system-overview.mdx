@@ -1,0 +1,90 @@
+---
+title: System Overview
+description: High-level architecture for the Therapii product and codebase.
+---
+
+# System Overview
+
+Therapii is organized as a Flutter frontend backed by Firebase services and a small set of privileged Cloud Functions.
+
+## Architecture layers
+
+### Presentation layer
+
+The Flutter application owns:
+
+- all end-user screens
+- role-aware navigation
+- optimistic UI state
+- direct Firestore reads and writes allowed by rules
+- calls to privileged backend functions for billing, invitation delivery, and protected integrations
+
+Main entry point:
+
+- `lib/main.dart`
+
+### Domain and data layer
+
+Domain objects live in `lib/models/` and service wrappers live in `lib/services/`.
+
+This layer handles:
+
+- user profile CRUD
+- therapist-client linking
+- conversations and summaries
+- onboarding persistence
+- journal favorites and content access
+- page persistence and walkthrough state
+
+### Backend integration layer
+
+Firebase Cloud Functions in `functions/index.js` handle actions that should not happen directly on the client, such as:
+
+- Stripe checkout and billing lookups
+- invoice retrieval
+- redemption flows
+- invitation email generation and delivery
+- OpenAI-backed server operations
+
+### Persistence and infrastructure
+
+- Firebase Authentication for identity
+- Cloud Firestore for user, content, and operational records
+- Firebase Storage for uploaded assets such as avatars and voice files
+- Firestore security rules for client-side authorization
+
+## Major bounded contexts
+
+| Context | Purpose |
+| --- | --- |
+| Auth | Account creation, login, verification, and role selection |
+| Client workspace | Client dashboard, therapist connection, chat, voice, billing |
+| Therapist workspace | Patient roster, active conversations, summaries, and monitoring |
+| Journal | Reader portal, article detail, favorites, content library, publishing |
+| Admin | Platform configuration, therapist approvals, landing content, grants |
+| Billing | Stripe checkout, invoice retrieval, code redemption, access reflection |
+
+## Data flow examples
+
+### Standard client-side Firestore flow
+
+1. Flutter page triggers a service call
+2. Service reads or writes to Firestore
+3. Firestore rules decide whether the current user is allowed
+4. UI updates through `FutureBuilder`, streams, or local state
+
+### Privileged backend flow
+
+1. Flutter page calls a Firebase callable function
+2. Cloud Function validates authentication and input
+3. Function reads secrets or privileged collections
+4. Function calls Stripe, Resend, or OpenAI as needed
+5. Result returns to the client for display
+
+## Design characteristics
+
+- Role-aware routing is centralized early in app bootstrap
+- Admin capabilities depend on both UI allowlists and Firestore rules
+- Firestore is used heavily as the primary application database
+- The journal platform is implemented as a product area inside the same app, not a separate service
+- Billing state can be sourced from Stripe subscriptions or admin-created access grants

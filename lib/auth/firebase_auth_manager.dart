@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart' as FirebaseAuth;
 import 'package:therapii/auth/auth_manager.dart';
 import 'package:therapii/models/user.dart' as AppUser;
+import 'package:therapii/services/app_page_state_service.dart';
 import 'package:therapii/services/user_service.dart';
 
 class FirebaseAuthManager extends AuthManager with EmailSignInManager {
   final FirebaseAuth.FirebaseAuth _auth = FirebaseAuth.FirebaseAuth.instance;
   final UserService _userService = UserService();
-  
+
   FirebaseAuth.User? get currentUser => _auth.currentUser;
   Stream<FirebaseAuth.User?> get authStateChanges => _auth.authStateChanges();
 
@@ -22,7 +23,7 @@ class FirebaseAuthManager extends AuthManager with EmailSignInManager {
         email: email,
         password: password,
       );
-      
+
       if (credential.user != null) {
         final appUser = await _userService.getUser(credential.user!.uid);
         return appUser;
@@ -32,7 +33,8 @@ class FirebaseAuthManager extends AuthManager with EmailSignInManager {
       _showErrorMessage(context, _getErrorMessage(e.code));
       return null;
     } catch (e) {
-      _showErrorMessage(context, 'An unexpected error occurred. Please try again.');
+      _showErrorMessage(
+          context, 'An unexpected error occurred. Please try again.');
       return null;
     }
   }
@@ -43,14 +45,13 @@ class FirebaseAuthManager extends AuthManager with EmailSignInManager {
     String email,
     String password, {
     required bool isTherapist,
-  }
-  ) async {
+  }) async {
     try {
       final credential = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
-      
+
       if (credential.user != null) {
         // Create user profile in Firestore
         final appUser = AppUser.User(
@@ -62,7 +63,7 @@ class FirebaseAuthManager extends AuthManager with EmailSignInManager {
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
-        
+
         await _userService.createUser(appUser);
         return appUser;
       }
@@ -71,7 +72,8 @@ class FirebaseAuthManager extends AuthManager with EmailSignInManager {
       _showErrorMessage(context, _getErrorMessage(e.code));
       return null;
     } catch (e) {
-      _showErrorMessage(context, 'An unexpected error occurred. Please try again.');
+      _showErrorMessage(
+          context, 'An unexpected error occurred. Please try again.');
       return null;
     }
   }
@@ -79,6 +81,7 @@ class FirebaseAuthManager extends AuthManager with EmailSignInManager {
   @override
   Future signOut() async {
     try {
+      await AppPageStateService.resetToLanding();
       await _auth.signOut();
     } catch (e) {
       throw Exception('Failed to sign out: $e');
@@ -103,7 +106,8 @@ class FirebaseAuthManager extends AuthManager with EmailSignInManager {
   }
 
   @override
-  Future updateEmail({required String email, required BuildContext context}) async {
+  Future updateEmail(
+      {required String email, required BuildContext context}) async {
     try {
       final user = _auth.currentUser;
       if (user != null) {
@@ -160,7 +164,8 @@ class FirebaseAuthManager extends AuthManager with EmailSignInManager {
     } on FirebaseAuth.FirebaseAuthException catch (e) {
       _showErrorMessage(context, _getErrorMessage(e.code));
     } catch (_) {
-      _showErrorMessage(context, 'Failed to update password. Please try again.');
+      _showErrorMessage(
+          context, 'Failed to update password. Please try again.');
     }
   }
 
@@ -192,14 +197,16 @@ class FirebaseAuthManager extends AuthManager with EmailSignInManager {
   }
 
   @override
-  Future resetPassword({required String email, required BuildContext context}) async {
+  Future resetPassword(
+      {required String email, required BuildContext context}) async {
     try {
       await _auth.sendPasswordResetEmail(email: email);
       _showSuccessMessage(context, 'Password reset email sent to $email');
     } on FirebaseAuth.FirebaseAuthException catch (e) {
       _showErrorMessage(context, _getErrorMessage(e.code));
     } catch (e) {
-      _showErrorMessage(context, 'Failed to send password reset email. Please try again.');
+      _showErrorMessage(
+          context, 'Failed to send password reset email. Please try again.');
     }
   }
 

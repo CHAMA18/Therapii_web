@@ -12,7 +12,8 @@ import 'package:therapii/services/voice_checkin_service.dart';
 class PatientProfilePage extends StatefulWidget {
   final app_user.User patient;
   final String therapistId;
-  const PatientProfilePage({super.key, required this.patient, required this.therapistId});
+  const PatientProfilePage(
+      {super.key, required this.patient, required this.therapistId});
 
   @override
   State<PatientProfilePage> createState() => _PatientProfilePageState();
@@ -49,7 +50,8 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
   }
 
   Future<void> _showFeedbackBottomSheet(AiConversationSummary summary) async {
-    final controller = TextEditingController(text: summary.therapistFeedback ?? '');
+    final controller =
+        TextEditingController(text: summary.therapistFeedback ?? '');
     final result = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
@@ -81,7 +83,8 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
                       color: scheme.primary.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(Icons.rate_review_rounded, color: scheme.primary),
+                    child:
+                        Icon(Icons.rate_review_rounded, color: scheme.primary),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -89,13 +92,17 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          summary.therapistFeedback != null ? 'Edit Model Feedback' : 'Provide Model Feedback',
-                          style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                          summary.therapistFeedback != null
+                              ? 'Edit Model Feedback'
+                              : 'Provide Model Feedback',
+                          style: theme.textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           'Help improve AI responses',
-                          style: theme.textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                          style: theme.textTheme.bodySmall
+                              ?.copyWith(color: scheme.onSurfaceVariant),
                         ),
                       ],
                     ),
@@ -120,7 +127,8 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
                 maxLines: 5,
                 minLines: 3,
                 decoration: InputDecoration(
-                  hintText: 'E.g., "The AI should use more empathetic language when discussing anxiety..."',
+                  hintText:
+                      'E.g., "The AI should use more empathetic language when discussing anxiety..."',
                   filled: true,
                   fillColor: scheme.surfaceContainerHighest.withOpacity(0.5),
                   border: OutlineInputBorder(
@@ -141,7 +149,8 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
                       onPressed: () => Navigator.of(ctx).pop(),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
                       child: const Text('Cancel'),
                     ),
@@ -149,10 +158,12 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: FilledButton(
-                      onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
+                      onPressed: () =>
+                          Navigator.of(ctx).pop(controller.text.trim()),
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
                       child: const Text('Save Feedback'),
                     ),
@@ -195,7 +206,8 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final patient = widget.patient;
-    final displayName = patient.fullName.trim().isNotEmpty ? patient.fullName : patient.email;
+    final displayName =
+        patient.fullName.trim().isNotEmpty ? patient.fullName : patient.email;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FB),
@@ -210,7 +222,8 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
                 padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
+                  borderRadius:
+                      const BorderRadius.vertical(bottom: Radius.circular(28)),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.06),
@@ -227,20 +240,24 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
                       children: [
                         IconButton(
                           onPressed: () => Navigator.of(context).pop(),
-                          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+                          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                              size: 20),
                           color: scheme.onSurface,
                           style: IconButton.styleFrom(
                             backgroundColor: scheme.primary.withOpacity(0.08),
                             padding: const EdgeInsets.all(10),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 8),
                           decoration: BoxDecoration(
                             color: scheme.primary.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: scheme.primary.withOpacity(0.15)),
+                            border: Border.all(
+                                color: scheme.primary.withOpacity(0.15)),
                           ),
                           child: Text(
                             'Patient Profile',
@@ -260,10 +277,13 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
                         CircleAvatar(
                           radius: 42,
                           backgroundColor: scheme.primary.withOpacity(0.12),
-                          backgroundImage: (patient.avatarUrl ?? '').isNotEmpty ? NetworkImage(patient.avatarUrl!) : null,
+                          backgroundImage: (patient.avatarUrl ?? '').isNotEmpty
+                              ? NetworkImage(patient.avatarUrl!)
+                              : null,
                           child: (patient.avatarUrl ?? '').isNotEmpty
                               ? null
-                              : Icon(Icons.person, size: 42, color: scheme.primary),
+                              : Icon(Icons.person,
+                                  size: 42, color: scheme.primary),
                         ),
                         const SizedBox(width: 18),
                         Expanded(
@@ -303,7 +323,8 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 28),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 28),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -311,10 +332,23 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
                       builder: (context, constraints) {
                         final twoCols = constraints.maxWidth > 900;
                         final cards = [
-                          _quickLink('Active AI Conversations', Icons.chat_bubble_rounded, _openDetails, SectionTarget.active),
-                          _quickLink('Recent AI Conversations', Icons.forum_outlined, _openDetails, SectionTarget.recent),
-                          _quickLink('AI Summaries', Icons.summarize_rounded, _openDetails, SectionTarget.summaries),
-                          _quickLink('Voice Check-ins', Icons.mic_rounded, _openDetails, SectionTarget.voice),
+                          _quickLink(
+                              'Active AI Conversations',
+                              Icons.chat_bubble_rounded,
+                              _openDetails,
+                              SectionTarget.active),
+                          _quickLink(
+                              'Recent AI Summaries',
+                              Icons.summarize_rounded,
+                              _openDetails,
+                              SectionTarget.summaries),
+                          _quickLink(
+                              'Conversation Context',
+                              Icons.forum_outlined,
+                              _openDetails,
+                              SectionTarget.recent),
+                          _quickLink('Voice Check-ins', Icons.mic_rounded,
+                              _openDetails, SectionTarget.voice),
                         ];
                         if (twoCols) {
                           return GridView.count(
@@ -344,7 +378,8 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
     );
   }
 
-  Widget _quickLink(String label, IconData icon, void Function(SectionTarget) onNavigate, SectionTarget target) {
+  Widget _quickLink(String label, IconData icon,
+      void Function(SectionTarget) onNavigate, SectionTarget target) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     return GestureDetector(
@@ -370,7 +405,8 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
             const SizedBox(width: 10),
             Text(
               label,
-              style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700, color: scheme.onSurface),
+              style: theme.textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w700, color: scheme.onSurface),
             ),
           ],
         ),
@@ -379,6 +415,10 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
   }
 
   void _openDetails(SectionTarget target) {
+    if (target == SectionTarget.active) {
+      _openChat();
+      return;
+    }
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => PatientProfileDetailsPage(
@@ -498,7 +538,8 @@ class _QuickLinkButton extends StatelessWidget {
   final String label;
   final IconData icon;
   final VoidCallback onTap;
-  const _QuickLinkButton({required this.label, required this.icon, required this.onTap});
+  const _QuickLinkButton(
+      {required this.label, required this.icon, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -507,7 +548,9 @@ class _QuickLinkButton extends StatelessWidget {
     return FilledButton.tonalIcon(
       onPressed: onTap,
       icon: Icon(icon, size: 18),
-      label: Text(label, style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600)),
+      label: Text(label,
+          style: theme.textTheme.labelLarge
+              ?.copyWith(fontWeight: FontWeight.w600)),
       style: FilledButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
         foregroundColor: scheme.onSurface,
@@ -521,7 +564,8 @@ class _QuickLinkButton extends StatelessWidget {
 class MessagePreview extends StatelessWidget {
   final ChatMessage message;
   final String therapistId;
-  const MessagePreview({super.key, required this.message, required this.therapistId});
+  const MessagePreview(
+      {super.key, required this.message, required this.therapistId});
 
   @override
   Widget build(BuildContext context) {
@@ -530,8 +574,10 @@ class MessagePreview extends StatelessWidget {
     final isTherapist = message.senderId == therapistId;
     final prefix = isTherapist ? 'You' : 'Patient';
     final date = message.sentAt;
-    final formatted = '${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
-    final text = message.text.trim().isEmpty ? '(Attachment)' : message.text.trim();
+    final formatted =
+        '${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+    final text =
+        message.text.trim().isEmpty ? '(Attachment)' : message.text.trim();
     final truncated = text.length > 90 ? '${text.substring(0, 87)}…' : text;
 
     return Container(
@@ -539,7 +585,8 @@ class MessagePreview extends StatelessWidget {
       decoration: BoxDecoration(
         color: isTherapist ? scheme.primary.withOpacity(0.12) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: scheme.outline.withOpacity(isTherapist ? 0.0 : 0.08)),
+        border: Border.all(
+            color: scheme.outline.withOpacity(isTherapist ? 0.0 : 0.08)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.03),
@@ -553,7 +600,8 @@ class MessagePreview extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(isTherapist ? Icons.account_circle : Icons.person_outline, size: 18, color: scheme.onSurface.withOpacity(0.75)),
+              Icon(isTherapist ? Icons.account_circle : Icons.person_outline,
+                  size: 18, color: scheme.onSurface.withOpacity(0.75)),
               const SizedBox(width: 6),
               Text(
                 '$prefix • $formatted',
@@ -582,15 +630,19 @@ class ConversationCard extends StatelessWidget {
   final AiConversationSummary summary;
   final VoidCallback onTap;
   final void Function(AiConversationSummary)? onFeedback;
-  const ConversationCard({super.key, required this.summary, required this.onTap, this.onFeedback});
+  const ConversationCard(
+      {super.key, required this.summary, required this.onTap, this.onFeedback});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final date = summary.createdAt;
-    final formatted = '${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
-    final preview = summary.summary.length > 120 ? '${summary.summary.substring(0, 117)}…' : summary.summary;
+    final formatted =
+        '${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+    final preview = summary.summary.length > 120
+        ? '${summary.summary.substring(0, 117)}…'
+        : summary.summary;
     final hasFeedback = summary.therapistFeedback?.isNotEmpty == true;
 
     return InkWell(
@@ -602,7 +654,10 @@ class ConversationCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: scheme.surfaceContainerHighest.withOpacity(0.5),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: hasFeedback ? scheme.primary.withOpacity(0.3) : scheme.outline.withOpacity(0.1)),
+          border: Border.all(
+              color: hasFeedback
+                  ? scheme.primary.withOpacity(0.3)
+                  : scheme.outline.withOpacity(0.1)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -622,7 +677,8 @@ class ConversationCard extends StatelessWidget {
                 ),
                 if (hasFeedback)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     margin: const EdgeInsets.only(right: 8),
                     decoration: BoxDecoration(
                       color: scheme.primary.withOpacity(0.1),
@@ -631,7 +687,8 @@ class ConversationCard extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.rate_review_rounded, size: 12, color: scheme.primary),
+                        Icon(Icons.rate_review_rounded,
+                            size: 12, color: scheme.primary),
                         const SizedBox(width: 4),
                         Text(
                           'Feedback',
@@ -647,16 +704,20 @@ class ConversationCard extends StatelessWidget {
                   IconButton(
                     onPressed: () => onFeedback!(summary),
                     icon: Icon(
-                      hasFeedback ? Icons.edit_note_rounded : Icons.rate_review_outlined,
+                      hasFeedback
+                          ? Icons.edit_note_rounded
+                          : Icons.rate_review_outlined,
                       color: scheme.primary,
                       size: 22,
                     ),
                     tooltip: hasFeedback ? 'Edit feedback' : 'Add feedback',
                     visualDensity: VisualDensity.compact,
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    constraints:
+                        const BoxConstraints(minWidth: 32, minHeight: 32),
                   ),
-                Icon(Icons.chevron_right_rounded, color: scheme.onSurface.withOpacity(0.5)),
+                Icon(Icons.chevron_right_rounded,
+                    color: scheme.onSurface.withOpacity(0.5)),
               ],
             ),
             const SizedBox(height: 10),
@@ -693,10 +754,12 @@ class VoiceCheckinCard extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final date = checkin.createdAt;
-    final formatted = '${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+    final formatted =
+        '${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
     final durationMinutes = checkin.durationSeconds ~/ 60;
     final durationSeconds = checkin.durationSeconds % 60;
-    final durationStr = '$durationMinutes:${durationSeconds.toString().padLeft(2, '0')}';
+    final durationStr =
+        '$durationMinutes:${durationSeconds.toString().padLeft(2, '0')}';
 
     return Container(
       padding: const EdgeInsets.all(16),

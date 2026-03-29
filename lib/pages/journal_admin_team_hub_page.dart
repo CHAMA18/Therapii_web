@@ -4,6 +4,7 @@ import 'package:therapii/pages/journal_admin_dashboard_page.dart';
 import 'package:therapii/pages/journal_admin_patients_hub_page.dart';
 import 'package:therapii/pages/journal_admin_settings_page.dart';
 import 'package:therapii/pages/journal_admin_studio_page.dart';
+import 'package:therapii/services/app_page_state_service.dart';
 import 'package:therapii/widgets/journal_admin_sidebar.dart';
 
 class JournalAdminTeamHubPage extends StatelessWidget {
@@ -25,7 +26,8 @@ class JournalAdminTeamHubPage extends StatelessWidget {
         return;
       case JournalAdminSidebarItem.patients:
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const JournalAdminPatientsHubPage()),
+          MaterialPageRoute(
+              builder: (_) => const JournalAdminPatientsHubPage()),
         );
         break;
       case JournalAdminSidebarItem.analytics:
@@ -43,17 +45,20 @@ class JournalAdminTeamHubPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF6F7F8),
-      body: SafeArea(
-        child: Row(
-          children: [
-            JournalAdminSidebar(
-              activeItem: JournalAdminSidebarItem.team,
-              onNavigate: (item) => _onSidebarNavigate(context, item),
-            ),
-            const Expanded(child: _TeamHubContent()),
-          ],
+    return RememberAppPage(
+      pageId: AppPageId.journalAdminTeamHub,
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF6F7F8),
+        body: SafeArea(
+          child: Row(
+            children: [
+              JournalAdminSidebar(
+                activeItem: JournalAdminSidebarItem.team,
+                onNavigate: (item) => _onSidebarNavigate(context, item),
+              ),
+              const Expanded(child: _TeamHubContent()),
+            ],
+          ),
         ),
       ),
     );
@@ -168,8 +173,10 @@ class _TeamHeader extends StatelessWidget {
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFF2B8CEE),
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
               icon: const Icon(Icons.group_add_rounded, size: 18),
               label: const Text(
@@ -256,7 +263,8 @@ class _SearchAndFiltersBar extends StatelessWidget {
             ),
             if (withArrow) ...[
               const SizedBox(width: 6),
-              const Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: Color(0xFF94A3B8)),
+              const Icon(Icons.keyboard_arrow_down_rounded,
+                  size: 18, color: Color(0xFF94A3B8)),
             ],
           ],
         ),
@@ -284,8 +292,10 @@ class _SearchAndFiltersBar extends StatelessWidget {
             child: const TextField(
               decoration: InputDecoration(
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                prefixIcon: Icon(Icons.search_rounded, color: Color(0xFF94A3B8)),
+                contentPadding:
+                    EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                prefixIcon:
+                    Icon(Icons.search_rounded, color: Color(0xFF94A3B8)),
                 hintText: 'Search by name, role or email...',
                 hintStyle: TextStyle(
                   fontSize: 14,
@@ -307,7 +317,8 @@ class _SearchAndFiltersBar extends StatelessWidget {
                   children: [
                     filterChip('All Roles'),
                     filterChip('All Statuses'),
-                    filterChip('Filters', withArrow: false, leading: Icons.tune_rounded),
+                    filterChip('Filters',
+                        withArrow: false, leading: Icons.tune_rounded),
                   ],
                 ),
               ],
@@ -322,7 +333,8 @@ class _SearchAndFiltersBar extends StatelessWidget {
               const SizedBox(width: 10),
               filterChip('All Statuses'),
               const SizedBox(width: 10),
-              filterChip('Filters', withArrow: false, leading: Icons.tune_rounded),
+              filterChip('Filters',
+                  withArrow: false, leading: Icons.tune_rounded),
             ],
           );
         },
@@ -348,7 +360,8 @@ class _TeamTable extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           const minWidth = 960.0;
-          final tableWidth = constraints.maxWidth > minWidth ? constraints.maxWidth : minWidth;
+          final tableWidth =
+              constraints.maxWidth > minWidth ? constraints.maxWidth : minWidth;
 
           return SingleChildScrollView(
             scrollDirection: Axis.horizontal,
@@ -357,10 +370,12 @@ class _TeamTable extends StatelessWidget {
               child: Column(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 14),
                     decoration: const BoxDecoration(
                       color: Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                      borderRadius:
+                          BorderRadius.vertical(top: Radius.circular(16)),
                     ),
                     child: const Row(
                       children: [
@@ -375,7 +390,8 @@ class _TeamTable extends StatelessWidget {
                   ),
                   ...rows.map((row) => _TeamDataRow(data: row)),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 14),
                     decoration: const BoxDecoration(
                       border: Border(top: BorderSide(color: Color(0xFFE8EDF4))),
                     ),
@@ -390,7 +406,8 @@ class _TeamTable extends StatelessWidget {
                           ),
                         ),
                         const Spacer(),
-                        const Icon(Icons.chevron_left_rounded, size: 18, color: Color(0xFFCBD5E1)),
+                        const Icon(Icons.chevron_left_rounded,
+                            size: 18, color: Color(0xFFCBD5E1)),
                         const SizedBox(width: 8),
                         Container(
                           width: 28,
@@ -419,7 +436,8 @@ class _TeamTable extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        const Icon(Icons.chevron_right_rounded, size: 18, color: Color(0xFF94A3B8)),
+                        const Icon(Icons.chevron_right_rounded,
+                            size: 18, color: Color(0xFF94A3B8)),
                       ],
                     ),
                   ),
@@ -476,7 +494,8 @@ class _TeamDataRow extends StatelessWidget {
                 CircleAvatar(
                   radius: 18,
                   backgroundColor: data.avatarBg,
-                  child: const Icon(Icons.person_outline_rounded, size: 18, color: Color(0xFF94A3B8)),
+                  child: const Icon(Icons.person_outline_rounded,
+                      size: 18, color: Color(0xFF94A3B8)),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -555,9 +574,12 @@ class _TeamDataRow extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(Icons.playlist_add_check_rounded, size: 20, color: Color(0xFF94A3B8)),
-                Icon(Icons.bar_chart_rounded, size: 20, color: Color(0xFF94A3B8)),
-                Icon(Icons.person_2_outlined, size: 20, color: Color(0xFF94A3B8)),
+                Icon(Icons.playlist_add_check_rounded,
+                    size: 20, color: Color(0xFF94A3B8)),
+                Icon(Icons.bar_chart_rounded,
+                    size: 20, color: Color(0xFF94A3B8)),
+                Icon(Icons.person_2_outlined,
+                    size: 20, color: Color(0xFF94A3B8)),
               ],
             ),
           ),
@@ -571,7 +593,8 @@ class _TeamDataRow extends StatelessWidget {
       alignment: Alignment.centerLeft,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(8)),
+        decoration:
+            BoxDecoration(color: bg, borderRadius: BorderRadius.circular(8)),
         child: Text(
           label,
           style: TextStyle(
@@ -589,7 +612,8 @@ class _TeamDataRow extends StatelessWidget {
       alignment: Alignment.centerLeft,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999)),
+        decoration:
+            BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999)),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [

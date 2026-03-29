@@ -9,6 +9,7 @@ import 'package:therapii/pages/journal_admin_patients_hub_page.dart';
 import 'package:therapii/pages/journal_admin_settings_page.dart';
 import 'package:therapii/pages/journal_admin_studio_page.dart';
 import 'package:therapii/pages/journal_admin_team_hub_page.dart';
+import 'package:therapii/services/app_page_state_service.dart';
 import 'package:therapii/widgets/journal_admin_sidebar.dart';
 
 class JournalAdminDashboardPage extends StatelessWidget {
@@ -30,7 +31,8 @@ class JournalAdminDashboardPage extends StatelessWidget {
         break;
       case JournalAdminSidebarItem.patients:
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const JournalAdminPatientsHubPage()),
+          MaterialPageRoute(
+              builder: (_) => const JournalAdminPatientsHubPage()),
         );
         break;
       case JournalAdminSidebarItem.analytics:
@@ -48,17 +50,20 @@ class JournalAdminDashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF6F7F8),
-      body: SafeArea(
-        child: Row(
-          children: [
-            JournalAdminSidebar(
-              activeItem: JournalAdminSidebarItem.dashboard,
-              onNavigate: (item) => _onSidebarNavigate(context, item),
-            ),
-            const Expanded(child: _DashboardContent()),
-          ],
+    return RememberAppPage(
+      pageId: AppPageId.journalAdminDashboard,
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF6F7F8),
+        body: SafeArea(
+          child: Row(
+            children: [
+              JournalAdminSidebar(
+                activeItem: JournalAdminSidebarItem.dashboard,
+                onNavigate: (item) => _onSidebarNavigate(context, item),
+              ),
+              const Expanded(child: _DashboardContent()),
+            ],
+          ),
         ),
       ),
     );
@@ -82,7 +87,8 @@ class _DashboardSidebar extends StatelessWidget {
     if (trimmed.isEmpty) return 'DA';
     final parts = trimmed.split(RegExp(r'\s+'));
     if (parts.length == 1) return parts.first.characters.first.toUpperCase();
-    return (parts.first.characters.first + parts.last.characters.first).toUpperCase();
+    return (parts.first.characters.first + parts.last.characters.first)
+        .toUpperCase();
   }
 
   String? _safePhotoUrl() {
@@ -120,7 +126,8 @@ class _DashboardSidebar extends StatelessWidget {
                     color: const Color(0xFF2B8CEE).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.self_improvement_rounded, color: Color(0xFF2B8CEE), size: 20),
+                  child: const Icon(Icons.self_improvement_rounded,
+                      color: Color(0xFF2B8CEE), size: 20),
                 ),
                 const SizedBox(width: 10),
                 const Expanded(
@@ -155,7 +162,8 @@ class _DashboardSidebar extends StatelessWidget {
                     label: 'Articles',
                     onTap: () {
                       Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(builder: (_) => const JournalAdminStudioPage()),
+                        MaterialPageRoute(
+                            builder: (_) => const JournalAdminStudioPage()),
                       );
                     },
                   ),
@@ -166,7 +174,8 @@ class _DashboardSidebar extends StatelessWidget {
                     label: 'Team',
                     onTap: () {
                       Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(builder: (_) => const JournalAdminTeamHubPage()),
+                        MaterialPageRoute(
+                            builder: (_) => const JournalAdminTeamHubPage()),
                       );
                     },
                   ),
@@ -175,7 +184,9 @@ class _DashboardSidebar extends StatelessWidget {
                     label: 'Patients',
                     onTap: () {
                       Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(builder: (_) => const JournalAdminPatientsHubPage()),
+                        MaterialPageRoute(
+                            builder: (_) =>
+                                const JournalAdminPatientsHubPage()),
                       );
                     },
                   ),
@@ -186,7 +197,8 @@ class _DashboardSidebar extends StatelessWidget {
                     label: 'Analytics',
                     onTap: () {
                       Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(builder: (_) => const JournalAdminAnalyticsPage()),
+                        MaterialPageRoute(
+                            builder: (_) => const JournalAdminAnalyticsPage()),
                       );
                     },
                   ),
@@ -195,7 +207,8 @@ class _DashboardSidebar extends StatelessWidget {
                     label: 'Settings',
                     onTap: () {
                       Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(builder: (_) => const JournalAdminSettingsPage()),
+                        MaterialPageRoute(
+                            builder: (_) => const JournalAdminSettingsPage()),
                       );
                     },
                   ),
@@ -255,9 +268,11 @@ class _DashboardSidebar extends StatelessWidget {
                 ),
                 IconButton(
                   onPressed: () => Navigator.of(context).maybePop(),
-                  icon: const Icon(Icons.logout_rounded, color: Color(0xFF64748B), size: 20),
+                  icon: const Icon(Icons.logout_rounded,
+                      color: Color(0xFF64748B), size: 20),
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                  constraints:
+                      const BoxConstraints(minWidth: 28, minHeight: 28),
                 ),
               ],
             ),
@@ -355,7 +370,8 @@ class _DashboardContentState extends State<_DashboardContent> {
   Object? _summariesError;
   Object? _sessionsError;
 
-  late final List<StreamSubscription<QuerySnapshot<Map<String, dynamic>>>> _subscriptions;
+  late final List<StreamSubscription<QuerySnapshot<Map<String, dynamic>>>>
+      _subscriptions;
 
   bool get _isLoading {
     return _therapistDocs == null ||
@@ -413,7 +429,8 @@ class _DashboardContentState extends State<_DashboardContent> {
           if (!mounted) return;
           setState(() {
             _conversationsError = error;
-            _conversationDocs ??= <QueryDocumentSnapshot<Map<String, dynamic>>>[];
+            _conversationDocs ??=
+                <QueryDocumentSnapshot<Map<String, dynamic>>>[];
           });
         },
       ),
@@ -518,7 +535,8 @@ class _DashboardContentState extends State<_DashboardContent> {
                 FilledButton.icon(
                   onPressed: () {
                     Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(builder: (_) => const JournalAdminStudioPage()),
+                      MaterialPageRoute(
+                          builder: (_) => const JournalAdminStudioPage()),
                     );
                   },
                   icon: const Icon(Icons.add_rounded, size: 18),
@@ -543,7 +561,8 @@ class _DashboardContentState extends State<_DashboardContent> {
                   Container(
                     width: double.infinity,
                     margin: const EdgeInsets.only(bottom: 14),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
                       color: const Color(0xFFFEF2F2),
                       borderRadius: BorderRadius.circular(10),
@@ -608,9 +627,13 @@ class _DashboardContentState extends State<_DashboardContent> {
                     return Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(child: _RecentArticlesCard(rows: liveData.recentSummaryRows)),
+                        Expanded(
+                            child: _RecentArticlesCard(
+                                rows: liveData.recentSummaryRows)),
                         const SizedBox(width: 16),
-                        Expanded(child: _UpcomingContentCard(rows: liveData.upcomingSessions)),
+                        Expanded(
+                            child: _UpcomingContentCard(
+                                rows: liveData.upcomingSessions)),
                       ],
                     );
                   },
@@ -625,11 +648,16 @@ class _DashboardContentState extends State<_DashboardContent> {
 
   _DashboardLiveData _buildLiveData() {
     final now = DateTime.now();
-    final therapists = _therapistDocs ?? const <QueryDocumentSnapshot<Map<String, dynamic>>>[];
-    final users = _userDocs ?? const <QueryDocumentSnapshot<Map<String, dynamic>>>[];
-    final conversations = _conversationDocs ?? const <QueryDocumentSnapshot<Map<String, dynamic>>>[];
-    final summaries = _summaryDocs ?? const <QueryDocumentSnapshot<Map<String, dynamic>>>[];
-    final sessions = _sessionDocs ?? const <QueryDocumentSnapshot<Map<String, dynamic>>>[];
+    final therapists =
+        _therapistDocs ?? const <QueryDocumentSnapshot<Map<String, dynamic>>>[];
+    final users =
+        _userDocs ?? const <QueryDocumentSnapshot<Map<String, dynamic>>>[];
+    final conversations = _conversationDocs ??
+        const <QueryDocumentSnapshot<Map<String, dynamic>>>[];
+    final summaries =
+        _summaryDocs ?? const <QueryDocumentSnapshot<Map<String, dynamic>>>[];
+    final sessions =
+        _sessionDocs ?? const <QueryDocumentSnapshot<Map<String, dynamic>>>[];
 
     final userMapById = <String, Map<String, dynamic>>{
       for (final doc in users) doc.id: doc.data(),
@@ -640,15 +668,18 @@ class _DashboardContentState extends State<_DashboardContent> {
     var staleTherapists = 0;
     for (final doc in therapists) {
       final data = doc.data();
-      final approvalStatus = _toNonEmptyString(data['approval_status'])?.toLowerCase() ?? '';
+      final approvalStatus =
+          _toNonEmptyString(data['approval_status'])?.toLowerCase() ?? '';
       if (approvalStatus.isEmpty ||
           approvalStatus == 'pending' ||
           approvalStatus == 'resubmitted' ||
           approvalStatus == 'needs_review') {
         pendingApprovals++;
       }
-      final updatedAt = _pickDate(data, const ['updated_at', 'approval_requested_at', 'created_at']);
-      if (updatedAt != null && updatedAt.isBefore(now.subtract(const Duration(days: 14)))) {
+      final updatedAt = _pickDate(
+          data, const ['updated_at', 'approval_requested_at', 'created_at']);
+      if (updatedAt != null &&
+          updatedAt.isBefore(now.subtract(const Duration(days: 14)))) {
         staleTherapists++;
       }
       final userId = _toNonEmptyString(data['user_id']) ?? doc.id;
@@ -662,12 +693,14 @@ class _DashboardContentState extends State<_DashboardContent> {
     var highUnreadBacklog = 0;
     for (final doc in conversations) {
       final data = doc.data();
-      final conversationAt = _pickDate(data, const ['updated_at', 'last_message_at', 'created_at']);
+      final conversationAt = _pickDate(
+          data, const ['updated_at', 'last_message_at', 'created_at']);
       if (conversationAt != null) {
         conversationDates.add(conversationAt);
         if (conversationAt.isAfter(now.subtract(const Duration(days: 7)))) {
           activeConversations7d++;
-        } else if (conversationAt.isAfter(now.subtract(const Duration(days: 14)))) {
+        } else if (conversationAt
+            .isAfter(now.subtract(const Duration(days: 14)))) {
           previousConversations7d++;
         }
       }
@@ -676,7 +709,8 @@ class _DashboardContentState extends State<_DashboardContent> {
 
       final patientId = _toNonEmptyString(data['patient_id']);
       if (patientId != null && conversationAt != null) {
-        patientEvents.add(_PatientActivityEvent(patientId: patientId, at: conversationAt));
+        patientEvents.add(
+            _PatientActivityEvent(patientId: patientId, at: conversationAt));
       }
     }
 
@@ -697,18 +731,22 @@ class _DashboardContentState extends State<_DashboardContent> {
       }
       final hasFeedback = _toNonEmptyString(data['therapist_feedback']) != null;
       if (hasFeedback) {
-        final feedbackAt = _pickDate(data, const ['feedback_updated_at', 'created_at']);
+        final feedbackAt =
+            _pickDate(data, const ['feedback_updated_at', 'created_at']);
         if (feedbackAt != null) feedbackDates.add(feedbackAt);
       }
       final patientId = _toNonEmptyString(data['patient_id']);
       if (patientId != null && createdAt != null) {
-        patientEvents.add(_PatientActivityEvent(patientId: patientId, at: createdAt));
+        patientEvents
+            .add(_PatientActivityEvent(patientId: patientId, at: createdAt));
       }
     }
 
-    final patientUsers = users.where((doc) => _isPatient(doc.data())).toList(growable: false);
+    final patientUsers =
+        users.where((doc) => _isPatient(doc.data())).toList(growable: false);
     final knownPatientIds = patientEvents.map((e) => e.patientId).toSet();
-    final totalActivePatients = patientUsers.isNotEmpty ? patientUsers.length : knownPatientIds.length;
+    final totalActivePatients =
+        patientUsers.isNotEmpty ? patientUsers.length : knownPatientIds.length;
 
     final activePatients30d = _uniquePatientCountInRange(
       patientEvents,
@@ -721,16 +759,25 @@ class _DashboardContentState extends State<_DashboardContent> {
       toExclusive: now.subtract(const Duration(days: 30)),
     );
 
-    final engagementRate = conversations.isEmpty ? 0.0 : (activeConversations7d / conversations.length) * 100;
-    final previousEngagementRate = conversations.isEmpty ? 0.0 : (previousConversations7d / conversations.length) * 100;
-    final summaryCoverage = activeConversations7d == 0 ? 0.0 : (summaries7d / activeConversations7d) * 100;
-    final previousSummaryCoverage = previousConversations7d == 0 ? 0.0 : (summariesPrev7d / previousConversations7d) * 100;
+    final engagementRate = conversations.isEmpty
+        ? 0.0
+        : (activeConversations7d / conversations.length) * 100;
+    final previousEngagementRate = conversations.isEmpty
+        ? 0.0
+        : (previousConversations7d / conversations.length) * 100;
+    final summaryCoverage = activeConversations7d == 0
+        ? 0.0
+        : (summaries7d / activeConversations7d) * 100;
+    final previousSummaryCoverage = previousConversations7d == 0
+        ? 0.0
+        : (summariesPrev7d / previousConversations7d) * 100;
 
     final metricCards = <_MetricData>[
       _MetricData(
         title: 'Total Active Patients',
         value: _formatInt(totalActivePatients),
-        trend: _trendLabel(activePatients30d.toDouble(), activePatientsPrev30d.toDouble()),
+        trend: _trendLabel(
+            activePatients30d.toDouble(), activePatientsPrev30d.toDouble()),
         icon: Icons.person_pin_circle_outlined,
         iconColor: const Color(0xFF2B8CEE),
         sparkColor: const Color(0xFF2B8CEE),
@@ -770,7 +817,8 @@ class _DashboardContentState extends State<_DashboardContent> {
       alerts.add(
         _AlertData(
           title: 'Pending Therapist Approvals',
-          message: '$pendingApprovals therapist profile(s) are waiting for admin review.',
+          message:
+              '$pendingApprovals therapist profile(s) are waiting for admin review.',
           time: 'Live',
           tone: const Color(0xFFEF4444),
           action: 'REVIEW APPLICATIONS',
@@ -781,7 +829,8 @@ class _DashboardContentState extends State<_DashboardContent> {
       alerts.add(
         _AlertData(
           title: 'Unread Message Backlog',
-          message: '$highUnreadBacklog conversation(s) have 5+ unread patient messages.',
+          message:
+              '$highUnreadBacklog conversation(s) have 5+ unread patient messages.',
           time: 'Live',
           tone: const Color(0xFFF59E0B),
           action: 'CHECK CONVERSATIONS',
@@ -792,7 +841,8 @@ class _DashboardContentState extends State<_DashboardContent> {
       alerts.add(
         _AlertData(
           title: 'Inactive Team Profiles',
-          message: '$staleTherapists therapist account(s) have been inactive for more than 14 days.',
+          message:
+              '$staleTherapists therapist account(s) have been inactive for more than 14 days.',
           time: 'Live',
           tone: const Color(0xFF2B8CEE),
           action: 'RE-ENGAGE TEAM',
@@ -803,7 +853,8 @@ class _DashboardContentState extends State<_DashboardContent> {
       final data = doc.data();
       final scheduledAt = _pickDate(data, const ['scheduled_at']);
       if (scheduledAt == null) return false;
-      final status = _toNonEmptyString(data['status'])?.toLowerCase() ?? 'scheduled';
+      final status =
+          _toNonEmptyString(data['status'])?.toLowerCase() ?? 'scheduled';
       return (status == 'scheduled' || status == 'ongoing') &&
           scheduledAt.isAfter(now) &&
           scheduledAt.isBefore(now.add(const Duration(hours: 24)));
@@ -812,7 +863,8 @@ class _DashboardContentState extends State<_DashboardContent> {
       alerts.add(
         const _AlertData(
           title: 'No Sessions in Next 24h',
-          message: 'No scheduled therapy sessions were found for the next 24 hours.',
+          message:
+              'No scheduled therapy sessions were found for the next 24 hours.',
           time: 'Live',
           tone: Color(0xFF0EA5E9),
           action: 'SCHEDULE CHECK',
@@ -821,25 +873,31 @@ class _DashboardContentState extends State<_DashboardContent> {
     }
     final visibleAlerts = alerts.take(3).toList(growable: false);
 
-    final summaryList = [...summaries]
-      ..sort((a, b) {
-        final aDate = _pickDate(a.data(), const ['created_at', 'updated_at']) ?? DateTime.fromMillisecondsSinceEpoch(0);
-        final bDate = _pickDate(b.data(), const ['created_at', 'updated_at']) ?? DateTime.fromMillisecondsSinceEpoch(0);
+    final summaryList = [...summaries]..sort((a, b) {
+        final aDate = _pickDate(a.data(), const ['created_at', 'updated_at']) ??
+            DateTime.fromMillisecondsSinceEpoch(0);
+        final bDate = _pickDate(b.data(), const ['created_at', 'updated_at']) ??
+            DateTime.fromMillisecondsSinceEpoch(0);
         return bDate.compareTo(aDate);
       });
     final recentSummaryRows = summaryList.take(3).map((doc) {
       final data = doc.data();
       final createdAt = _pickDate(data, const ['created_at', 'updated_at']);
-      final summaryText = _toNonEmptyString(data['summary']) ?? 'AI summary generated';
+      final summaryText =
+          _toNonEmptyString(data['summary']) ?? 'AI summary generated';
       final patientId = _toNonEmptyString(data['patient_id']) ?? doc.id;
-      final transcriptLength = data['transcript'] is List ? (data['transcript'] as List).length : 0;
+      final transcriptLength =
+          data['transcript'] is List ? (data['transcript'] as List).length : 0;
       final hasFeedback = _toNonEmptyString(data['therapist_feedback']) != null;
       return _RecentSummaryData(
         title: _truncate(summaryText, max: 52),
-        subtitle: 'Patient ${_shortId(patientId)} • ${createdAt == null ? 'Unknown time' : _formatRelative(createdAt)}',
-        metric: transcriptLength > 0 ? '$transcriptLength msgs' : 'No transcript',
+        subtitle:
+            'Patient ${_shortId(patientId)} • ${createdAt == null ? 'Unknown time' : _formatRelative(createdAt)}',
+        metric:
+            transcriptLength > 0 ? '$transcriptLength msgs' : 'No transcript',
         completion: hasFeedback ? 'Feedback reviewed' : 'Awaiting feedback',
-        metricColor: hasFeedback ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+        metricColor:
+            hasFeedback ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
       );
     }).toList(growable: false);
 
@@ -847,12 +905,16 @@ class _DashboardContentState extends State<_DashboardContent> {
       final data = doc.data();
       final scheduledAt = _pickDate(data, const ['scheduled_at']);
       if (scheduledAt == null) return false;
-      final status = _toNonEmptyString(data['status'])?.toLowerCase() ?? 'scheduled';
-      return (status == 'scheduled' || status == 'ongoing') && scheduledAt.isAfter(now);
+      final status =
+          _toNonEmptyString(data['status'])?.toLowerCase() ?? 'scheduled';
+      return (status == 'scheduled' || status == 'ongoing') &&
+          scheduledAt.isAfter(now);
     }).toList()
       ..sort((a, b) {
-        final aDate = _pickDate(a.data(), const ['scheduled_at']) ?? DateTime.fromMillisecondsSinceEpoch(0);
-        final bDate = _pickDate(b.data(), const ['scheduled_at']) ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final aDate = _pickDate(a.data(), const ['scheduled_at']) ??
+            DateTime.fromMillisecondsSinceEpoch(0);
+        final bDate = _pickDate(b.data(), const ['scheduled_at']) ??
+            DateTime.fromMillisecondsSinceEpoch(0);
         return aDate.compareTo(bDate);
       });
 
@@ -861,10 +923,15 @@ class _DashboardContentState extends State<_DashboardContent> {
       final data = scheduledSessions[i].data();
       final scheduledAt = _pickDate(data, const ['scheduled_at']);
       if (scheduledAt == null) continue;
-      final patientId = _toNonEmptyString(data['user_id']) ?? _toNonEmptyString(data['patient_id']) ?? '';
+      final patientId = _toNonEmptyString(data['user_id']) ??
+          _toNonEmptyString(data['patient_id']) ??
+          '';
       final therapistId = _toNonEmptyString(data['therapist_id']) ?? '';
-      final patientName = _nameFromUser(userMapById[patientId]) ?? _shortId(patientId);
-      final therapistName = therapistNameById[therapistId] ?? _nameFromUser(userMapById[therapistId]) ?? _shortId(therapistId);
+      final patientName =
+          _nameFromUser(userMapById[patientId]) ?? _shortId(patientId);
+      final therapistName = therapistNameById[therapistId] ??
+          _nameFromUser(userMapById[therapistId]) ??
+          _shortId(therapistId);
       upcomingRows.add(
         _UpcomingSessionData(
           month: _monthLabel(scheduledAt.month),
@@ -909,7 +976,8 @@ class _DashboardContentState extends State<_DashboardContent> {
     return !isTherapist;
   }
 
-  String _bestDisplayName(Map<String, dynamic> therapistData, Map<String, dynamic>? userData) {
+  String _bestDisplayName(
+      Map<String, dynamic> therapistData, Map<String, dynamic>? userData) {
     final fullName = _toNonEmptyString(therapistData['full_name']);
     if (fullName != null) return fullName;
 
@@ -981,7 +1049,8 @@ class _DashboardContentState extends State<_DashboardContent> {
     return buckets.map((count) => count.toDouble()).toList(growable: false);
   }
 
-  List<double> _uniqueSeriesFromEvents(List<_PatientActivityEvent> events, int days) {
+  List<double> _uniqueSeriesFromEvents(
+      List<_PatientActivityEvent> events, int days) {
     if (days <= 1) return <double>[events.length.toDouble()];
     final today = DateTime.now();
     final anchor = DateTime(today.year, today.month, today.day);
@@ -1034,7 +1103,20 @@ class _DashboardContentState extends State<_DashboardContent> {
   }
 
   String _monthLabel(int month) {
-    const months = <String>['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+    const months = <String>[
+      'JAN',
+      'FEB',
+      'MAR',
+      'APR',
+      'MAY',
+      'JUN',
+      'JUL',
+      'AUG',
+      'SEP',
+      'OCT',
+      'NOV',
+      'DEC'
+    ];
     if (month < 1 || month > 12) return 'N/A';
     return months[month - 1];
   }
@@ -1142,7 +1224,11 @@ class _MetricsGrid extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        final cols = width >= 1240 ? 4 : width >= 900 ? 2 : 1;
+        final cols = width >= 1240
+            ? 4
+            : width >= 900
+                ? 2
+                : 1;
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -1193,7 +1279,9 @@ class _MetricCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
-                  color: positive ? const Color(0xFF10B981) : const Color(0xFF64748B),
+                  color: positive
+                      ? const Color(0xFF10B981)
+                      : const Color(0xFF64748B),
                 ),
               ),
             ],
@@ -1353,7 +1441,8 @@ class _AreaChartPainter extends CustomPainter {
     final area = Path();
     for (var i = 0; i < points.length; i++) {
       final x = (i / (points.length - 1)) * size.width;
-      final y = size.height - (((points[i] - minY) / span) * (size.height - 18)) - 8;
+      final y =
+          size.height - (((points[i] - minY) / span) * (size.height - 18)) - 8;
       if (i == 0) {
         line.moveTo(x, y);
         area.moveTo(x, size.height);
@@ -1414,7 +1503,10 @@ class _AlertsCard extends StatelessWidget {
               const Expanded(
                 child: Text(
                   'Critical Alerts',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF111418)),
+                  style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF111418)),
                 ),
               ),
               _Badge('${alerts.length} ACTION REQ.'),
@@ -1426,7 +1518,10 @@ class _AlertsCard extends StatelessWidget {
               padding: EdgeInsets.symmetric(vertical: 10),
               child: Text(
                 'No active critical alerts from live Firestore data.',
-                style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                style: TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF64748B),
+                    fontWeight: FontWeight.w600),
               ),
             ),
           for (var i = 0; i < alerts.length; i++) ...[
@@ -1501,7 +1596,8 @@ class _AlertItem extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: tone),
+                  style: TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.w800, color: tone),
                 ),
               ),
               Text(
@@ -1513,7 +1609,8 @@ class _AlertItem extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             message,
-            style: const TextStyle(fontSize: 11, color: Color(0xFF334155), height: 1.3),
+            style: const TextStyle(
+                fontSize: 11, color: Color(0xFF334155), height: 1.3),
           ),
           const SizedBox(height: 8),
           Text(
@@ -1549,13 +1646,19 @@ class _RecentArticlesCard extends StatelessWidget {
         children: [
           const Text(
             'Recent AI Session Summaries',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF111418)),
+            style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF111418)),
           ),
           const SizedBox(height: 12),
           if (rows.isEmpty)
             const Text(
               'No AI summary records found yet.',
-              style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+              style: TextStyle(
+                  fontSize: 11,
+                  color: Color(0xFF64748B),
+                  fontWeight: FontWeight.w600),
             ),
           for (var i = 0; i < rows.length; i++) ...[
             _ArticlePerformanceRow(
@@ -1605,7 +1708,8 @@ class _ArticlePerformanceRow extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
-            child: const Icon(Icons.description_outlined, color: Color(0xFF2B8CEE), size: 18),
+            child: const Icon(Icons.description_outlined,
+                color: Color(0xFF2B8CEE), size: 18),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -1614,14 +1718,18 @@ class _ArticlePerformanceRow extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF111418)),
+                  style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF111418)),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                  style:
+                      const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -1633,7 +1741,10 @@ class _ArticlePerformanceRow extends StatelessWidget {
             children: [
               Text(
                 metric,
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: metricColor),
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: metricColor),
               ),
               const SizedBox(height: 2),
               Text(
@@ -1666,13 +1777,19 @@ class _UpcomingContentCard extends StatelessWidget {
         children: [
           const Text(
             'Upcoming Scheduled Sessions',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF111418)),
+            style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF111418)),
           ),
           const SizedBox(height: 12),
           if (rows.isEmpty)
             const Text(
               'No upcoming sessions found in Firestore.',
-              style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+              style: TextStyle(
+                  fontSize: 11,
+                  color: Color(0xFF64748B),
+                  fontWeight: FontWeight.w600),
             ),
           for (var i = 0; i < rows.length; i++) ...[
             _ScheduleRow(
@@ -1726,14 +1843,19 @@ class _ScheduleRow extends StatelessWidget {
               children: [
                 Text(
                   month,
-                  style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Color(0xFF94A3B8)),
+                  style: const TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF94A3B8)),
                 ),
                 Text(
                   day,
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
-                    color: active ? const Color(0xFF2B8CEE) : const Color(0xFF64748B),
+                    color: active
+                        ? const Color(0xFF2B8CEE)
+                        : const Color(0xFF64748B),
                   ),
                 ),
               ],
@@ -1746,17 +1868,24 @@ class _ScheduleRow extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF111418)),
+                  style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF111418)),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   tag,
-                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontStyle: FontStyle.italic),
+                  style: const TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF64748B),
+                      fontStyle: FontStyle.italic),
                 ),
               ],
             ),
           ),
-          const Icon(Icons.more_vert_rounded, size: 16, color: Color(0xFFCBD5E1)),
+          const Icon(Icons.more_vert_rounded,
+              size: 16, color: Color(0xFFCBD5E1)),
         ],
       ),
     );

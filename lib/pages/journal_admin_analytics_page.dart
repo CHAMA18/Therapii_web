@@ -7,6 +7,7 @@ import 'package:therapii/pages/journal_admin_patients_hub_page.dart';
 import 'package:therapii/pages/journal_admin_settings_page.dart';
 import 'package:therapii/pages/journal_admin_studio_page.dart';
 import 'package:therapii/pages/journal_admin_team_hub_page.dart';
+import 'package:therapii/services/app_page_state_service.dart';
 import 'package:therapii/widgets/journal_admin_sidebar.dart';
 
 class JournalAdminAnalyticsPage extends StatelessWidget {
@@ -31,7 +32,8 @@ class JournalAdminAnalyticsPage extends StatelessWidget {
         break;
       case JournalAdminSidebarItem.patients:
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const JournalAdminPatientsHubPage()),
+          MaterialPageRoute(
+              builder: (_) => const JournalAdminPatientsHubPage()),
         );
         break;
       case JournalAdminSidebarItem.analytics:
@@ -46,17 +48,20 @@ class JournalAdminAnalyticsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF6F7F8),
-      body: SafeArea(
-        child: Row(
-          children: [
-            JournalAdminSidebar(
-              activeItem: JournalAdminSidebarItem.analytics,
-              onNavigate: (item) => _onSidebarNavigate(context, item),
-            ),
-            const Expanded(child: _AnalyticsContent()),
-          ],
+    return RememberAppPage(
+      pageId: AppPageId.journalAdminAnalytics,
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF6F7F8),
+        body: SafeArea(
+          child: Row(
+            children: [
+              JournalAdminSidebar(
+                activeItem: JournalAdminSidebarItem.analytics,
+                onNavigate: (item) => _onSidebarNavigate(context, item),
+              ),
+              const Expanded(child: _AnalyticsContent()),
+            ],
+          ),
         ),
       ),
     );
@@ -80,7 +85,8 @@ class _AnalyticsSidebar extends StatelessWidget {
     if (trimmed.isEmpty) return 'DA';
     final parts = trimmed.split(RegExp(r'\s+'));
     if (parts.length == 1) return parts.first.characters.first.toUpperCase();
-    return (parts.first.characters.first + parts.last.characters.first).toUpperCase();
+    return (parts.first.characters.first + parts.last.characters.first)
+        .toUpperCase();
   }
 
   String? _safePhotoUrl() {
@@ -118,7 +124,8 @@ class _AnalyticsSidebar extends StatelessWidget {
                     color: const Color(0xFF2B8CEE).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.self_improvement_rounded, color: Color(0xFF2B8CEE), size: 20),
+                  child: const Icon(Icons.self_improvement_rounded,
+                      color: Color(0xFF2B8CEE), size: 20),
                 ),
                 const SizedBox(width: 10),
                 const Expanded(
@@ -147,7 +154,8 @@ class _AnalyticsSidebar extends StatelessWidget {
                     label: 'Dashboard',
                     onTap: () {
                       Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(builder: (_) => const JournalAdminDashboardPage()),
+                        MaterialPageRoute(
+                            builder: (_) => const JournalAdminDashboardPage()),
                       );
                     },
                   ),
@@ -156,7 +164,8 @@ class _AnalyticsSidebar extends StatelessWidget {
                     label: 'Articles',
                     onTap: () {
                       Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(builder: (_) => const JournalAdminStudioPage()),
+                        MaterialPageRoute(
+                            builder: (_) => const JournalAdminStudioPage()),
                       );
                     },
                   ),
@@ -167,7 +176,8 @@ class _AnalyticsSidebar extends StatelessWidget {
                     label: 'Team',
                     onTap: () {
                       Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(builder: (_) => const JournalAdminTeamHubPage()),
+                        MaterialPageRoute(
+                            builder: (_) => const JournalAdminTeamHubPage()),
                       );
                     },
                   ),
@@ -176,7 +186,9 @@ class _AnalyticsSidebar extends StatelessWidget {
                     label: 'Patients',
                     onTap: () {
                       Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(builder: (_) => const JournalAdminPatientsHubPage()),
+                        MaterialPageRoute(
+                            builder: (_) =>
+                                const JournalAdminPatientsHubPage()),
                       );
                     },
                   ),
@@ -192,7 +204,8 @@ class _AnalyticsSidebar extends StatelessWidget {
                     label: 'Settings',
                     onTap: () {
                       Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(builder: (_) => const JournalAdminSettingsPage()),
+                        MaterialPageRoute(
+                            builder: (_) => const JournalAdminSettingsPage()),
                       );
                     },
                   ),
@@ -252,9 +265,11 @@ class _AnalyticsSidebar extends StatelessWidget {
                 ),
                 IconButton(
                   onPressed: () => Navigator.of(context).maybePop(),
-                  icon: const Icon(Icons.logout_rounded, color: Color(0xFF64748B), size: 20),
+                  icon: const Icon(Icons.logout_rounded,
+                      color: Color(0xFF64748B), size: 20),
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                  constraints:
+                      const BoxConstraints(minWidth: 28, minHeight: 28),
                 ),
               ],
             ),
@@ -368,7 +383,8 @@ class _AnalyticsHeader extends StatelessWidget {
       child: const Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.calendar_today_rounded, size: 14, color: Color(0xFF64748B)),
+          Icon(Icons.calendar_today_rounded,
+              size: 14, color: Color(0xFF64748B)),
           SizedBox(width: 8),
           Text(
             'Jan 1, 2024 - Jan 30, 2024',
@@ -732,7 +748,20 @@ class _JournalingEngagementCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const bars = <double>[0.14, 0.24, 0.62, 0.70, 0.50, 0.27, 0.18, 0.40, 0.47, 0.36, 0.21, 0.09];
+    const bars = <double>[
+      0.14,
+      0.24,
+      0.62,
+      0.70,
+      0.50,
+      0.27,
+      0.18,
+      0.40,
+      0.47,
+      0.36,
+      0.21,
+      0.09
+    ];
     return _CardShell(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -791,8 +820,8 @@ class _JournalingEngagementCard extends StatelessWidget {
                 final color = isPrimaryPeak
                     ? const Color(0xFF2B8CEE)
                     : isSecondaryPeak
-                    ? const Color(0xFF8CB8E8)
-                    : const Color(0xFFE7EDF5);
+                        ? const Color(0xFF8CB8E8)
+                        : const Color(0xFFE7EDF5);
                 return Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -858,8 +887,10 @@ class _MostDiscussedThemesCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const chips = [
-      _ThemeChipData('Relationships (42%)', Color(0xFFE8F3FF), Color(0xFF2B8CEE)),
-      _ThemeChipData('Career Growth (18%)', Color(0xFFE6F8F2), Color(0xFF22A37A)),
+      _ThemeChipData(
+          'Relationships (42%)', Color(0xFFE8F3FF), Color(0xFF2B8CEE)),
+      _ThemeChipData(
+          'Career Growth (18%)', Color(0xFFE6F8F2), Color(0xFF22A37A)),
       _ThemeChipData('Self-Esteem (15%)', Color(0xFFFFF4E8), Color(0xFFDD8B18)),
       _ThemeChipData('Social Anxiety', Color(0xFFFFECF2), Color(0xFFE34978)),
       _ThemeChipData('Mindfulness', Color(0xFFF3EDFF), Color(0xFF7E50E9)),
@@ -894,7 +925,8 @@ class _MostDiscussedThemesCard extends StatelessWidget {
             runSpacing: 8,
             children: chips
                 .map((chip) => Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
                         color: chip.background,
                         borderRadius: BorderRadius.circular(999),

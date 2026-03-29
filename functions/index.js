@@ -1050,10 +1050,9 @@ exports.getStripeBillingDetails = functions
   }
 
   const userId = context.auth.uid;
+  const authEmail = (context.auth.token.email || '').toString().trim().toLowerCase();
 
   try {
-    const stripe = getStripe();
-    
     // Get user's Stripe customer ID
     const userDoc = await admin.firestore().collection('users').doc(userId).get();
     if (!userDoc.exists) {
@@ -1069,9 +1068,101 @@ exports.getStripeBillingDetails = functions
     }
 
     const userData = userDoc.data();
-    const customerId = userData.stripe_customer_id;
+    const customerId = (userData.stripe_customer_id || '').toString().trim();
+    const userEmail = (userData.email || authEmail || '').toString().trim().toLowerCase();
 
-    if (!customerId) {
+    const now = admin.firestore.Timestamp.now();
+    let activeGrant = null;
+
+    if (userEmail || customerId) {
+      const grantsSnap = await admin.firestore()
+        .collection('admin_settings')
+        .doc('user_access')
+        .collection('grants')
+        .where('status', '==', 'active')
+        .get();
+
+      activeGrant = grantsSnap.docs
+        .map((doc) => ({ id: doc.id, ...doc.data() }))
+        .where((grant) => {
+          const grantEmail = (grant.email || '').toString().trim().toLowerCase();
+          const grantCustomerId = (grant.stripe_customer_id || '').toString().trim();
+          const expiresAt = grant.expires_at;
+          const grantedAt = grant.granted_at;
+
+          if (!expiresAt || !grantedAt) return false;
+          if (expiresAt.toMillis() < now.toMillis()) return false;
+          if (grantedAt.toMillis() > now.toMillis()) return false;
+
+          return (userEmail && grantEmail && grantEmail === userEmail) ||
+            (customerId && grantCustomerId && grantCustomerId === customerId);
+        })
+        .sort((a, b) => {
+          const aExpires = a.expires_at?.toMillis?.() || 0;
+          const bExpires = b.expires_at?.toMillis?.() || 0;
+          return bExpires - aExpires;
+        })[0] || null;
+    }
+
+    let stripe = null;
+    let customer = null;
+    let paymentMethod = null;
+    let subscription = null;
+    let hasActiveSubscription = false;
+    let appliedCoupon = null;
+    let creditBalance = 0;
+
+    if (customerId) {
+      stripe = getStripe();
+
+      // Fetch customer data including credit balance
+      customer = await stripe.customers.retrieve(customerId, {
+        expand: ['sources', 'invoice_settings.default_payment_method'],
+      });
+
+      // Fetch active subscriptions
+      const subscriptions = await stripe.subscriptions.list({
+        customer: customerId,
+        status: 'active',
+        limit: 1,
+      });
+
+      hasActiveSubscription = subscriptions.data.length > 0;
+      subscription = subscriptions.data[0] || null;
+
+      if (customer.invoice_settings?.default_payment_method) {
+        const pm = typeof customer.invoice_settings.default_payment_method === 'string'
+          ? await stripe.paymentMethods.retrieve(customer.invoice_settings.default_payment_method)
+          : customer.invoice_settings.default_payment_method;
+
+        if (pm && pm.card) {
+          paymentMethod = {
+            brand: pm.card.brand,
+            last4: pm.card.last4,
+            expMonth: pm.card.exp_month,
+            expYear: pm.card.exp_year,
+          };
+        }
+      }
+
+      if (subscription?.discount?.coupon) {
+        const coupon = subscription.discount.coupon;
+        appliedCoupon = {
+          code: subscription.discount.promotion_code || coupon.id,
+          name: coupon.name || coupon.id,
+          percentOff: coupon.percent_off,
+          amountOff: coupon.amount_off ? coupon.amount_off / 100 : null,
+        };
+      }
+
+      creditBalance = customer.balance ? Math.abs(customer.balance) / 100 : 0;
+    }
+
+    const hasSpecialAccess = activeGrant != null;
+    const specialAccessTier = (activeGrant?.access_tier || 'Special Access').toString().trim();
+    const specialAccessExpiry = activeGrant?.expires_at?.toDate?.();
+
+    if (!customerId && !hasSpecialAccess) {
       return {
         isPaidUser: false,
         planName: 'Free Plan',
@@ -1083,63 +1174,30 @@ exports.getStripeBillingDetails = functions
       };
     }
 
-    // Fetch customer data including credit balance
-    const customer = await stripe.customers.retrieve(customerId, {
-      expand: ['sources', 'invoice_settings.default_payment_method'],
-    });
-
-    // Fetch active subscriptions
-    const subscriptions = await stripe.subscriptions.list({
-      customer: customerId,
-      status: 'active',
-      limit: 1,
-    });
-
-    const hasActiveSubscription = subscriptions.data.length > 0;
-    const subscription = subscriptions.data[0] || null;
-
-    // Get payment method details
-    let paymentMethod = null;
-    if (customer.invoice_settings?.default_payment_method) {
-      const pm = typeof customer.invoice_settings.default_payment_method === 'string'
-        ? await stripe.paymentMethods.retrieve(customer.invoice_settings.default_payment_method)
-        : customer.invoice_settings.default_payment_method;
-      
-      if (pm && pm.card) {
-        paymentMethod = {
-          brand: pm.card.brand,
-          last4: pm.card.last4,
-          expMonth: pm.card.exp_month,
-          expYear: pm.card.exp_year,
-        };
-      }
-    }
-
-    // Get applied coupon/discount
-    let appliedCoupon = null;
-    if (subscription?.discount?.coupon) {
-      const coupon = subscription.discount.coupon;
-      appliedCoupon = {
-        code: subscription.discount.promotion_code || coupon.id,
-        name: coupon.name || coupon.id,
-        percentOff: coupon.percent_off,
-        amountOff: coupon.amount_off ? coupon.amount_off / 100 : null,
-      };
-    }
-
-    // Credit balance is stored as negative cents in Stripe (negative = credit)
-    const creditBalance = customer.balance ? Math.abs(customer.balance) / 100 : 0;
-
     return {
-      isPaidUser: hasActiveSubscription,
-      planName: hasActiveSubscription ? 'Platinum Plan' : 'Free Plan',
+      isPaidUser: hasActiveSubscription || hasSpecialAccess,
+      planName: hasActiveSubscription
+        ? 'Platinum Plan'
+        : (hasSpecialAccess ? specialAccessTier : 'Free Plan'),
       creditBalance: creditBalance,
       paymentMethod: paymentMethod,
-      subscriptionStatus: subscription?.status || null,
-      nextBillingDate: subscription?.current_period_end 
-        ? new Date(subscription.current_period_end * 1000).toISOString() 
-        : null,
+      subscriptionStatus: hasActiveSubscription
+        ? (subscription?.status || null)
+        : (hasSpecialAccess ? 'special_access' : null),
+      nextBillingDate: hasActiveSubscription
+        ? (subscription?.current_period_end
+            ? new Date(subscription.current_period_end * 1000).toISOString()
+            : null)
+        : (specialAccessExpiry ? specialAccessExpiry.toISOString() : null),
       appliedCoupon: appliedCoupon,
+      specialAccess: hasSpecialAccess
+        ? {
+            tier: specialAccessTier,
+            expiresAt: specialAccessExpiry ? specialAccessExpiry.toISOString() : null,
+            stripeCustomerId: activeGrant?.stripe_customer_id || null,
+            stripeConfigReference: activeGrant?.stripe_config_reference || null,
+          }
+        : null,
     };
   } catch (error) {
     console.error('Error fetching Stripe billing details:', error);

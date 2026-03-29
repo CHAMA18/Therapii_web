@@ -1,0 +1,104 @@
+---
+title: Data Model and Security
+description: Core Firestore collections, ownership model, and security rule patterns.
+---
+
+# Data Model and Security
+
+## Core collections
+
+### `users`
+
+Stores user profile information for all signed-in accounts.
+
+Common responsibilities:
+
+- identity and profile data
+- therapist linkage
+- client onboarding state
+- per-user favorite journal articles in a subcollection
+
+Subcollection:
+
+- `users/{uid}/favorite_journal_articles`
+
+### `therapists`
+
+Stores therapist directory and training-profile data.
+
+### `conversations`
+
+Stores therapist-client conversations.
+
+Subcollection:
+
+- `messages`
+
+### `ai_conversation_summaries`
+
+Stores AI-generated or AI-related summary records visible to the relevant therapist or client.
+
+### `therapy_sessions`
+
+Stores session records and related session metadata.
+
+### `voice_checkins`
+
+Stores metadata for voice check-ins, with media access enforced through storage rules.
+
+### `invitation_codes`
+
+Stores therapist-issued connection codes for new client onboarding.
+
+### `admin_settings`
+
+Stores admin-managed configuration and content, including:
+
+- OpenAI config
+- email config
+- landing content
+- journal content and article records
+- user access grants
+
+## Firestore rule patterns
+
+The rule file is `firestore.rules`.
+
+Main patterns:
+
+- signed-in checks
+- self-document access
+- therapist-of-patient access
+- admin email checks
+- admin-only settings access
+- deny-by-default catch-all
+
+## Rule highlights
+
+### Users
+
+- users can read and update their own document
+- therapists can read linked patient documents
+- patients can read their therapist document
+- admins can read broadly
+
+### Favorites
+
+- only the owning user can read and write favorite articles
+
+### Conversations
+
+- only participants can read or write
+- message edits and deletes are intentionally blocked from the client
+
+### Admin settings
+
+- all reads and writes under `admin_settings/**` are admin-only
+
+## Known operational sensitivity
+
+Permission errors commonly appear when:
+
+- the signed-in admin email is not present in both the app allowlist and Firestore rules
+- a non-admin user reaches an admin-only page
+- new collections are introduced without matching rules updates

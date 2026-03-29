@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:therapii/pages/patient_dashboard_page.dart';
+import 'package:therapii/services/app_page_state_service.dart';
 import 'package:therapii/services/user_service.dart';
 import 'package:therapii/widgets/primary_button.dart';
 
@@ -8,7 +9,8 @@ class PatientOnboardingFlowPage extends StatefulWidget {
   const PatientOnboardingFlowPage({super.key});
 
   @override
-  State<PatientOnboardingFlowPage> createState() => _PatientOnboardingFlowPageState();
+  State<PatientOnboardingFlowPage> createState() =>
+      _PatientOnboardingFlowPageState();
 }
 
 class _PatientOnboardingFlowPageState extends State<PatientOnboardingFlowPage> {
@@ -85,9 +87,11 @@ class _PatientOnboardingFlowPageState extends State<PatientOnboardingFlowPage> {
 
         if (goals is String) _goalsCtrl.text = goals;
         if (support is String) _supportCtrl.text = support;
-        if (frequency is String && frequency.isNotEmpty) _checkInFrequency = frequency;
+        if (frequency is String && frequency.isNotEmpty)
+          _checkInFrequency = frequency;
         if (reminders is bool) _sendReminders = reminders;
-        if (shareSummaries is bool) _shareSummariesWithTherapist = shareSummaries;
+        if (shareSummaries is bool)
+          _shareSummariesWithTherapist = shareSummaries;
         if (focusList is List) {
           _focusAreas
             ..clear()
@@ -132,7 +136,8 @@ class _PatientOnboardingFlowPageState extends State<PatientOnboardingFlowPage> {
     final firebaseUser = firebase_auth.FirebaseAuth.instance.currentUser;
     if (firebaseUser == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('You are not signed in. Please log in again.')),
+        const SnackBar(
+            content: Text('You are not signed in. Please log in again.')),
       );
       return;
     }
@@ -177,7 +182,8 @@ class _PatientOnboardingFlowPageState extends State<PatientOnboardingFlowPage> {
       children: [
         Text(
           'Step ${_stepIndex + 1} of 3',
-          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+          style: theme.textTheme.titleMedium
+              ?.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 8),
         ClipRRect(
@@ -185,7 +191,8 @@ class _PatientOnboardingFlowPageState extends State<PatientOnboardingFlowPage> {
           child: LinearProgressIndicator(
             value: _progress,
             minHeight: 8,
-            backgroundColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.4),
+            backgroundColor:
+                theme.colorScheme.surfaceContainerHighest.withOpacity(0.4),
             valueColor: AlwaysStoppedAnimation(theme.colorScheme.primary),
           ),
         ),
@@ -198,19 +205,24 @@ class _PatientOnboardingFlowPageState extends State<PatientOnboardingFlowPage> {
       case 0:
         return _StepContainer(
           title: 'Let’s get to know you',
-          subtitle: 'Share what brings you to Therapii so conversations can meet you where you are.',
+          subtitle:
+              'Share what brings you to Therapii so conversations can meet you where you are.',
           children: [
             TextField(
               controller: _goalsCtrl,
               minLines: 4,
               maxLines: 6,
               textCapitalization: TextCapitalization.sentences,
-              decoration: _textFieldDecoration(context, 'What would you like support with right now?'),
+              decoration: _textFieldDecoration(
+                  context, 'What would you like support with right now?'),
             ),
             const SizedBox(height: 16),
             Text(
               'Select the areas you want to focus on:',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 12),
             Wrap(
@@ -238,7 +250,8 @@ class _PatientOnboardingFlowPageState extends State<PatientOnboardingFlowPage> {
       case 1:
         return _StepContainer(
           title: 'Tell us about support that helps',
-          subtitle: 'Preferences help both your therapist and the AI respond in ways that feel useful.',
+          subtitle:
+              'Preferences help both your therapist and the AI respond in ways that feel useful.',
           children: [
             DropdownButtonFormField<String>(
               value: _checkInFrequency,
@@ -247,34 +260,49 @@ class _PatientOnboardingFlowPageState extends State<PatientOnboardingFlowPage> {
                 'A few times a week',
                 'Weekly summaries',
                 'Only when something important happens',
-              ].map((option) => DropdownMenuItem(value: option, child: Text(option))).toList(),
-              onChanged: _saving ? null : (value) => setState(() => _checkInFrequency = value ?? _checkInFrequency),
-              decoration: _inputDecoration(context, 'How often would you like check-ins?'),
+              ]
+                  .map((option) =>
+                      DropdownMenuItem(value: option, child: Text(option)))
+                  .toList(),
+              onChanged: _saving
+                  ? null
+                  : (value) => setState(
+                      () => _checkInFrequency = value ?? _checkInFrequency),
+              decoration: _inputDecoration(
+                  context, 'How often would you like check-ins?'),
             ),
             const SizedBox(height: 16),
             SwitchListTile.adaptive(
               value: _sendReminders,
-              onChanged: _saving ? null : (value) => setState(() => _sendReminders = value),
+              onChanged: _saving
+                  ? null
+                  : (value) => setState(() => _sendReminders = value),
               title: const Text('Send me gentle reminders if I go quiet'),
             ),
             SwitchListTile.adaptive(
               value: _shareSummariesWithTherapist,
-              onChanged: _saving ? null : (value) => setState(() => _shareSummariesWithTherapist = value),
-              title: const Text('Share conversation summaries with my therapist'),
+              onChanged: _saving
+                  ? null
+                  : (value) =>
+                      setState(() => _shareSummariesWithTherapist = value),
+              title:
+                  const Text('Share conversation summaries with my therapist'),
             ),
           ],
         );
       default:
         return _StepContainer(
           title: 'Anything else we should know?',
-          subtitle: 'Add personal notes, routines, or boundaries so your conversations stay supportive.',
+          subtitle:
+              'Add personal notes, routines, or boundaries so your conversations stay supportive.',
           children: [
             TextField(
               controller: _supportCtrl,
               minLines: 3,
               maxLines: 5,
               textCapitalization: TextCapitalization.sentences,
-              decoration: _textFieldDecoration(context, 'What helps you feel supported on tough days?'),
+              decoration: _textFieldDecoration(
+                  context, 'What helps you feel supported on tough days?'),
             ),
             const SizedBox(height: 16),
             TextField(
@@ -282,7 +310,8 @@ class _PatientOnboardingFlowPageState extends State<PatientOnboardingFlowPage> {
               minLines: 3,
               maxLines: 5,
               textCapitalization: TextCapitalization.sentences,
-              decoration: _textFieldDecoration(context, 'Anything else you want to share with us?'),
+              decoration: _textFieldDecoration(
+                  context, 'Anything else you want to share with us?'),
             ),
           ],
         );
@@ -300,7 +329,8 @@ class _PatientOnboardingFlowPageState extends State<PatientOnboardingFlowPage> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(20),
-        borderSide: BorderSide(color: Theme.of(context).colorScheme.primary.withOpacity(0.5)),
+        borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.5)),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
     );
@@ -318,91 +348,106 @@ class _PatientOnboardingFlowPageState extends State<PatientOnboardingFlowPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     if (_initializing) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+      return const RememberAppPage(
+        pageId: AppPageId.patientOnboarding,
+        child: Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        ),
       );
     }
 
     if (_error != null) {
-      return Scaffold(
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(_error!, textAlign: TextAlign.center, style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.error)),
-                const SizedBox(height: 16),
-                FilledButton(
-                  onPressed: _loadExistingData,
-                  child: const Text('Try again'),
-                ),
-              ],
+      return RememberAppPage(
+        pageId: AppPageId.patientOnboarding,
+        child: Scaffold(
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(_error!,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyLarge
+                          ?.copyWith(color: theme.colorScheme.error)),
+                  const SizedBox(height: 16),
+                  FilledButton(
+                    onPressed: _loadExistingData,
+                    child: const Text('Try again'),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
       );
     }
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          tooltip: 'Back',
-          onPressed: () => Navigator.of(context).pop(),
+    return RememberAppPage(
+      pageId: AppPageId.patientOnboarding,
+      child: Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded),
+            tooltip: 'Back',
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          title: const Text('Welcome'),
+          centerTitle: true,
         ),
-        title: const Text('Welcome'),
-        centerTitle: true,
-      ),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 640),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Welcome to Therapii',
-                    style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'We’ll ask a few quick questions to personalize your space. You can always update these later in settings.',
-                    style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.75), height: 1.5),
-                  ),
-                  const SizedBox(height: 24),
-                  _buildProgressIndicator(context),
-                  const SizedBox(height: 24),
-                  _buildStepContent(context),
-                  const SizedBox(height: 28),
-                  Row(
-                    children: [
-                      if (_stepIndex > 0)
-                        TextButton(
-                          onPressed: _saving ? null : _previousStep,
-                          child: const Text('Back'),
-                        )
-                      else
-                        const SizedBox.shrink(),
-                      const Spacer(),
-                      SizedBox(
-                        width: 160,
-                        child: PrimaryButton(
-                          label: _stepIndex == 2 ? 'Finish' : 'Next',
-                          onPressed: _saving ? null : _nextStep,
-                          isLoading: _saving,
-                          uppercase: false,
+        body: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 640),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Welcome to Therapii',
+                      style: theme.textTheme.headlineMedium
+                          ?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'We’ll ask a few quick questions to personalize your space. You can always update these later in settings.',
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                          color: theme.colorScheme.onSurface.withOpacity(0.75),
+                          height: 1.5),
+                    ),
+                    const SizedBox(height: 24),
+                    _buildProgressIndicator(context),
+                    const SizedBox(height: 24),
+                    _buildStepContent(context),
+                    const SizedBox(height: 28),
+                    Row(
+                      children: [
+                        if (_stepIndex > 0)
+                          TextButton(
+                            onPressed: _saving ? null : _previousStep,
+                            child: const Text('Back'),
+                          )
+                        else
+                          const SizedBox.shrink(),
+                        const Spacer(),
+                        SizedBox(
+                          width: 160,
+                          child: PrimaryButton(
+                            label: _stepIndex == 2 ? 'Finish' : 'Next',
+                            onPressed: _saving ? null : _nextStep,
+                            isLoading: _saving,
+                            uppercase: false,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -444,9 +489,14 @@ class _StepContainer extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+          Text(title,
+              style: theme.textTheme.titleLarge
+                  ?.copyWith(fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
-          Text(subtitle, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.72), height: 1.5)),
+          Text(subtitle,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurface.withOpacity(0.72),
+                  height: 1.5)),
           const SizedBox(height: 20),
           ...children,
         ],

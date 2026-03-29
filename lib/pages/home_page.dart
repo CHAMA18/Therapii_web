@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart' as FirebaseAuth;
 import 'package:therapii/auth/firebase_auth_manager.dart';
-import 'package:therapii/pages/auth_welcome_page.dart';
+import 'package:therapii/pages/landing_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -20,18 +20,18 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _currentUser = _authManager.currentUser;
-    
+
     // Listen to auth state changes
     _authSub = _authManager.authStateChanges.listen((user) {
       if (mounted) {
         setState(() {
           _currentUser = user;
         });
-        
+
         if (user == null) {
-          // User signed out, navigate back to auth
+          // User signed out, navigate back to landing.
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => const AuthWelcomePage()),
+            MaterialPageRoute(builder: (context) => const LandingPage()),
           );
         }
       }
@@ -91,9 +91,9 @@ class _HomePageState extends State<HomePage> {
               Text(
                 'Welcome to Therapii!',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
@@ -107,8 +107,11 @@ class _HomePageState extends State<HomePage> {
                 Text(
                   'User ID: ${_currentUser!.uid}',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                  ),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.6),
+                      ),
                   textAlign: TextAlign.center,
                 ),
               ],

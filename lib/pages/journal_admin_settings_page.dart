@@ -5,17 +5,20 @@ import 'package:therapii/pages/journal_admin_dashboard_page.dart';
 import 'package:therapii/pages/journal_admin_patients_hub_page.dart';
 import 'package:therapii/pages/journal_admin_studio_page.dart';
 import 'package:therapii/pages/journal_admin_team_hub_page.dart';
+import 'package:therapii/services/app_page_state_service.dart';
 import 'package:therapii/widgets/journal_admin_sidebar.dart';
 
 class JournalAdminSettingsPage extends StatefulWidget {
   const JournalAdminSettingsPage({super.key});
 
   @override
-  State<JournalAdminSettingsPage> createState() => _JournalAdminSettingsPageState();
+  State<JournalAdminSettingsPage> createState() =>
+      _JournalAdminSettingsPageState();
 }
 
 class _JournalAdminSettingsPageState extends State<JournalAdminSettingsPage> {
-  final TextEditingController _orgNameController = TextEditingController(text: 'Mindful Health Group');
+  final TextEditingController _orgNameController =
+      TextEditingController(text: 'Mindful Health Group');
   String _selectedTimezone = 'Pacific Time (PT) - US & Canada';
   String _selectedTab = 'General';
 
@@ -52,7 +55,8 @@ class _JournalAdminSettingsPageState extends State<JournalAdminSettingsPage> {
         break;
       case JournalAdminSidebarItem.patients:
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const JournalAdminPatientsHubPage()),
+          MaterialPageRoute(
+              builder: (_) => const JournalAdminPatientsHubPage()),
         );
         break;
       case JournalAdminSidebarItem.analytics:
@@ -67,43 +71,47 @@ class _JournalAdminSettingsPageState extends State<JournalAdminSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF6F7F8),
-      body: SafeArea(
-        child: Row(
-          children: [
-            JournalAdminSidebar(
-              activeItem: JournalAdminSidebarItem.settings,
-              onNavigate: _onSidebarNavigate,
-            ),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(28, 12, 28, 28),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 980),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildHeader(),
-                        const SizedBox(height: 18),
-                        _buildTabs(),
-                        const SizedBox(height: 28),
-                        const _SectionHeader(
-                          title: 'Organization Profile',
-                          subtitle: 'Update your organization\'s basic information and regional settings.',
-                        ),
-                        const SizedBox(height: 14),
-                        _buildOrganizationCard(),
-                        const SizedBox(height: 38),
-                        _buildFooterActions(),
-                      ],
+    return RememberAppPage(
+      pageId: AppPageId.journalAdminSettings,
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF6F7F8),
+        body: SafeArea(
+          child: Row(
+            children: [
+              JournalAdminSidebar(
+                activeItem: JournalAdminSidebarItem.settings,
+                onNavigate: _onSidebarNavigate,
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(28, 12, 28, 28),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 980),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildHeader(),
+                          const SizedBox(height: 18),
+                          _buildTabs(),
+                          const SizedBox(height: 28),
+                          const _SectionHeader(
+                            title: 'Organization Profile',
+                            subtitle:
+                                'Update your organization\'s basic information and regional settings.',
+                          ),
+                          const SizedBox(height: 14),
+                          _buildOrganizationCard(),
+                          const SizedBox(height: 38),
+                          _buildFooterActions(),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -141,7 +149,8 @@ class _JournalAdminSettingsPageState extends State<JournalAdminSettingsPage> {
           style: FilledButton.styleFrom(
             backgroundColor: const Color(0xFF2B8CEE),
             foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
           ),
           child: const Text(
@@ -218,24 +227,32 @@ class _JournalAdminSettingsPageState extends State<JournalAdminSettingsPage> {
                     decoration: BoxDecoration(
                       color: const Color(0xFFFAFCFF),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFD5DFEC), style: BorderStyle.solid),
+                      border: Border.all(
+                          color: const Color(0xFFD5DFEC),
+                          style: BorderStyle.solid),
                     ),
-                    child: const Icon(Icons.image_outlined, size: 20, color: Color(0xFF9CA3AF)),
+                    child: const Icon(Icons.image_outlined,
+                        size: 20, color: Color(0xFF9CA3AF)),
                   ),
                   OutlinedButton(
                     onPressed: () {},
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFF334155),
                       side: const BorderSide(color: Color(0xFFD8E1EE)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 12),
                     ),
-                    child: const Text('Upload New', style: TextStyle(fontWeight: FontWeight.w700)),
+                    child: const Text('Upload New',
+                        style: TextStyle(fontWeight: FontWeight.w700)),
                   ),
                   TextButton(
                     onPressed: () {},
-                    style: TextButton.styleFrom(foregroundColor: const Color(0xFFEF4444)),
-                    child: const Text('Remove', style: TextStyle(fontWeight: FontWeight.w700)),
+                    style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFFEF4444)),
+                    child: const Text('Remove',
+                        style: TextStyle(fontWeight: FontWeight.w700)),
                   ),
                 ],
               ),
@@ -285,7 +302,8 @@ class _JournalAdminSettingsPageState extends State<JournalAdminSettingsPage> {
                   child: Text(
                     tz,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 14, color: Color(0xFF1F2937)),
+                    style:
+                        const TextStyle(fontSize: 14, color: Color(0xFF1F2937)),
                   ),
                 ),
               )
@@ -345,7 +363,8 @@ class _JournalAdminSettingsPageState extends State<JournalAdminSettingsPage> {
             style: FilledButton.styleFrom(
               backgroundColor: const Color(0xFF2B8CEE),
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
               padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 14),
             ),
             child: const Text(
@@ -470,7 +489,8 @@ class _SettingsSidebar extends StatelessWidget {
     if (trimmed.isEmpty) return 'DA';
     final parts = trimmed.split(RegExp(r'\s+'));
     if (parts.length == 1) return parts.first.characters.first.toUpperCase();
-    return (parts.first.characters.first + parts.last.characters.first).toUpperCase();
+    return (parts.first.characters.first + parts.last.characters.first)
+        .toUpperCase();
   }
 
   String? _safePhotoUrl() {
@@ -508,7 +528,8 @@ class _SettingsSidebar extends StatelessWidget {
                     color: const Color(0xFF2B8CEE).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.self_improvement_rounded, color: Color(0xFF2B8CEE), size: 20),
+                  child: const Icon(Icons.self_improvement_rounded,
+                      color: Color(0xFF2B8CEE), size: 20),
                 ),
                 const SizedBox(width: 10),
                 const Expanded(
@@ -537,7 +558,8 @@ class _SettingsSidebar extends StatelessWidget {
                     label: 'Dashboard',
                     onTap: () {
                       Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(builder: (_) => const JournalAdminDashboardPage()),
+                        MaterialPageRoute(
+                            builder: (_) => const JournalAdminDashboardPage()),
                       );
                     },
                   ),
@@ -546,7 +568,8 @@ class _SettingsSidebar extends StatelessWidget {
                     label: 'Articles',
                     onTap: () {
                       Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(builder: (_) => const JournalAdminStudioPage()),
+                        MaterialPageRoute(
+                            builder: (_) => const JournalAdminStudioPage()),
                       );
                     },
                   ),
@@ -557,7 +580,8 @@ class _SettingsSidebar extends StatelessWidget {
                     label: 'Team',
                     onTap: () {
                       Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(builder: (_) => const JournalAdminTeamHubPage()),
+                        MaterialPageRoute(
+                            builder: (_) => const JournalAdminTeamHubPage()),
                       );
                     },
                   ),
@@ -566,7 +590,9 @@ class _SettingsSidebar extends StatelessWidget {
                     label: 'Patients',
                     onTap: () {
                       Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(builder: (_) => const JournalAdminPatientsHubPage()),
+                        MaterialPageRoute(
+                            builder: (_) =>
+                                const JournalAdminPatientsHubPage()),
                       );
                     },
                   ),
@@ -577,7 +603,8 @@ class _SettingsSidebar extends StatelessWidget {
                     label: 'Analytics',
                     onTap: () {
                       Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(builder: (_) => const JournalAdminAnalyticsPage()),
+                        MaterialPageRoute(
+                            builder: (_) => const JournalAdminAnalyticsPage()),
                       );
                     },
                   ),
@@ -642,9 +669,11 @@ class _SettingsSidebar extends StatelessWidget {
                 ),
                 IconButton(
                   onPressed: () => Navigator.of(context).maybePop(),
-                  icon: const Icon(Icons.logout_rounded, color: Color(0xFF64748B), size: 20),
+                  icon: const Icon(Icons.logout_rounded,
+                      color: Color(0xFF64748B), size: 20),
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                  constraints:
+                      const BoxConstraints(minWidth: 28, minHeight: 28),
                 ),
               ],
             ),

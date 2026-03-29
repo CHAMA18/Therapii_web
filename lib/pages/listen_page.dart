@@ -3,7 +3,7 @@ import 'package:therapii/auth/firebase_auth_manager.dart';
 import 'package:therapii/models/chat_conversation.dart';
 import 'package:therapii/models/user.dart' as app_user;
 import 'package:therapii/models/voice_checkin.dart';
-import 'package:therapii/pages/auth_welcome_page.dart';
+import 'package:therapii/pages/landing_page.dart';
 import 'package:therapii/pages/my_patients_page.dart';
 import 'package:therapii/pages/patient_chat_page.dart';
 import 'package:therapii/pages/therapist_voice_conversation_page.dart';
@@ -51,15 +51,20 @@ class _ListenPageState extends State<ListenPage> {
       if (me == null) {
         if (!mounted) return;
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const AuthWelcomePage(initialTab: AuthTab.login)),
+          MaterialPageRoute(builder: (_) => const LandingPage()),
           (route) => false,
         );
         return;
       }
 
       final therapistId = me.uid;
-      final acceptedInvitations = await _invitationService.getAcceptedInvitationsForTherapist(therapistId);
-      final patientIds = acceptedInvitations.map((inv) => inv.patientId).whereType<String>().toSet().toList();
+      final acceptedInvitations = await _invitationService
+          .getAcceptedInvitationsForTherapist(therapistId);
+      final patientIds = acceptedInvitations
+          .map((inv) => inv.patientId)
+          .whereType<String>()
+          .toSet()
+          .toList();
       final users = await _userService.getUsersByIds(patientIds);
       final therapistUser = await _userService.getUser(therapistId);
 
@@ -91,7 +96,20 @@ class _ListenPageState extends State<ListenPage> {
   }
 
   String _formatMonthDay(DateTime date) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
     final monthLabel = months[date.month - 1];
     return '$monthLabel ${date.day}';
   }
@@ -123,7 +141,8 @@ class _ListenPageState extends State<ListenPage> {
     }
 
     return StreamBuilder<ChatConversation?>(
-      stream: _chatService.streamConversation(therapistId: therapistId, patientId: user.id),
+      stream: _chatService.streamConversation(
+          therapistId: therapistId, patientId: user.id),
       builder: (context, snapshot) {
         final subtitle = _subtitleForConversation(snapshot.data);
         return _WebPatientTile(
@@ -141,7 +160,8 @@ class _ListenPageState extends State<ListenPage> {
 
   Future<void> _startTherapistRecordingFlow() async {
     if (_activePatients.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No active patients to record for.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No active patients to record for.')));
       return;
     }
 
@@ -154,7 +174,8 @@ class _ListenPageState extends State<ListenPage> {
 
     if (selected != null && mounted) {
       Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => TherapistVoiceConversationPage(patient: selected)),
+        MaterialPageRoute(
+            builder: (_) => TherapistVoiceConversationPage(patient: selected)),
       );
     }
   }
@@ -169,7 +190,11 @@ class _ListenPageState extends State<ListenPage> {
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: scheme.error.withValues(alpha: 0.28)),
         boxShadow: [
-          BoxShadow(color: scheme.error.withValues(alpha: 0.2), blurRadius: 28, offset: const Offset(0, 18), spreadRadius: -6),
+          BoxShadow(
+              color: scheme.error.withValues(alpha: 0.2),
+              blurRadius: 28,
+              offset: const Offset(0, 18),
+              spreadRadius: -6),
         ],
       ),
       padding: const EdgeInsets.fromLTRB(28, 26, 28, 24),
@@ -217,7 +242,8 @@ class _ListenPageState extends State<ListenPage> {
                 style: FilledButton.styleFrom(
                   backgroundColor: scheme.error,
                   foregroundColor: scheme.onError,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                 ),
                 child: const Text('Try again'),
               ),
@@ -248,7 +274,12 @@ class _ListenPageState extends State<ListenPage> {
         ),
         boxShadow: isDark
             ? []
-            : [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
+            : [
+                BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2))
+              ],
       ),
       padding: const EdgeInsets.all(28),
       child: Column(
@@ -260,7 +291,9 @@ class _ListenPageState extends State<ListenPage> {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E3A5F) : const Color(0xFFEFF6FF),
+                  color: isDark
+                      ? const Color(0xFF1E3A5F)
+                      : const Color(0xFFEFF6FF),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(
@@ -285,7 +318,9 @@ class _ListenPageState extends State<ListenPage> {
                     Text(
                       'Manage your currently enrolled patients',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                        color: isDark
+                            ? const Color(0xFF94A3B8)
+                            : const Color(0xFF64748B),
                       ),
                     ),
                   ],
@@ -309,7 +344,8 @@ class _ListenPageState extends State<ListenPage> {
               children: [
                 for (var i = 0; i < _activePatients.length; i++) ...[
                   _buildPatientTile(_activePatients[i]),
-                  if (i != _activePatients.length - 1) const SizedBox(height: 12),
+                  if (i != _activePatients.length - 1)
+                    const SizedBox(height: 12),
                 ],
               ],
             ),
@@ -357,7 +393,12 @@ class _ListenPageState extends State<ListenPage> {
         ),
         boxShadow: isDark
             ? []
-            : [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
+            : [
+                BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2))
+              ],
       ),
       padding: const EdgeInsets.all(28),
       child: Column(
@@ -370,12 +411,16 @@ class _ListenPageState extends State<ListenPage> {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF4C1D1D) : const Color(0xFFFEE2E2),
+                  color: isDark
+                      ? const Color(0xFF4C1D1D)
+                      : const Color(0xFFFEE2E2),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(
                   Icons.mic,
-                  color: isDark ? const Color(0xFFF87171) : const Color(0xFFEF4444),
+                  color: isDark
+                      ? const Color(0xFFF87171)
+                      : const Color(0xFFEF4444),
                   size: 24,
                 ),
               ),
@@ -396,12 +441,16 @@ class _ListenPageState extends State<ListenPage> {
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
-              onPressed: _activePatients.isEmpty ? null : _startTherapistRecordingFlow,
+              onPressed:
+                  _activePatients.isEmpty ? null : _startTherapistRecordingFlow,
               style: FilledButton.styleFrom(
-                backgroundColor: isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A),
-                foregroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
+                backgroundColor:
+                    isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A),
+                foregroundColor:
+                    isDark ? const Color(0xFF0F172A) : Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
               ),
               icon: const Icon(Icons.add_circle_outline, size: 20),
               label: Text(
@@ -418,7 +467,8 @@ class _ListenPageState extends State<ListenPage> {
             child: Text(
               'Review recorded reflections and open them to listen or download.',
               style: theme.textTheme.bodySmall?.copyWith(
-                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                color:
+                    isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                 height: 1.5,
               ),
               textAlign: TextAlign.center,
@@ -429,12 +479,14 @@ class _ListenPageState extends State<ListenPage> {
             Text(
               'Link a patient to begin receiving voice reflections.',
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                color:
+                    isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
               ),
             )
           else
             StreamBuilder<List<VoiceCheckin>>(
-              stream: _voiceService.streamTherapistCheckins(therapistId: therapistId, limit: 20),
+              stream: _voiceService.streamTherapistCheckins(
+                  therapistId: therapistId, limit: 20),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Column(
@@ -458,7 +510,9 @@ class _ListenPageState extends State<ListenPage> {
                   return Text(
                     'No voice check-ins yet. Encourage patients to send quick reflections.',
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                      color: isDark
+                          ? const Color(0xFF64748B)
+                          : const Color(0xFF94A3B8),
                     ),
                   );
                 }
@@ -469,7 +523,9 @@ class _ListenPageState extends State<ListenPage> {
                   final patient = patientLookup[c.patientId];
                   final name = patient == null
                       ? 'Unknown patient'
-                      : (patient.fullName.isNotEmpty ? patient.fullName : patient.email);
+                      : (patient.fullName.isNotEmpty
+                          ? patient.fullName
+                          : patient.email);
                   children.add(_WebVoiceCheckinTile(
                     name: name,
                     dateLabel: _formatMonthDay(c.createdAt),
@@ -501,7 +557,9 @@ class _ListenPageState extends State<ListenPage> {
               child: Text(
                 'View all check-ins',
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                  color: isDark
+                      ? const Color(0xFF64748B)
+                      : const Color(0xFF94A3B8),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -520,7 +578,8 @@ class _ListenPageState extends State<ListenPage> {
     final isWideLayout = screenWidth >= 900;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+      backgroundColor:
+          isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
       body: Column(
         children: [
           // Sticky Header
@@ -529,7 +588,9 @@ class _ListenPageState extends State<ListenPage> {
               color: isDark ? const Color(0xFF0F172A) : Colors.white,
               border: Border(
                 bottom: BorderSide(
-                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+                  color: isDark
+                      ? const Color(0xFF1E293B)
+                      : const Color(0xFFE2E8F0),
                 ),
               ),
             ),
@@ -548,7 +609,9 @@ class _ListenPageState extends State<ListenPage> {
                             onPressed: () => Navigator.of(context).pop(),
                             icon: Icon(
                               Icons.arrow_back,
-                              color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0F172A),
+                              color: isDark
+                                  ? const Color(0xFFE2E8F0)
+                                  : const Color(0xFF0F172A),
                             ),
                             tooltip: 'Back',
                           ),
@@ -568,7 +631,9 @@ class _ListenPageState extends State<ListenPage> {
                             onPressed: () => showSettingsPopup(context),
                             icon: Icon(
                               Icons.settings_outlined,
-                              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                              color: isDark
+                                  ? const Color(0xFF94A3B8)
+                                  : const Color(0xFF64748B),
                             ),
                             tooltip: 'Settings',
                           ),
@@ -613,12 +678,14 @@ class _ListenPageState extends State<ListenPage> {
                             ),
                             FilledButton.icon(
                               onPressed: () => Navigator.of(context).push(
-                                MaterialPageRoute(builder: (_) => const MyPatientsPage()),
+                                MaterialPageRoute(
+                                    builder: (_) => const MyPatientsPage()),
                               ),
                               style: FilledButton.styleFrom(
                                 backgroundColor: theme.colorScheme.primary,
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 20, vertical: 12),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(24),
                                 ),
@@ -640,7 +707,8 @@ class _ListenPageState extends State<ListenPage> {
                               // Left column - Active patients (larger)
                               Expanded(
                                 flex: 7,
-                                child: _buildActivePatientsSection(context, true),
+                                child:
+                                    _buildActivePatientsSection(context, true),
                               ),
                               const SizedBox(width: 28),
                               // Right column - Voice check-ins
@@ -677,7 +745,8 @@ class _WebPatientTile extends StatelessWidget {
   final String name;
   final String lastMessage;
   final VoidCallback? onTap;
-  const _WebPatientTile({required this.name, required this.lastMessage, this.onTap});
+  const _WebPatientTile(
+      {required this.name, required this.lastMessage, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -692,7 +761,9 @@ class _WebPatientTile extends StatelessWidget {
         hoverColor: isDark ? const Color(0xFF1E293B) : Colors.white,
         child: Container(
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E293B).withValues(alpha: 0.4) : const Color(0xFFF8FAFC),
+            color: isDark
+                ? const Color(0xFF1E293B).withValues(alpha: 0.4)
+                : const Color(0xFFF8FAFC),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(color: Colors.transparent),
           ),
@@ -707,11 +778,15 @@ class _WebPatientTile extends StatelessWidget {
                     width: 56,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                      color: isDark
+                          ? const Color(0xFF334155)
+                          : const Color(0xFFE2E8F0),
                     ),
                     child: Icon(
                       Icons.person_outline,
-                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF94A3B8),
+                      color: isDark
+                          ? const Color(0xFF94A3B8)
+                          : const Color(0xFF94A3B8),
                       size: 28,
                     ),
                   ),
@@ -725,7 +800,8 @@ class _WebPatientTile extends StatelessWidget {
                         color: const Color(0xFF22C55E),
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: isDark ? const Color(0xFF0F172A) : Colors.white,
+                          color:
+                              isDark ? const Color(0xFF0F172A) : Colors.white,
                           width: 2,
                         ),
                       ),
@@ -743,7 +819,9 @@ class _WebPatientTile extends StatelessWidget {
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                         fontSize: 18,
-                        color: isDark ? const Color(0xFFF1F5F9) : const Color(0xFF1E293B),
+                        color: isDark
+                            ? const Color(0xFFF1F5F9)
+                            : const Color(0xFF1E293B),
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -752,7 +830,9 @@ class _WebPatientTile extends StatelessWidget {
                         Text(
                           lastMessage,
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                            color: isDark
+                                ? const Color(0xFF94A3B8)
+                                : const Color(0xFF64748B),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -763,7 +843,8 @@ class _WebPatientTile extends StatelessWidget {
               ),
               Icon(
                 Icons.chevron_right,
-                color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
+                color:
+                    isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
                 size: 24,
               ),
             ],
@@ -779,7 +860,11 @@ class _WebVoiceCheckinTile extends StatelessWidget {
   final String dateLabel;
   final Duration duration;
   final VoidCallback? onOpen;
-  const _WebVoiceCheckinTile({required this.name, required this.dateLabel, required this.duration, this.onOpen});
+  const _WebVoiceCheckinTile(
+      {required this.name,
+      required this.dateLabel,
+      required this.duration,
+      this.onOpen});
 
   String _formatDuration(Duration d) {
     final mm = d.inMinutes.remainder(60).toString().padLeft(2, '0');
@@ -794,10 +879,14 @@ class _WebVoiceCheckinTile extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B).withValues(alpha: 0.4) : const Color(0xFFF8FAFC),
+        color: isDark
+            ? const Color(0xFF1E293B).withValues(alpha: 0.4)
+            : const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark ? const Color(0xFF334155).withValues(alpha: 0.5) : const Color(0xFFF1F5F9),
+          color: isDark
+              ? const Color(0xFF334155).withValues(alpha: 0.5)
+              : const Color(0xFFF1F5F9),
         ),
       ),
       padding: const EdgeInsets.all(16),
@@ -834,7 +923,9 @@ class _WebVoiceCheckinTile extends StatelessWidget {
                   name,
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: isDark ? const Color(0xFFF1F5F9) : const Color(0xFF1E293B),
+                    color: isDark
+                        ? const Color(0xFFF1F5F9)
+                        : const Color(0xFF1E293B),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -843,7 +934,9 @@ class _WebVoiceCheckinTile extends StatelessWidget {
                 Text(
                   '$dateLabel • ${_formatDuration(duration)}',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                    color: isDark
+                        ? const Color(0xFF94A3B8)
+                        : const Color(0xFF64748B),
                     fontWeight: FontWeight.w500,
                     fontSize: 12,
                   ),
@@ -862,7 +955,8 @@ class _WebVoiceCheckinTile extends StatelessWidget {
               backgroundColor: isDark
                   ? theme.colorScheme.primary.withValues(alpha: 0.15)
                   : const Color(0xFFEFF6FF),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
             ),
             tooltip: 'Open audio',
           ),
@@ -877,10 +971,12 @@ class _RecordPatientSelectionSheet extends StatefulWidget {
   const _RecordPatientSelectionSheet({required this.patients});
 
   @override
-  State<_RecordPatientSelectionSheet> createState() => _RecordPatientSelectionSheetState();
+  State<_RecordPatientSelectionSheet> createState() =>
+      _RecordPatientSelectionSheetState();
 }
 
-class _RecordPatientSelectionSheetState extends State<_RecordPatientSelectionSheet> {
+class _RecordPatientSelectionSheetState
+    extends State<_RecordPatientSelectionSheet> {
   app_user.User? _selectedPatient;
 
   @override
@@ -898,7 +994,8 @@ class _RecordPatientSelectionSheetState extends State<_RecordPatientSelectionShe
     final bottomPadding = MediaQuery.of(context).viewPadding.bottom;
 
     return Container(
-      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
+      constraints:
+          BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
@@ -907,7 +1004,10 @@ class _RecordPatientSelectionSheetState extends State<_RecordPatientSelectionShe
         ),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 30, offset: const Offset(0, -10)),
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.15),
+              blurRadius: 30,
+              offset: const Offset(0, -10)),
         ],
       ),
       child: Column(
@@ -931,23 +1031,29 @@ class _RecordPatientSelectionSheetState extends State<_RecordPatientSelectionShe
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [scheme.primary.withValues(alpha: 0.1), scheme.primary.withValues(alpha: 0.05)],
+                      colors: [
+                        scheme.primary.withValues(alpha: 0.1),
+                        scheme.primary.withValues(alpha: 0.05)
+                      ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(Icons.mic_rounded, size: 36, color: scheme.primary),
+                  child:
+                      Icon(Icons.mic_rounded, size: 36, color: scheme.primary),
                 ),
                 const SizedBox(height: 16),
                 Text(
                   'Record Voice Check-in',
-                  style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+                  style: theme.textTheme.headlineSmall
+                      ?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Select a patient to create a personalized voice note',
-                  style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+                  style: theme.textTheme.bodyMedium
+                      ?.copyWith(color: scheme.onSurfaceVariant),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -988,7 +1094,9 @@ class _RecordPatientSelectionSheetState extends State<_RecordPatientSelectionShe
               itemBuilder: (context, index) {
                 final patient = widget.patients[index];
                 final isSelected = _selectedPatient?.id == patient.id;
-                final name = patient.fullName.isNotEmpty ? patient.fullName : patient.email;
+                final name = patient.fullName.isNotEmpty
+                    ? patient.fullName
+                    : patient.email;
                 return Material(
                   color: Colors.transparent,
                   child: InkWell(
@@ -997,10 +1105,13 @@ class _RecordPatientSelectionSheetState extends State<_RecordPatientSelectionShe
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: isSelected ? scheme.primaryContainer : Colors.grey.shade100,
+                        color: isSelected
+                            ? scheme.primaryContainer
+                            : Colors.grey.shade100,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: isSelected ? scheme.primary : Colors.transparent,
+                          color:
+                              isSelected ? scheme.primary : Colors.transparent,
                           width: 2,
                         ),
                       ),
@@ -1008,11 +1119,15 @@ class _RecordPatientSelectionSheetState extends State<_RecordPatientSelectionShe
                         children: [
                           CircleAvatar(
                             radius: 22,
-                            backgroundColor: isSelected ? scheme.primary : Colors.grey.shade300,
+                            backgroundColor: isSelected
+                                ? scheme.primary
+                                : Colors.grey.shade300,
                             child: Text(
                               name.isNotEmpty ? name[0].toUpperCase() : '?',
                               style: TextStyle(
-                                color: isSelected ? scheme.onPrimary : Colors.grey.shade700,
+                                color: isSelected
+                                    ? scheme.onPrimary
+                                    : Colors.grey.shade700,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
@@ -1023,11 +1138,14 @@ class _RecordPatientSelectionSheetState extends State<_RecordPatientSelectionShe
                               name,
                               style: theme.textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w600,
-                                color: isSelected ? scheme.onPrimaryContainer : null,
+                                color: isSelected
+                                    ? scheme.onPrimaryContainer
+                                    : null,
                               ),
                             ),
                           ),
-                          if (isSelected) Icon(Icons.check_circle, color: scheme.primary),
+                          if (isSelected)
+                            Icon(Icons.check_circle, color: scheme.primary),
                         ],
                       ),
                     ),
@@ -1047,7 +1165,8 @@ class _RecordPatientSelectionSheetState extends State<_RecordPatientSelectionShe
                     : () => Navigator.of(context).pop(_selectedPatient),
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16)),
                 ),
                 icon: const Icon(Icons.mic_rounded),
                 label: const Text('Start Recording'),
@@ -1064,7 +1183,8 @@ class _FeatureMiniCard extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color color;
-  const _FeatureMiniCard({required this.icon, required this.label, required this.color});
+  const _FeatureMiniCard(
+      {required this.icon, required this.label, required this.color});
 
   @override
   Widget build(BuildContext context) {

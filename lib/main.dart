@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
@@ -8,11 +9,19 @@ import 'package:therapii/theme_mode_controller.dart';
 import 'package:therapii/models/user.dart' as app_user;
 import 'package:therapii/pages/admin_dashboard_page.dart';
 import 'package:therapii/pages/auth_welcome_page.dart';
+import 'package:therapii/pages/journal_admin_analytics_page.dart';
+import 'package:therapii/pages/journal_admin_dashboard_page.dart';
+import 'package:therapii/pages/journal_admin_patients_hub_page.dart';
+import 'package:therapii/pages/journal_admin_settings_page.dart';
+import 'package:therapii/pages/journal_admin_studio_page.dart';
+import 'package:therapii/pages/journal_admin_team_hub_page.dart';
+import 'package:therapii/pages/journal_portal_page.dart';
 import 'package:therapii/pages/landing_page.dart';
 import 'package:therapii/pages/my_patients_page.dart';
 import 'package:therapii/pages/patient_dashboard_page.dart';
 import 'package:therapii/pages/patient_onboarding_flow_page.dart';
 import 'package:therapii/pages/verify_email_page.dart';
+import 'package:therapii/services/app_page_state_service.dart';
 import 'package:therapii/utils/admin_access.dart';
 import 'package:therapii/services/user_service.dart';
 import 'package:therapii/services/therapist_service.dart';
@@ -70,7 +79,10 @@ class _ProfileContext {
   final app_user.User? user;
   final bool hasTherapistDoc;
   final bool isTherapist;
-  const _ProfileContext({required this.user, required this.hasTherapistDoc, required this.isTherapist});
+  const _ProfileContext(
+      {required this.user,
+      required this.hasTherapistDoc,
+      required this.isTherapist});
 }
 
 Future<void> _bootstrapFirebase() async {
@@ -78,6 +90,10 @@ Future<void> _bootstrapFirebase() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+    if (kIsWeb) {
+      await firebase_auth.FirebaseAuth.instance
+          .setPersistence(firebase_auth.Persistence.LOCAL);
+    }
   } catch (e, st) {
     _firebaseInitError = e;
     // ignore: avoid_print
@@ -155,8 +171,22 @@ class _RootRouter extends StatelessWidget {
 
         final authUser = authSnap.data;
         if (authUser == null) {
-          // Not signed in → marketing/entry experience.
-          return const LandingPage();
+          return FutureBuilder<String?>(
+            future: AppPageStateService.loadRememberedPage(),
+            builder: (context, lastPageSnap) {
+              if (lastPageSnap.connectionState == ConnectionState.waiting) {
+                return const Scaffold(
+                  body: Center(child: CircularProgressIndicator()),
+                );
+              }
+
+              if (lastPageSnap.data == AppPageId.authWelcome) {
+                return const AuthWelcomePage();
+              }
+
+              return const LandingPage();
+            },
+          );
         }
 
         return FutureBuilder<_ProfileContext>(
@@ -175,26 +205,22 @@ class _RootRouter extends StatelessWidget {
             }
 
             final profileCtx = profileSnap.data!;
-            final profile = profileCtx.user!;
-            final isTherapist = profileCtx.isTherapist;
-            final onboardingDone = profile.patientOnboardingCompleted;
-            final email = authUser.email ?? '';
+            return FutureBuilder<String?>(
+              future: AppPageStateService.loadRememberedPage(),
+              builder: (context, lastPageSnap) {
+                if (lastPageSnap.connectionState == ConnectionState.waiting) {
+                  return const Scaffold(
+                    body: Center(child: CircularProgressIndicator()),
+                  );
+                }
 
-            if (!authUser.emailVerified) {
-              return VerifyEmailPage(email: email, isTherapist: isTherapist);
-            }
-
-            if (AdminAccess.isAdminEmail(email)) {
-              return const AdminDashboardPage();
-            }
-
-            if (isTherapist) {
-              return const MyPatientsPage();
-            }
-
-            return onboardingDone
-                ? const PatientDashboardPage()
-                : const PatientOnboardingFlowPage();
+                return _resolveRestoredPage(
+                  authUser: authUser,
+                  profileCtx: profileCtx,
+                  lastPageId: lastPageSnap.data,
+                );
+              },
+            );
           },
         );
       },
@@ -215,5 +241,57 @@ Future<_ProfileContext> _loadUserContext(String uid) async {
   } catch (_) {
     // swallow; fallback to user record
   }
-  return _ProfileContext(user: user, hasTherapistDoc: hasTherapistDoc, isTherapist: isTherapist);
+  return _ProfileContext(
+      user: user, hasTherapistDoc: hasTherapistDoc, isTherapist: isTherapist);
+}
+
+Widget _resolveRestoredPage({
+  required firebase_auth.User authUser,
+  required _ProfileContext profileCtx,
+  required String? lastPageId,
+}) {
+  final profile = profileCtx.user!;
+  final isTherapist = profileCtx.isTherapist;
+  final onboardingDone = profile.patientOnboardingCompleted;
+  final email = authUser.email ?? '';
+
+  if (!authUser.emailVerified) {
+    return VerifyEmailPage(email: email, isTherapist: isTherapist);
+  }
+
+  if (AdminAccess.isAdminEmail(email)) {
+    switch (lastPageId) {
+      case AppPageId.journalAdminDashboard:
+        return const JournalAdminDashboardPage();
+      case AppPageId.journalAdminStudio:
+        return const JournalAdminStudioPage();
+      case AppPageId.journalAdminTeamHub:
+        return const JournalAdminTeamHubPage();
+      case AppPageId.journalAdminPatientsHub:
+        return const JournalAdminPatientsHubPage();
+      case AppPageId.journalAdminAnalytics:
+        return const JournalAdminAnalyticsPage();
+      case AppPageId.journalAdminSettings:
+        return const JournalAdminSettingsPage();
+      case AppPageId.adminDashboard:
+      default:
+        return const AdminDashboardPage();
+    }
+  }
+
+  if (isTherapist) {
+    return const MyPatientsPage();
+  }
+
+  if (!onboardingDone) {
+    return const PatientOnboardingFlowPage();
+  }
+
+  switch (lastPageId) {
+    case AppPageId.journalPortal:
+      return const JournalPortalPage();
+    case AppPageId.patientDashboard:
+    default:
+      return const PatientDashboardPage();
+  }
 }

@@ -1,0 +1,52 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Therapii Documentation",
+  "colors": {
+    "primary": "#1E69FF",
+    "light": "#4B8DFF",
+    "dark": "#1447B8"
+  },
+  "navigation": {
+    "groups": [
+      {
+        "group": "Getting Started",
+        "pages": [
+          "index",
+          "getting-started/local-development"
+        ]
+      },
+      {
+        "group": "Architecture",
+        "pages": [
+          "architecture/system-overview",
+          "architecture/routing-and-roles"
+        ]
+      },
+      {
+        "group": "Product Areas",
+        "pages": [
+          "product/auth-and-onboarding",
+          "product/client-experience",
+          "product/therapist-workspace",
+          "product/journal-platform",
+          "product/admin-console"
+        ]
+      },
+      {
+        "group": "Backend",
+        "pages": [
+          "backend/firebase-and-functions",
+          "backend/data-model-and-security"
+        ]
+      },
+      {
+        "group": "Operations",
+        "pages": [
+          "operations/deployment",
+          "operations/troubleshooting"
+        ]
+      }
+    ]
+  }
+}

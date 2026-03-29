@@ -14,13 +14,24 @@ import 'package:therapii/pages/my_patients_page.dart';
 import 'package:therapii/pages/patient_dashboard_page.dart';
 import 'package:therapii/pages/patient_onboarding_flow_page.dart';
 import 'package:therapii/pages/verify_email_page.dart';
+import 'package:therapii/services/app_page_state_service.dart';
 import 'package:therapii/services/invitation_service.dart';
 import 'package:therapii/utils/admin_access.dart';
 import 'package:therapii/theme_mode_controller.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 enum AuthTab { create, login }
+
 enum AccountRole { therapist, patient }
+
+String accountRoleLabel(AccountRole role) {
+  switch (role) {
+    case AccountRole.therapist:
+      return 'Therapist';
+    case AccountRole.patient:
+      return 'Client';
+  }
+}
 
 class AuthWelcomePage extends StatefulWidget {
   final AuthTab initialTab;
@@ -50,34 +61,38 @@ class _AuthWelcomePageState extends State<AuthWelcomePage> {
     final bgColor = isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
     final viewportHeight = MediaQuery.of(context).size.height;
     final compact = viewportHeight < 920;
-    
-    return Scaffold(
-      backgroundColor: bgColor,
-      body: Stack(
-        children: [
-          SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: compact ? 12 : 24,
-                ),
-                child: _AuthCard(
-                  tab: _tab,
-                  compact: compact,
-                  openJournalPortalAfterAuth: widget.openJournalPortalAfterAuth,
-                  onTabChanged: (t) => setState(() => _tab = t),
+
+    return RememberAppPage(
+      pageId: AppPageId.authWelcome,
+      child: Scaffold(
+        backgroundColor: bgColor,
+        body: Stack(
+          children: [
+            SafeArea(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: compact ? 12 : 24,
+                  ),
+                  child: _AuthCard(
+                    tab: _tab,
+                    compact: compact,
+                    openJournalPortalAfterAuth:
+                        widget.openJournalPortalAfterAuth,
+                    onTabChanged: (t) => setState(() => _tab = t),
+                  ),
                 ),
               ),
             ),
-          ),
-          // Theme toggle button
-          Positioned(
-            bottom: 32,
-            right: 32,
-            child: _ThemeToggleButton(),
-          ),
-        ],
+            // Theme toggle button
+            Positioned(
+              bottom: 32,
+              right: 32,
+              child: _ThemeToggleButton(),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -87,7 +102,7 @@ class _ThemeToggleButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -116,13 +131,16 @@ class _ThemeToggleButton extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                  color: isDark
+                      ? const Color(0xFF334155)
+                      : const Color(0xFFE2E8F0),
                 ),
               ),
               child: Icon(
                 isDark ? Icons.light_mode : Icons.dark_mode,
                 size: 24,
-                color: isDark ? const Color(0xFFFACC15) : const Color(0xFF475569),
+                color:
+                    isDark ? const Color(0xFFFACC15) : const Color(0xFF475569),
               ),
             ),
           ),
@@ -137,7 +155,7 @@ class _AuthCard extends StatelessWidget {
   final bool openJournalPortalAfterAuth;
   final bool compact;
   final ValueChanged<AuthTab> onTabChanged;
-  
+
   const _AuthCard({
     required this.tab,
     required this.onTabChanged,
@@ -148,8 +166,9 @@ class _AuthCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = isDark ? const Color(0xFF1E293B).withValues(alpha: 0.8) : Colors.white;
-    
+    final cardColor =
+        isDark ? const Color(0xFF1E293B).withValues(alpha: 0.8) : Colors.white;
+
     return Container(
       constraints: const BoxConstraints(maxWidth: 600),
       decoration: BoxDecoration(
@@ -158,13 +177,15 @@ class _AuthCard extends StatelessWidget {
         border: Border.all(
           color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
         ),
-        boxShadow: isDark ? null : [
-          BoxShadow(
-            color: const Color(0xFFE2E8F0).withValues(alpha: 0.6),
-            blurRadius: 60,
-            offset: const Offset(0, 20),
-          ),
-        ],
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: const Color(0xFFE2E8F0).withValues(alpha: 0.6),
+                  blurRadius: 60,
+                  offset: const Offset(0, 20),
+                ),
+              ],
       ),
       child: Padding(
         padding: EdgeInsets.symmetric(
@@ -184,17 +205,17 @@ class _AuthCard extends StatelessWidget {
             SizedBox(height: compact ? 24 : 40),
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 200),
-              child: tab == AuthTab.create 
-                ? _CreateAccountForm(
-                    key: const ValueKey('create'),
-                    compact: compact,
-                    openJournalPortalAfterAuth: openJournalPortalAfterAuth,
-                  ) 
-                : _LoginForm(
-                    key: const ValueKey('login'),
-                    compact: compact,
-                    openJournalPortalAfterAuth: openJournalPortalAfterAuth,
-                  ),
+              child: tab == AuthTab.create
+                  ? _CreateAccountForm(
+                      key: const ValueKey('create'),
+                      compact: compact,
+                      openJournalPortalAfterAuth: openJournalPortalAfterAuth,
+                    )
+                  : _LoginForm(
+                      key: const ValueKey('login'),
+                      compact: compact,
+                      openJournalPortalAfterAuth: openJournalPortalAfterAuth,
+                    ),
             ),
           ],
         ),
@@ -212,8 +233,9 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final journalHintColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-    
+    final journalHintColor =
+        isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+
     return Column(
       children: [
         Padding(
@@ -225,14 +247,19 @@ class _Header extends StatelessWidget {
                   width: compact ? 250 : 320,
                   padding: EdgeInsets.all(compact ? 12 : 16),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                    color: isDark
+                        ? const Color(0xFF0F172A)
+                        : const Color(0xFFF8FAFC),
                     borderRadius: BorderRadius.circular(compact ? 24 : 30),
                     border: Border.all(
-                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                      color: isDark
+                          ? const Color(0xFF334155)
+                          : const Color(0xFFE2E8F0),
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.08),
+                        color: Colors.black
+                            .withValues(alpha: isDark ? 0.18 : 0.08),
                         blurRadius: compact ? 22 : 30,
                         offset: const Offset(0, 12),
                       ),
@@ -255,8 +282,7 @@ class _Header extends StatelessWidget {
                   height: compact ? 160 : 240,
                   fit: BoxFit.contain,
                 ),
-              if (showJournalTag)
-                SizedBox(height: compact ? 12 : 16),
+              if (showJournalTag) SizedBox(height: compact ? 12 : 16),
               if (showJournalTag)
                 Text(
                   'Sign in to complete your journal check-in',
@@ -288,7 +314,7 @@ class _TabBar extends StatelessWidget {
   final AuthTab tab;
   final bool compact;
   final ValueChanged<AuthTab> onChanged;
-  
+
   const _TabBar({
     required this.tab,
     required this.onChanged,
@@ -299,9 +325,11 @@ class _TabBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final scheme = Theme.of(context).colorScheme;
-    final unselectedColor = isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8);
+    final unselectedColor =
+        isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8);
     final selectedColor = isDark ? Colors.white : const Color(0xFF0F172A);
-    final dividerColor = isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
+    final dividerColor =
+        isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
 
     Widget buildTab(String label, AuthTab value) {
       final isSelected = tab == value;
@@ -366,7 +394,8 @@ class _RoleSelector extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9);
     final selectedBg = isDark ? const Color(0xFF475569) : Colors.white;
-    final unselectedText = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final unselectedText =
+        isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
     final selectedText = isDark ? Colors.white : const Color(0xFF0F172A);
 
     Widget buildOption(String label, AccountRole value) {
@@ -383,16 +412,20 @@ class _RoleSelector extends StatelessWidget {
             decoration: BoxDecoration(
               color: isSelected ? selectedBg : Colors.transparent,
               borderRadius: BorderRadius.circular(12),
-              boxShadow: isSelected ? [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ] : null,
-              border: isSelected && !isDark ? Border.all(
-                color: const Color(0xFFE2E8F0),
-              ) : null,
+              boxShadow: isSelected
+                  ? [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ]
+                  : null,
+              border: isSelected && !isDark
+                  ? Border.all(
+                      color: const Color(0xFFE2E8F0),
+                    )
+                  : null,
             ),
             child: Center(
               child: Text(
@@ -429,8 +462,10 @@ class _RoleSelector extends StatelessWidget {
           ),
           child: Row(
             children: [
-              buildOption('Therapist', AccountRole.therapist),
-              buildOption('Patient', AccountRole.patient),
+              buildOption(accountRoleLabel(AccountRole.therapist),
+                  AccountRole.therapist),
+              buildOption(
+                  accountRoleLabel(AccountRole.patient), AccountRole.patient),
             ],
           ),
         ),
@@ -461,10 +496,14 @@ class _StyledTextField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark ? const Color(0xFF334155).withValues(alpha: 0.4) : const Color(0xFFF8FAFC).withValues(alpha: 0.5);
-    final borderColor = isDark ? const Color(0xFF475569) : const Color(0xFFE2E8F0);
+    final bgColor = isDark
+        ? const Color(0xFF334155).withValues(alpha: 0.4)
+        : const Color(0xFFF8FAFC).withValues(alpha: 0.5);
+    final borderColor =
+        isDark ? const Color(0xFF475569) : const Color(0xFFE2E8F0);
     final textColor = isDark ? Colors.white : const Color(0xFF0F172A);
-    final placeholderColor = isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8);
+    final placeholderColor =
+        isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8);
 
     return TextField(
       controller: controller,
@@ -474,7 +513,8 @@ class _StyledTextField extends StatelessWidget {
       style: TextStyle(fontSize: compact ? 16 : 18, color: textColor),
       decoration: InputDecoration(
         hintText: placeholder,
-        hintStyle: TextStyle(fontSize: compact ? 16 : 18, color: placeholderColor),
+        hintStyle:
+            TextStyle(fontSize: compact ? 16 : 18, color: placeholderColor),
         filled: true,
         fillColor: bgColor,
         contentPadding: EdgeInsets.symmetric(
@@ -491,7 +531,8 @@ class _StyledTextField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
+          borderSide: BorderSide(
+              color: Theme.of(context).colorScheme.primary, width: 2),
         ),
         suffixIcon: suffixIcon,
       ),
@@ -522,7 +563,8 @@ class _PasswordFieldState extends State<_PasswordField> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final iconColor = isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8);
+    final iconColor =
+        isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8);
 
     return _StyledTextField(
       controller: widget.controller,
@@ -558,7 +600,7 @@ class _PrimaryActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    
+
     return Material(
       color: scheme.primary,
       borderRadius: BorderRadius.circular(16),
@@ -571,23 +613,23 @@ class _PrimaryActionButton extends StatelessWidget {
           padding: EdgeInsets.symmetric(vertical: compact ? 16 : 20),
           child: Center(
             child: isLoading
-              ? const SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: compact ? 16 : 18,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.5,
+                      color: Colors.white,
+                    ),
                   ),
-                )
-              : Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: compact ? 16 : 18,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.5,
-                    color: Colors.white,
-                  ),
-                ),
           ),
         ),
       ),
@@ -638,7 +680,8 @@ class _CreateAccountFormState extends State<_CreateAccountForm> {
     final pending = InvitationService.pendingInvitation;
     if (pending != null) {
       final composedName = pending.patientFullName.trim();
-      nameCtl.text = composedName.isNotEmpty ? composedName : pending.patientFirstName;
+      nameCtl.text =
+          composedName.isNotEmpty ? composedName : pending.patientFirstName;
       emailCtl.text = pending.patientEmail;
       _role = AccountRole.patient;
     }
@@ -647,7 +690,8 @@ class _CreateAccountFormState extends State<_CreateAccountForm> {
   Future<void> _pickAvatar() async {
     try {
       debugPrint('[Auth] Avatar tap detected. Opening file picker...');
-      final typeGroup = const XTypeGroup(label: 'Images', extensions: ['jpg', 'jpeg', 'png', 'gif', 'webp']);
+      final typeGroup = const XTypeGroup(
+          label: 'Images', extensions: ['jpg', 'jpeg', 'png', 'gif', 'webp']);
       final XFile? file = await openFile(acceptedTypeGroups: [typeGroup]);
       if (file == null) {
         debugPrint('[Auth] File picker canceled.');
@@ -662,7 +706,8 @@ class _CreateAccountFormState extends State<_CreateAccountForm> {
       });
     } catch (e, st) {
       debugPrint('[Auth] Error picking image (file_selector): $e\n$st');
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not pick image.')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Could not pick image.')));
     }
   }
 
@@ -670,14 +715,17 @@ class _CreateAccountFormState extends State<_CreateAccountForm> {
     if (_avatarBytes == null) return null;
     try {
       final ext = (_avatarFileName ?? 'avatar').split('.').last.toLowerCase();
-      final ref = FirebaseStorage.instance.ref('user_avatars/$userId/profile.$ext');
-      final metadata = SettableMetadata(contentType: 'image/${ext == 'jpg' ? 'jpeg' : ext}');
+      final ref =
+          FirebaseStorage.instance.ref('user_avatars/$userId/profile.$ext');
+      final metadata =
+          SettableMetadata(contentType: 'image/${ext == 'jpg' ? 'jpeg' : ext}');
       await ref.putData(_avatarBytes!, metadata);
       final url = await ref.getDownloadURL();
       setState(() => _avatarPreviewUrl = url);
       return url;
     } catch (_) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to upload avatar.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to upload avatar.')));
       return null;
     }
   }
@@ -690,19 +738,27 @@ class _CreateAccountFormState extends State<_CreateAccountForm> {
   Future<void> _submit() async {
     final messenger = ScaffoldMessenger.of(context);
     if (_role == null) {
-      messenger.showSnackBar(const SnackBar(content: Text('Please select account type: Therapist or Patient.')));
+      messenger.showSnackBar(const SnackBar(
+          content: Text('Please select account type: Therapist or Client.')));
       return;
     }
     if (!agreeTos || !agreePrivacy) {
-      messenger.showSnackBar(const SnackBar(content: Text('Please agree to Terms of Service and Privacy Policy.')));
+      messenger.showSnackBar(const SnackBar(
+          content:
+              Text('Please agree to Terms of Service and Privacy Policy.')));
       return;
     }
-    if (nameCtl.text.isEmpty || emailCtl.text.isEmpty || passCtl.text.isEmpty || confirmCtl.text.isEmpty) {
-      messenger.showSnackBar(const SnackBar(content: Text('Fill in all fields.')));
+    if (nameCtl.text.isEmpty ||
+        emailCtl.text.isEmpty ||
+        passCtl.text.isEmpty ||
+        confirmCtl.text.isEmpty) {
+      messenger
+          .showSnackBar(const SnackBar(content: Text('Fill in all fields.')));
       return;
     }
     if (passCtl.text != confirmCtl.text) {
-      messenger.showSnackBar(const SnackBar(content: Text('Passwords do not match.')));
+      messenger.showSnackBar(
+          const SnackBar(content: Text('Passwords do not match.')));
       return;
     }
 
@@ -730,7 +786,9 @@ class _CreateAccountFormState extends State<_CreateAccountForm> {
             InvitationService.pendingInvitation = null;
           } catch (e) {
             messenger.showSnackBar(
-              SnackBar(content: Text('Linked account but failed to finalize code: $e')),
+              SnackBar(
+                  content:
+                      Text('Linked account but failed to finalize code: $e')),
             );
           }
         }
@@ -759,7 +817,8 @@ class _CreateAccountFormState extends State<_CreateAccountForm> {
                 builder: (context) => VerifyEmailPage(
                   email: emailCtl.text.trim(),
                   isTherapist: isTherapist,
-                  openJournalPortalAfterVerification: widget.openJournalPortalAfterAuth,
+                  openJournalPortalAfterVerification:
+                      widget.openJournalPortalAfterAuth,
                 ),
               ),
             );
@@ -804,7 +863,7 @@ class _CreateAccountFormState extends State<_CreateAccountForm> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final scheme = Theme.of(context).colorScheme;
-    
+
     final avatarWidget = Material(
       color: Colors.transparent,
       child: InkWell(
@@ -812,15 +871,19 @@ class _CreateAccountFormState extends State<_CreateAccountForm> {
         customBorder: const CircleBorder(),
         child: CircleAvatar(
           radius: widget.compact ? 38 : 44,
-          backgroundColor: isDark ? const Color(0xFF334155) : Colors.grey.shade200,
+          backgroundColor:
+              isDark ? const Color(0xFF334155) : Colors.grey.shade200,
           backgroundImage: _avatarBytes != null
               ? MemoryImage(_avatarBytes!)
-              : (_avatarPreviewUrl != null ? NetworkImage(_avatarPreviewUrl!) as ImageProvider : null),
+              : (_avatarPreviewUrl != null
+                  ? NetworkImage(_avatarPreviewUrl!) as ImageProvider
+                  : null),
           child: _avatarBytes == null && _avatarPreviewUrl == null
               ? Icon(
                   Icons.person,
                   size: widget.compact ? 48 : 56,
-                  color: isDark ? const Color(0xFF64748B) : Colors.grey.shade600,
+                  color:
+                      isDark ? const Color(0xFF64748B) : Colors.grey.shade600,
                 )
               : null,
         ),
@@ -966,11 +1029,13 @@ class _LoginFormState extends State<_LoginForm> {
   Future<void> _login() async {
     final messenger = ScaffoldMessenger.of(context);
     if (_role == null) {
-      messenger.showSnackBar(const SnackBar(content: Text('Please select account type: Therapist or Patient.')));
+      messenger.showSnackBar(const SnackBar(
+          content: Text('Please select account type: Therapist or Client.')));
       return;
     }
     if (emailCtl.text.isEmpty || passCtl.text.isEmpty) {
-      messenger.showSnackBar(const SnackBar(content: Text('Enter email and password.')));
+      messenger.showSnackBar(
+          const SnackBar(content: Text('Enter email and password.')));
       return;
     }
 
@@ -986,10 +1051,14 @@ class _LoginFormState extends State<_LoginForm> {
       if (user != null) {
         final selectedTherapist = _role == AccountRole.therapist;
         if (user.isTherapist != selectedTherapist) {
-          final actualRole = user.isTherapist ? 'Therapist' : 'Patient';
+          final actualRole = user.isTherapist
+              ? accountRoleLabel(AccountRole.therapist)
+              : accountRoleLabel(AccountRole.patient);
           await _authManager.signOut();
           messenger.showSnackBar(
-            SnackBar(content: Text('This account is registered as a $actualRole. Switch to the $actualRole role to continue.')),
+            SnackBar(
+                content: Text(
+                    'This account is registered as a $actualRole. Switch to the $actualRole role to continue.')),
           );
           return;
         }
@@ -1012,7 +1081,8 @@ class _LoginFormState extends State<_LoginForm> {
           }
         }
         final authUser = FirebaseAuth.FirebaseAuth.instance.currentUser;
-        final requiresVerification = authUser != null && !authUser.emailVerified;
+        final requiresVerification =
+            authUser != null && !authUser.emailVerified;
 
         if (requiresVerification) {
           if (mounted) {
@@ -1021,7 +1091,8 @@ class _LoginFormState extends State<_LoginForm> {
                 builder: (context) => VerifyEmailPage(
                   email: emailCtl.text.trim(),
                   isTherapist: user.isTherapist,
-                  openJournalPortalAfterVerification: widget.openJournalPortalAfterAuth,
+                  openJournalPortalAfterVerification:
+                      widget.openJournalPortalAfterAuth,
                 ),
               ),
             );
@@ -1069,7 +1140,8 @@ class _LoginFormState extends State<_LoginForm> {
     final email = emailCtl.text.trim();
     if (email.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter your email to reset your password.')),
+        const SnackBar(
+            content: Text('Enter your email to reset your password.')),
       );
       return;
     }
@@ -1080,7 +1152,8 @@ class _LoginFormState extends State<_LoginForm> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final scheme = Theme.of(context).colorScheme;
-    final textColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569);
+    final textColor =
+        isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1114,14 +1187,22 @@ class _LoginFormState extends State<_LoginForm> {
               height: 20,
               child: Checkbox(
                 value: _rememberMe,
-                onChanged: _isLoading ? null : (v) => setState(() => _rememberMe = v ?? false),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                side: BorderSide(color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1)),
+                onChanged: _isLoading
+                    ? null
+                    : (v) => setState(() => _rememberMe = v ?? false),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(4)),
+                side: BorderSide(
+                    color: isDark
+                        ? const Color(0xFF475569)
+                        : const Color(0xFFCBD5E1)),
               ),
             ),
             const SizedBox(width: 12),
             GestureDetector(
-              onTap: _isLoading ? null : () => setState(() => _rememberMe = !_rememberMe),
+              onTap: _isLoading
+                  ? null
+                  : () => setState(() => _rememberMe = !_rememberMe),
               child: Text(
                 'Remember Me',
                 style: TextStyle(

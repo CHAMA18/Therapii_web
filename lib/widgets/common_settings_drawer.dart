@@ -5,11 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:therapii/auth/firebase_auth_manager.dart';
 import 'package:therapii/pages/admin_dashboard_page.dart';
 import 'package:therapii/pages/admin_settings_page.dart';
-import 'package:therapii/pages/auth_welcome_page.dart';
 import 'package:therapii/pages/billing_page.dart';
 import 'package:therapii/pages/edit_profile_page.dart';
 import 'package:therapii/pages/journal_admin_studio_page.dart';
 import 'package:therapii/pages/journal_portal_page.dart';
+import 'package:therapii/pages/landing_page.dart';
 import 'package:therapii/theme_mode_controller.dart';
 import 'package:therapii/utils/admin_access.dart';
 
@@ -22,9 +22,11 @@ Future<void> showSettingsPopup(BuildContext context) async {
     barrierLabel: 'Settings',
     barrierColor: Colors.black54,
     transitionDuration: const Duration(milliseconds: 320),
-    pageBuilder: (ctx, animation, secondaryAnimation) => const _SettingsPopupContent(),
+    pageBuilder: (ctx, animation, secondaryAnimation) =>
+        const _SettingsPopupContent(),
     transitionBuilder: (ctx, animation, secondaryAnimation, child) {
-      final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+      final curved =
+          CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
       return SlideTransition(
         position: Tween<Offset>(
           begin: const Offset(0, 0.08),
@@ -83,7 +85,8 @@ class _SettingsPopupContentState extends State<_SettingsPopupContent> {
 
   Future<void> _fetchSubscriptionStatus() async {
     try {
-      final callable = FirebaseFunctions.instance.httpsCallable('getStripeBillingDetails');
+      final callable =
+          FirebaseFunctions.instance.httpsCallable('getStripeBillingDetails');
       final result = await callable.call();
       final data = result.data as Map<String, dynamic>;
       if (mounted) {
@@ -120,7 +123,8 @@ class _SettingsPopupContentState extends State<_SettingsPopupContent> {
 
     setState(() => _isSwitchingJournal = true);
     final navigator = Navigator.of(context, rootNavigator: true);
-    final destination = _isAdmin() ? const JournalAdminStudioPage() : const JournalPortalPage();
+    final destination =
+        _isAdmin() ? const JournalAdminStudioPage() : const JournalPortalPage();
 
     navigator.pop();
     await Future<void>.delayed(const Duration(milliseconds: 40));
@@ -140,7 +144,8 @@ class _SettingsPopupContentState extends State<_SettingsPopupContent> {
     if (parts.length == 1) {
       return parts.first.characters.first.toUpperCase();
     }
-    return (parts.first.characters.first + parts.last.characters.first).toUpperCase();
+    return (parts.first.characters.first + parts.last.characters.first)
+        .toUpperCase();
   }
 
   @override
@@ -181,25 +186,39 @@ class _SettingsPopupContentState extends State<_SettingsPopupContent> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          _PopupHeader(name: name, initials: initials, onClose: () => Navigator.pop(context)),
+                          _PopupHeader(
+                              name: name,
+                              initials: initials,
+                              onClose: () => Navigator.pop(context)),
                           Flexible(
                             child: SingleChildScrollView(
-                              padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
+                              padding:
+                                  const EdgeInsets.fromLTRB(16, 14, 16, 20),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   _SettingsCard(
-                                    icon: _isPaidUser ? Icons.workspace_premium_rounded : Icons.star_border_rounded,
-                                    iconColor: _isPaidUser ? scheme.primary : const Color(0xFF38BDF8),
-                                    title: _isLoadingSubscription ? 'Loading...' : _planName,
+                                    icon: _isPaidUser
+                                        ? Icons.workspace_premium_rounded
+                                        : Icons.star_border_rounded,
+                                    iconColor: _isPaidUser
+                                        ? scheme.primary
+                                        : const Color(0xFF38BDF8),
+                                    title: _isLoadingSubscription
+                                        ? 'Loading...'
+                                        : _planName,
                                     subtitle: _isLoadingSubscription
                                         ? 'Checking subscription'
-                                        : (_isPaidUser ? 'Premium member' : 'Tap to upgrade'),
+                                        : (_isPaidUser
+                                            ? 'Premium member'
+                                            : 'Tap to upgrade'),
                                     isLoading: _isLoadingSubscription,
                                     onTap: () {
                                       Navigator.pop(context);
                                       Navigator.of(context).push(
-                                        MaterialPageRoute(builder: (_) => const BillingPage()),
+                                        MaterialPageRoute(
+                                            builder: (_) =>
+                                                const BillingPage()),
                                       );
                                     },
                                   ),
@@ -209,11 +228,14 @@ class _SettingsPopupContentState extends State<_SettingsPopupContent> {
                                       icon: Icons.space_dashboard_outlined,
                                       iconColor: scheme.secondary,
                                       title: 'Admin Dashboard',
-                                      subtitle: 'Approve therapists & view platform health',
+                                      subtitle:
+                                          'Approve therapists & view platform health',
                                       onTap: () {
                                         Navigator.pop(context);
                                         Navigator.of(context).push(
-                                          MaterialPageRoute(builder: (_) => const AdminDashboardPage()),
+                                          MaterialPageRoute(
+                                              builder: (_) =>
+                                                  const AdminDashboardPage()),
                                         );
                                       },
                                     ),
@@ -226,7 +248,9 @@ class _SettingsPopupContentState extends State<_SettingsPopupContent> {
                                       onTap: () {
                                         Navigator.pop(context);
                                         Navigator.of(context).push(
-                                          MaterialPageRoute(builder: (_) => const AdminSettingsPage()),
+                                          MaterialPageRoute(
+                                              builder: (_) =>
+                                                  const AdminSettingsPage()),
                                         );
                                       },
                                     ),
@@ -240,7 +264,9 @@ class _SettingsPopupContentState extends State<_SettingsPopupContent> {
                                     onTap: () {
                                       Navigator.pop(context);
                                       Navigator.of(context).push(
-                                        MaterialPageRoute(builder: (_) => const EditProfilePage()),
+                                        MaterialPageRoute(
+                                            builder: (_) =>
+                                                const EditProfilePage()),
                                       );
                                     },
                                   ),
@@ -248,7 +274,8 @@ class _SettingsPopupContentState extends State<_SettingsPopupContent> {
                                   Text(
                                     'WORKSPACES',
                                     style: theme.textTheme.labelSmall?.copyWith(
-                                      color: scheme.onSurface.withValues(alpha: 0.6),
+                                      color: scheme.onSurface
+                                          .withValues(alpha: 0.6),
                                       fontWeight: FontWeight.w700,
                                       letterSpacing: 1.1,
                                     ),
@@ -263,7 +290,8 @@ class _SettingsPopupContentState extends State<_SettingsPopupContent> {
                                   Text(
                                     'LEGAL',
                                     style: theme.textTheme.labelSmall?.copyWith(
-                                      color: scheme.onSurface.withValues(alpha: 0.6),
+                                      color: scheme.onSurface
+                                          .withValues(alpha: 0.6),
                                       fontWeight: FontWeight.w700,
                                       letterSpacing: 1.1,
                                     ),
@@ -279,9 +307,11 @@ class _SettingsPopupContentState extends State<_SettingsPopupContent> {
                                             Navigator.pop(context);
                                             Navigator.of(context).push(
                                               MaterialPageRoute(
-                                                builder: (_) => const _StaticContentPage(
+                                                builder: (_) =>
+                                                    const _StaticContentPage(
                                                   title: 'Privacy Policy',
-                                                  paragraphs: _privacyPolicyParagraphs,
+                                                  paragraphs:
+                                                      _privacyPolicyParagraphs,
                                                 ),
                                               ),
                                             );
@@ -297,9 +327,11 @@ class _SettingsPopupContentState extends State<_SettingsPopupContent> {
                                             Navigator.pop(context);
                                             Navigator.of(context).push(
                                               MaterialPageRoute(
-                                                builder: (_) => const _StaticContentPage(
+                                                builder: (_) =>
+                                                    const _StaticContentPage(
                                                   title: 'Terms and Conditions',
-                                                  paragraphs: _termsAndConditionsParagraphs,
+                                                  paragraphs:
+                                                      _termsAndConditionsParagraphs,
                                                 ),
                                               ),
                                             );
@@ -312,7 +344,8 @@ class _SettingsPopupContentState extends State<_SettingsPopupContent> {
                                   Text(
                                     'APPEARANCE',
                                     style: theme.textTheme.labelSmall?.copyWith(
-                                      color: scheme.onSurface.withValues(alpha: 0.6),
+                                      color: scheme.onSurface
+                                          .withValues(alpha: 0.6),
                                       fontWeight: FontWeight.w700,
                                       letterSpacing: 1.1,
                                     ),
@@ -325,8 +358,11 @@ class _SettingsPopupContentState extends State<_SettingsPopupContent> {
                                       Navigator.pop(context);
                                       await FirebaseAuthManager().signOut();
                                       if (context.mounted) {
-                                        Navigator.of(context).pushAndRemoveUntil(
-                                          MaterialPageRoute(builder: (_) => const AuthWelcomePage(initialTab: AuthTab.login)),
+                                        Navigator.of(context)
+                                            .pushAndRemoveUntil(
+                                          MaterialPageRoute(
+                                              builder: (_) =>
+                                                  const LandingPage()),
                                           (route) => false,
                                         );
                                       }
@@ -356,7 +392,8 @@ class _PopupHeader extends StatelessWidget {
   final String initials;
   final VoidCallback onClose;
 
-  const _PopupHeader({required this.name, required this.initials, required this.onClose});
+  const _PopupHeader(
+      {required this.name, required this.initials, required this.onClose});
 
   @override
   Widget build(BuildContext context) {
@@ -371,7 +408,8 @@ class _PopupHeader extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: [
             scheme.primary,
-            Color.lerp(scheme.primary, scheme.primaryContainer, 0.5) ?? scheme.primaryContainer,
+            Color.lerp(scheme.primary, scheme.primaryContainer, 0.5) ??
+                scheme.primaryContainer,
           ],
         ),
         borderRadius: const BorderRadius.only(
@@ -387,7 +425,8 @@ class _PopupHeader extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: scheme.onPrimary.withValues(alpha: 0.15),
-              border: Border.all(color: scheme.onPrimary.withValues(alpha: 0.25), width: 2),
+              border: Border.all(
+                  color: scheme.onPrimary.withValues(alpha: 0.25), width: 2),
             ),
             child: Center(
               child: Text(
@@ -406,7 +445,8 @@ class _PopupHeader extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.settings_rounded, size: 18, color: scheme.onPrimary),
+                    Icon(Icons.settings_rounded,
+                        size: 18, color: scheme.onPrimary),
                     const SizedBox(width: 6),
                     Text(
                       'Settings',
@@ -567,16 +607,23 @@ class _WorkspaceSwitchCardState extends State<_WorkspaceSwitchCard> {
     final isDark = theme.brightness == Brightness.dark;
     final elevated = _hovered || _pressed || widget.isLoading;
 
-    final shellColor = isDark ? const Color(0xFF0F1D38) : const Color(0xFFEEF4FF);
-    final borderColor = isDark ? const Color(0xFF28426F) : const Color(0xFFC9DAFF);
-    final badgeColor = isDark ? const Color(0xFF18335B) : Colors.white.withValues(alpha: 0.86);
-    final badgeBorder = isDark ? const Color(0xFF335486) : const Color(0xFFD6E3FF);
+    final shellColor =
+        isDark ? const Color(0xFF0F1D38) : const Color(0xFFEEF4FF);
+    final borderColor =
+        isDark ? const Color(0xFF28426F) : const Color(0xFFC9DAFF);
+    final badgeColor =
+        isDark ? const Color(0xFF18335B) : Colors.white.withValues(alpha: 0.86);
+    final badgeBorder =
+        isDark ? const Color(0xFF335486) : const Color(0xFFD6E3FF);
     final iconColor = scheme.primary;
-    final title = widget.isAdmin ? 'Switch to Journal Studio' : 'Switch to Journal';
+    final title =
+        widget.isAdmin ? 'Switch to Journal Studio' : 'Switch to Journal';
     final subtitle = widget.isAdmin
         ? 'Open the publishing studio, analytics, and editorial controls.'
         : 'Open your journal workspace for reflections, favorites, and reading flow.';
-    final footer = widget.isLoading ? 'Opening journal workspace...' : 'Open journal session';
+    final footer = widget.isLoading
+        ? 'Opening journal workspace...'
+        : 'Open journal session';
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -595,7 +642,10 @@ class _WorkspaceSwitchCardState extends State<_WorkspaceSwitchCard> {
             border: Border.all(color: borderColor, width: 1.15),
             boxShadow: [
               BoxShadow(
-                color: scheme.primary.withValues(alpha: elevated ? (isDark ? 0.22 : 0.14) : (isDark ? 0.12 : 0.08)),
+                color: scheme.primary.withValues(
+                    alpha: elevated
+                        ? (isDark ? 0.22 : 0.14)
+                        : (isDark ? 0.12 : 0.08)),
                 blurRadius: elevated ? 26 : 18,
                 offset: Offset(0, elevated ? 16 : 10),
                 spreadRadius: elevated ? 0 : -4,
@@ -617,7 +667,8 @@ class _WorkspaceSwitchCardState extends State<_WorkspaceSwitchCard> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
                         color: badgeColor,
                         borderRadius: BorderRadius.circular(999),
@@ -641,10 +692,13 @@ class _WorkspaceSwitchCardState extends State<_WorkspaceSwitchCard> {
                           height: 48,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(16),
-                            color: iconColor.withValues(alpha: isDark ? 0.2 : 0.14),
+                            color: iconColor.withValues(
+                                alpha: isDark ? 0.2 : 0.14),
                           ),
                           child: Icon(
-                            widget.isAdmin ? Icons.auto_stories_rounded : Icons.menu_book_rounded,
+                            widget.isAdmin
+                                ? Icons.auto_stories_rounded
+                                : Icons.menu_book_rounded,
                             color: iconColor,
                             size: 24,
                           ),
@@ -666,7 +720,8 @@ class _WorkspaceSwitchCardState extends State<_WorkspaceSwitchCard> {
                               Text(
                                 subtitle,
                                 style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: scheme.onSurface.withValues(alpha: 0.68),
+                                  color:
+                                      scheme.onSurface.withValues(alpha: 0.68),
                                   height: 1.42,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -678,11 +733,14 @@ class _WorkspaceSwitchCardState extends State<_WorkspaceSwitchCard> {
                     ),
                     const SizedBox(height: 14),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 11),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(18),
-                        color: scheme.surface.withValues(alpha: isDark ? 0.18 : 0.7),
-                        border: Border.all(color: scheme.outline.withValues(alpha: 0.1)),
+                        color: scheme.surface
+                            .withValues(alpha: isDark ? 0.18 : 0.7),
+                        border: Border.all(
+                            color: scheme.outline.withValues(alpha: 0.1)),
                       ),
                       child: Row(
                         children: [
@@ -704,7 +762,8 @@ class _WorkspaceSwitchCardState extends State<_WorkspaceSwitchCard> {
                                     height: 18,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2.2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(scheme.primary),
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          scheme.primary),
                                     ),
                                   )
                                 : Icon(
@@ -734,7 +793,8 @@ class _MiniActionCard extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
 
-  const _MiniActionCard({required this.icon, required this.label, required this.onTap});
+  const _MiniActionCard(
+      {required this.icon, required this.label, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -807,8 +867,14 @@ class _DarkModeToggleCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               gradient: LinearGradient(
                 colors: isDark
-                    ? [scheme.primary.withValues(alpha: 0.2), scheme.secondary.withValues(alpha: 0.15)]
-                    : [Colors.amber.withValues(alpha: 0.2), Colors.orange.withValues(alpha: 0.15)],
+                    ? [
+                        scheme.primary.withValues(alpha: 0.2),
+                        scheme.secondary.withValues(alpha: 0.15)
+                      ]
+                    : [
+                        Colors.amber.withValues(alpha: 0.2),
+                        Colors.orange.withValues(alpha: 0.15)
+                      ],
               ),
             ),
             child: Icon(
@@ -824,7 +890,8 @@ class _DarkModeToggleCard extends StatelessWidget {
               children: [
                 Text(
                   'Dark Mode',
-                  style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                  style: theme.textTheme.titleSmall
+                      ?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 Text(
                   isDark ? 'Enabled' : 'Disabled',
@@ -838,7 +905,8 @@ class _DarkModeToggleCard extends StatelessWidget {
           Switch.adaptive(
             value: isDark,
             onChanged: (value) {
-              themeModeController.setMode(value ? ThemeMode.dark : ThemeMode.light);
+              themeModeController
+                  .setMode(value ? ThemeMode.dark : ThemeMode.light);
             },
             activeColor: scheme.primary,
           ),

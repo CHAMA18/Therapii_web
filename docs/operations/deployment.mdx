@@ -1,0 +1,84 @@
+---
+title: Deployment
+description: What needs to be deployed when frontend, rules, or backend behavior changes.
+---
+
+# Deployment
+
+## Deployment units
+
+Therapii changes may require one or more of the following:
+
+- Flutter web application build and hosting deployment
+- Firestore rules deployment
+- Storage rules deployment
+- Firebase Cloud Functions deployment
+
+## When each deployment is required
+
+### Frontend-only changes
+
+Deploy the web app when changes are limited to Flutter UI and client-side logic.
+
+Examples:
+
+- copy changes
+- layout updates
+- navigation behavior
+- local state handling
+
+### Firestore rules changes
+
+Deploy Firestore rules when access control is modified.
+
+Examples:
+
+- new admin emails
+- new collections
+- changed read or write patterns
+
+### Cloud Functions changes
+
+Deploy functions when any callable or privileged backend logic changes.
+
+Examples:
+
+- Stripe behavior
+- invitation emails
+- billing plan reflection
+- OpenAI server flows
+
+## Common commands
+
+Deploy functions:
+
+```bash
+firebase deploy --only functions
+```
+
+Deploy Firestore rules:
+
+```bash
+firebase deploy --only firestore:rules
+```
+
+Deploy storage rules:
+
+```bash
+firebase deploy --only storage
+```
+
+## Release checklist
+
+1. Run `dart format` on touched Dart files
+2. Run `flutter analyze`
+3. Run `node --check functions/index.js` if functions changed
+4. Confirm Firestore rules cover any new client reads or writes
+5. Deploy the correct Firebase surface, not just the frontend
+6. Refresh the web app after deployment to verify live behavior
+
+## High-risk deployment scenarios
+
+- billing updates that require Functions deployment but only the frontend was deployed
+- admin feature rollouts without matching Firestore rules changes
+- renamed or moved pages that break remembered-page restoration

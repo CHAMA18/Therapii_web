@@ -1,0 +1,73 @@
+---
+title: Troubleshooting
+description: Common failure modes and where to look first when debugging Therapii.
+---
+
+# Troubleshooting
+
+## `permission-denied` from Firestore
+
+Check:
+
+- the signed-in account role
+- whether the target collection is admin-only
+- whether the admin email exists in both `admin_access.dart` and `firestore.rules`
+
+Most common cause:
+
+- UI navigation reached an admin page, but Firestore rules do not recognize the current email as admin
+
+## Billing still shows `Free Plan`
+
+Check:
+
+- whether `functions/index.js` changes were deployed
+- whether the callable `getStripeBillingDetails` is live
+- whether the access grant exists and is still active
+- whether the current user matches the grant by email or Stripe customer ID
+
+## App reload returns to the wrong page
+
+Check:
+
+- `lib/services/app_page_state_service.dart`
+- whether the page is wrapped with `RememberAppPage`
+- whether the saved page is still valid for the current auth state and role
+
+## Journal favorites do not save
+
+Check:
+
+- authenticated user state
+- Firestore rules for `users/{uid}/favorite_journal_articles`
+- whether the favorite action is writing to the current user document path
+
+## Admin content tools fail to load
+
+Check:
+
+- admin email allowlist
+- `admin_settings/**` rules
+- current Firebase auth session
+
+## Web console shows Flutter assertion noise after another exception
+
+Treat the first real exception as primary and the later assertion cascade as secondary. On Flutter web, one asynchronous error can trigger multiple noisy framework exceptions afterward.
+
+## Avatar or image loading fails with status code `0`
+
+Check:
+
+- Firebase Storage object availability
+- token validity for the generated download URL
+- browser network access and CORS-related behavior
+
+## Good first debug files
+
+- `lib/main.dart`
+- `lib/pages/auth_welcome_page.dart`
+- `lib/pages/billing_page.dart`
+- `lib/pages/journal_portal_page.dart`
+- `lib/pages/admin_dashboard_page.dart`
+- `functions/index.js`
+- `firestore.rules`

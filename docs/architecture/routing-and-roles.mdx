@@ -1,0 +1,89 @@
+---
+title: Routing and Roles
+description: How Therapii restores sessions and routes users by role and account state.
+---
+
+# Routing and Roles
+
+## Entry flow
+
+The app starts in `lib/main.dart`.
+
+Bootstrap sequence:
+
+1. Initialize Firebase
+2. Load persisted theme mode
+3. Subscribe to Firebase Auth state
+4. Load the Firestore user profile and therapist context
+5. Restore the last remembered top-level page when valid
+
+## Effective roles
+
+### Admin
+
+Admins are recognized by email allowlists in:
+
+- `lib/utils/admin_access.dart`
+- `firestore.rules`
+
+Admins can access:
+
+- admin dashboard
+- journal admin pages
+- admin settings collections
+
+### Therapist
+
+Therapists are identified by:
+
+- `user.isTherapist == true`
+- or a matching therapist profile document
+
+Therapists are routed to:
+
+- `MyPatientsPage`
+- journal admin surfaces when applicable
+
+### Client
+
+The UI uses the term `Client` in the authentication experience, but many internal checks and persisted values still use `patient`.
+
+Clients are routed to:
+
+- onboarding when incomplete
+- dashboard when onboarding is complete
+
+## Remembered page behavior
+
+Top-level pages are wrapped with the app page state service so refresh restores the prior location when possible.
+
+State is persisted through:
+
+- `lib/services/app_page_state_service.dart`
+
+Restore behavior is validated against:
+
+- auth state
+- email verification
+- admin status
+- therapist versus client role
+- onboarding completion
+
+## Authentication surface
+
+The auth screen in `lib/pages/auth_welcome_page.dart` supports:
+
+- account creation
+- login
+- therapist versus client selection
+- optional journal portal entry path
+- remembered email
+
+If a user selects the wrong role at login, the app rejects the session and instructs them to switch to the correct role label.
+
+## Verification and guardrails
+
+- Unverified accounts are routed to `VerifyEmailPage`
+- Missing profile context falls back to auth
+- Therapist approval-aware screens use gate components before exposing full functionality
+- Firestore rules remain the source of truth for actual data authorization

@@ -5,9 +5,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:therapii/auth/firebase_auth_manager.dart';
 import 'package:therapii/pages/admin_settings_page.dart';
-import 'package:therapii/pages/auth_welcome_page.dart';
 import 'package:therapii/pages/landing_page.dart';
 import 'package:therapii/pages/therapist_approvals_page.dart';
+import 'package:therapii/services/app_page_state_service.dart';
 import 'package:therapii/theme_mode_controller.dart';
 import 'package:therapii/utils/admin_access.dart';
 
@@ -47,11 +47,20 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   final _nav1Controller = TextEditingController();
   final _nav2Controller = TextEditingController();
   final _nav3Controller = TextEditingController();
+  final _accessEmailController = TextEditingController();
+  final _accessStripeCustomerController = TextEditingController();
+  final _accessStripeConfigController = TextEditingController();
+  final _accessDurationController = TextEditingController(text: '30');
+  final _accessNotesController = TextEditingController();
   String? _landingUpdatedBy;
   DateTime? _landingUpdatedAt;
   bool _landingLoading = true;
   bool _landingSaving = false;
+  bool _accessGranting = false;
+  int _accessDurationDays = 30;
+  String _selectedAccessTier = 'Premium';
   final _landingSectionKey = GlobalKey();
+  final _userAccessSectionKey = GlobalKey();
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -81,6 +90,11 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     _nav1Controller.dispose();
     _nav2Controller.dispose();
     _nav3Controller.dispose();
+    _accessEmailController.dispose();
+    _accessStripeCustomerController.dispose();
+    _accessStripeConfigController.dispose();
+    _accessDurationController.dispose();
+    _accessNotesController.dispose();
     _scrollController.dispose();
     _authSubscription?.cancel();
     super.dispose();
@@ -92,11 +106,24 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       _countsError = null;
     });
     try {
-      final humanAgg = await _firestore.collection('conversations').count().get();
-      final aiAgg = await _firestore.collection('ai_conversation_summaries').count().get();
-      final therapistsAgg = await _firestore.collection('therapists').count().get();
-      final approvedAgg = await _firestore.collection('therapists').where('approval_status', isEqualTo: 'approved').count().get();
-      final patientsAgg = await _firestore.collection('users').where('role', isEqualTo: 'patient').count().get();
+      final humanAgg =
+          await _firestore.collection('conversations').count().get();
+      final aiAgg = await _firestore
+          .collection('ai_conversation_summaries')
+          .count()
+          .get();
+      final therapistsAgg =
+          await _firestore.collection('therapists').count().get();
+      final approvedAgg = await _firestore
+          .collection('therapists')
+          .where('approval_status', isEqualTo: 'approved')
+          .count()
+          .get();
+      final patientsAgg = await _firestore
+          .collection('users')
+          .where('role', isEqualTo: 'patient')
+          .count()
+          .get();
       if (!mounted) return;
       setState(() {
         _humanConversationCount = humanAgg.count ?? 0;
@@ -120,7 +147,10 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       _landingLoading = true;
     });
     try {
-      final doc = await _firestore.collection('admin_settings').doc('landing_content').get();
+      final doc = await _firestore
+          .collection('admin_settings')
+          .doc('landing_content')
+          .get();
       final data = doc.data();
       final headline = (data?['headline'] as String?)?.trim();
       final subheadline = (data?['subheadline'] as String?)?.trim();
@@ -135,17 +165,22 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       _landingUpdatedBy = data?['updated_by'] as String?;
       final ts = data?['updated_at'] as Timestamp?;
       _landingUpdatedAt = ts?.toDate();
-      _headlineController.text = headline?.isNotEmpty == true ? headline! : 'Good afternoon,';
+      _headlineController.text =
+          headline?.isNotEmpty == true ? headline! : 'Good afternoon,';
       _subheadlineController.text = subheadline?.isNotEmpty == true
           ? subheadline!
           : 'Manage approvals, monitor activity, and configure the platform settings for your therapy network.';
-      _heroKickerController.text = kicker?.isNotEmpty == true ? kicker! : 'The Future of';
-      _heroTitleController.text = heroTitle?.isNotEmpty == true ? heroTitle! : 'Emotional Care';
+      _heroKickerController.text =
+          kicker?.isNotEmpty == true ? kicker! : 'The Future of';
+      _heroTitleController.text =
+          heroTitle?.isNotEmpty == true ? heroTitle! : 'Emotional Care';
       _heroSubtitleController.text = heroSubtitle?.isNotEmpty == true
           ? heroSubtitle!
           : 'An immersive AI companion designed to extend the therapeutic relationship beyond the session.';
-      _ctaPrimaryController.text = ctaPrimary?.isNotEmpty == true ? ctaPrimary! : 'Begin Experience';
-      _ctaSecondaryController.text = ctaSecondary?.isNotEmpty == true ? ctaSecondary! : 'Sign In';
+      _ctaPrimaryController.text =
+          ctaPrimary?.isNotEmpty == true ? ctaPrimary! : 'Begin Experience';
+      _ctaSecondaryController.text =
+          ctaSecondary?.isNotEmpty == true ? ctaSecondary! : 'Sign In';
       _nav1Controller.text = nav1?.isNotEmpty == true ? nav1! : 'Journal';
       _nav2Controller.text = nav2?.isNotEmpty == true ? nav2! : 'Methodology';
       _nav3Controller.text = nav3?.isNotEmpty == true ? nav3! : 'Access';
@@ -224,6 +259,18 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     }
   }
 
+  Future<void> _scrollToUserAccessPanel() async {
+    final ctx = _userAccessSectionKey.currentContext;
+    if (ctx != null) {
+      await Scrollable.ensureVisible(
+        ctx,
+        alignment: 0.08,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
   void _showSnack(String msg, {bool isError = false}) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -235,7 +282,68 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     );
   }
 
-  InputDecoration _textFieldDecoration(bool isDark, Color primaryColor, {required String label, required String hint}) {
+  Future<void> _grantTimedUserAccess() async {
+    final email = _accessEmailController.text.trim().toLowerCase();
+    final stripeCustomerId = _accessStripeCustomerController.text.trim();
+    final stripeConfigRef = _accessStripeConfigController.text.trim();
+    final notes = _accessNotesController.text.trim();
+
+    if (email.isEmpty || !email.contains('@')) {
+      _showSnack('Enter a valid user email.', isError: true);
+      return;
+    }
+    if (_accessDurationDays <= 0) {
+      _showSnack('Duration must be at least 1 day.', isError: true);
+      return;
+    }
+
+    setState(() => _accessGranting = true);
+
+    final now = DateTime.now();
+    final expiresAt = now.add(Duration(days: _accessDurationDays));
+    final adminUser = FirebaseAuthManager().currentUser;
+
+    try {
+      await _firestore
+          .collection('admin_settings')
+          .doc('user_access')
+          .collection('grants')
+          .add({
+        'email': email,
+        'access_tier': _selectedAccessTier,
+        'duration_days': _accessDurationDays,
+        'granted_at': Timestamp.fromDate(now),
+        'expires_at': Timestamp.fromDate(expiresAt),
+        'status': 'active',
+        'stripe_customer_id': stripeCustomerId,
+        'stripe_config_reference': stripeConfigRef,
+        'notes': notes,
+        'granted_by_uid': adminUser?.uid,
+        'granted_by_email': adminUser?.email,
+        'updated_at': FieldValue.serverTimestamp(),
+      });
+
+      if (!mounted) return;
+      _accessEmailController.clear();
+      _accessStripeCustomerController.clear();
+      _accessStripeConfigController.clear();
+      _accessDurationController.text = '30';
+      _accessNotesController.clear();
+      setState(() {
+        _accessDurationDays = 30;
+        _selectedAccessTier = 'Premium';
+        _accessGranting = false;
+      });
+      _showSnack('Timed user access granted successfully.');
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _accessGranting = false);
+      _showSnack('Failed to grant user access. $e', isError: true);
+    }
+  }
+
+  InputDecoration _textFieldDecoration(bool isDark, Color primaryColor,
+      {required String label, required String hint}) {
     return InputDecoration(
       labelText: label,
       hintText: hint,
@@ -243,11 +351,13 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       fillColor: isDark ? const Color(0xFF1f2a3d) : const Color(0xFFf8fafc),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFe2e8f0)),
+        borderSide: BorderSide(
+            color: isDark ? const Color(0xFF334155) : const Color(0xFFe2e8f0)),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFe2e8f0)),
+        borderSide: BorderSide(
+            color: isDark ? const Color(0xFF334155) : const Color(0xFFe2e8f0)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
@@ -318,7 +428,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
   void _showTherapistDetails(Map<String, dynamic> data) {
     final educations = _resolveEducationSummaries(data);
-    final licensure = List<String>.from(data['state_licensures'] ?? const <String>[]);
+    final licensure =
+        List<String>.from(data['state_licensures'] ?? const <String>[]);
     final theme = Theme.of(context);
     showModalBottomSheet<void>(
       context: context,
@@ -335,7 +446,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           top: 32,
         );
         return ConstrainedBox(
-          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
+          constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.85),
           child: Padding(
             padding: padding,
             child: Column(
@@ -351,7 +463,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                         children: [
                           Text(
                             data['full_name'] ?? 'Therapist details',
-                            style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                            style: theme.textTheme.headlineSmall
+                                ?.copyWith(fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 4),
                           Text(
@@ -367,7 +480,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                       icon: const Icon(Icons.close),
                       onPressed: () => Navigator.of(sheetContext).pop(),
                       style: IconButton.styleFrom(
-                        backgroundColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                        backgroundColor: theme
+                            .colorScheme.surfaceContainerHighest
+                            .withValues(alpha: 0.5),
                       ),
                     ),
                   ],
@@ -404,18 +519,24 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                             runSpacing: 8,
                             children: licensure
                                 .map((item) => Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 6),
                                       decoration: BoxDecoration(
-                                        color: theme.colorScheme.primaryContainer.withValues(alpha: 0.4),
+                                        color: theme
+                                            .colorScheme.primaryContainer
+                                            .withValues(alpha: 0.4),
                                         borderRadius: BorderRadius.circular(8),
                                         border: Border.all(
-                                          color: theme.colorScheme.primaryContainer,
+                                          color: theme
+                                              .colorScheme.primaryContainer,
                                         ),
                                       ),
                                       child: Text(
                                         item,
-                                        style: theme.textTheme.labelMedium?.copyWith(
-                                          color: theme.colorScheme.onPrimaryContainer,
+                                        style: theme.textTheme.labelMedium
+                                            ?.copyWith(
+                                          color: theme
+                                              .colorScheme.onPrimaryContainer,
                                         ),
                                       ),
                                     ))
@@ -433,10 +554,12 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                                 Padding(
                                   padding: const EdgeInsets.only(bottom: 12),
                                   child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Padding(
-                                        padding: const EdgeInsets.only(top: 6, right: 12),
+                                        padding: const EdgeInsets.only(
+                                            top: 6, right: 12),
                                         child: Icon(
                                           Icons.school_outlined,
                                           size: 18,
@@ -446,7 +569,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                                       Expanded(
                                         child: Text(
                                           entry,
-                                          style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
+                                          style: theme.textTheme.bodyMedium
+                                              ?.copyWith(height: 1.4),
                                         ),
                                       ),
                                     ],
@@ -487,59 +611,73 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     final isDark = theme.brightness == Brightness.dark;
     final primaryColor = const Color(0xFF1d78ff);
 
-    return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0f172a) : const Color(0xFFF8FAFC),
-      body: Column(
-        children: [
-          // Sticky Navigation Bar
-          _buildNavBar(theme, isDark, primaryColor),
-          // Main Content
-          Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return RefreshIndicator(
-                  onRefresh: () async {
-                    await _loadCounts();
-                    await _loadLandingContent();
-                  },
-                  child: SingleChildScrollView(
-                    controller: _scrollController,
-                    physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                      child: Center(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(minHeight: constraints.maxHeight - 48),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Header Section
-                                _buildHeader(theme, isDark, primaryColor),
-                                // Action Cards Grid
-                                _buildActionCardsGrid(theme, isDark, primaryColor),
-                                const SizedBox(height: 48),
-                                // Pending Approvals Table
-                                _buildPendingApprovalsTable(theme, isDark, primaryColor),
-                                const SizedBox(height: 48),
-                                // Analytics & Activity Row
-                                _buildAnalyticsActivityRow(theme, isDark, primaryColor),
-                                const SizedBox(height: 48),
-                                // Footer
-                                _buildFooter(theme, isDark),
-                              ],
+    return RememberAppPage(
+      pageId: AppPageId.adminDashboard,
+      child: Scaffold(
+        backgroundColor:
+            isDark ? const Color(0xFF0f172a) : const Color(0xFFF8FAFC),
+        body: Column(
+          children: [
+            // Sticky Navigation Bar
+            _buildNavBar(theme, isDark, primaryColor),
+            // Main Content
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return RefreshIndicator(
+                    onRefresh: () async {
+                      await _loadCounts();
+                      await _loadLandingContent();
+                    },
+                    child: SingleChildScrollView(
+                      controller: _scrollController,
+                      physics: const AlwaysScrollableScrollPhysics(
+                          parent: BouncingScrollPhysics()),
+                      child: ConstrainedBox(
+                        constraints:
+                            BoxConstraints(minHeight: constraints.maxHeight),
+                        child: Center(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 24, vertical: 24),
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                  minHeight: constraints.maxHeight - 48),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Header Section
+                                  _buildHeader(theme, isDark, primaryColor),
+                                  // Action Cards Grid
+                                  _buildActionCardsGrid(
+                                      theme, isDark, primaryColor),
+                                  const SizedBox(height: 48),
+                                  _buildUserAccessPanel(
+                                      theme, isDark, primaryColor),
+                                  const SizedBox(height: 48),
+                                  // Pending Approvals Table
+                                  _buildPendingApprovalsTable(
+                                      theme, isDark, primaryColor),
+                                  const SizedBox(height: 48),
+                                  // Analytics & Activity Row
+                                  _buildAnalyticsActivityRow(
+                                      theme, isDark, primaryColor),
+                                  const SizedBox(height: 48),
+                                  // Footer
+                                  _buildFooter(theme, isDark),
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -554,7 +692,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           ),
         ),
         boxShadow: const [
-          BoxShadow(color: Color(0x12000000), blurRadius: 12, offset: Offset(0, 4)),
+          BoxShadow(
+              color: Color(0x12000000), blurRadius: 12, offset: Offset(0, 4)),
         ],
       ),
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -586,14 +725,19 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               ),
               const Spacer(),
               if (MediaQuery.of(context).size.width > 768) ...[
-                _NavLink(label: 'Home', isActive: true, primaryColor: primaryColor, isDark: isDark),
+                _NavLink(
+                    label: 'Home',
+                    isActive: true,
+                    primaryColor: primaryColor,
+                    isDark: isDark),
                 _NavLink(
                   label: 'Approvals',
                   isActive: false,
                   primaryColor: primaryColor,
                   isDark: isDark,
                   onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const TherapistApprovalsPage()),
+                    MaterialPageRoute(
+                        builder: (_) => const TherapistApprovalsPage()),
                   ),
                 ),
                 _NavLink(
@@ -602,17 +746,25 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                   primaryColor: primaryColor,
                   isDark: isDark,
                   onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const AdminSettingsPage()),
+                    MaterialPageRoute(
+                        builder: (_) => const AdminSettingsPage()),
                   ),
                 ),
                 const SizedBox(width: 16),
-                Container(width: 1, height: 24, color: isDark ? const Color(0xFF334155) : const Color(0xFFe2e8f0)),
+                Container(
+                    width: 1,
+                    height: 24,
+                    color: isDark
+                        ? const Color(0xFF334155)
+                        : const Color(0xFFe2e8f0)),
                 const SizedBox(width: 16),
               ],
               IconButton(
                 icon: Icon(
                   isDark ? Icons.light_mode : Icons.dark_mode,
-                  color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF64748b),
+                  color: isDark
+                      ? const Color(0xFF94a3b8)
+                      : const Color(0xFF64748b),
                 ),
                 onPressed: () => themeModeController.toggleLightDark(),
               ),
@@ -635,7 +787,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           value: 'profile',
           child: Row(
             children: [
-              Icon(Icons.person_outline, size: 20, color: theme.colorScheme.onSurface),
+              Icon(Icons.person_outline,
+                  size: 20, color: theme.colorScheme.onSurface),
               const SizedBox(width: 12),
               const Text('Profile'),
             ],
@@ -645,7 +798,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           value: 'settings',
           child: Row(
             children: [
-              Icon(Icons.settings_outlined, size: 20, color: theme.colorScheme.onSurface),
+              Icon(Icons.settings_outlined,
+                  size: 20, color: theme.colorScheme.onSurface),
               const SizedBox(width: 12),
               const Text('Settings'),
             ],
@@ -658,7 +812,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             children: [
               Icon(Icons.logout, size: 20, color: theme.colorScheme.error),
               const SizedBox(width: 12),
-              Text('Sign out', style: TextStyle(color: theme.colorScheme.error)),
+              Text('Sign out',
+                  style: TextStyle(color: theme.colorScheme.error)),
             ],
           ),
         ),
@@ -668,7 +823,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           await FirebaseAuthManager().signOut();
           if (!mounted) return;
           Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => const AuthWelcomePage(initialTab: AuthTab.login)),
+            MaterialPageRoute(builder: (_) => const LandingPage()),
             (route) => false,
           );
         } else if (value == 'settings') {
@@ -693,7 +848,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1e3a5f) : const Color(0xFFdbeafe),
+                color:
+                    isDark ? const Color(0xFF1e3a5f) : const Color(0xFFdbeafe),
                 shape: BoxShape.circle,
               ),
               child: Center(
@@ -737,7 +893,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
-                  color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF64748b),
+                  color: isDark
+                      ? const Color(0xFF94a3b8)
+                      : const Color(0xFF64748b),
                 ),
               ),
               const SizedBox(height: 4),
@@ -755,7 +913,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 'Manage approvals, monitor activity, and configure the platform settings for your therapy network.',
                 style: TextStyle(
                   fontSize: 14,
-                  color: isDark ? const Color(0xFF64748b) : const Color(0xFF94a3b8),
+                  color: isDark
+                      ? const Color(0xFF64748b)
+                      : const Color(0xFF94a3b8),
                 ),
               ),
             ],
@@ -795,7 +955,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     return Container(
       key: _landingSectionKey,
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1e293b).withValues(alpha: 0.4) : Colors.white,
+        color: isDark
+            ? const Color(0xFF1e293b).withValues(alpha: 0.4)
+            : Colors.white,
         borderRadius: BorderRadius.circular(32),
         border: Border.all(
           color: isDark ? const Color(0xFF334155) : const Color(0xFFe2e8f0),
@@ -817,7 +979,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1e293b) : const Color(0xFFdbeafe),
+                  color: isDark
+                      ? const Color(0xFF1e293b)
+                      : const Color(0xFFdbeafe),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(Icons.edit_note_rounded, color: primaryColor),
@@ -837,7 +1001,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                   Text(
                     'Update the headline and supporting text shown on the landing page.',
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF64748b),
+                      color: isDark
+                          ? const Color(0xFF94a3b8)
+                          : const Color(0xFF64748b),
                     ),
                   ),
                 ],
@@ -847,7 +1013,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 Text(
                   'Last updated${_landingUpdatedBy != null ? " by $_landingUpdatedBy" : ""}${_landingUpdatedAt != null ? " • ${_formatDate(_landingUpdatedAt!)}" : ""}',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF64748b),
+                    color: isDark
+                        ? const Color(0xFF94a3b8)
+                        : const Color(0xFF64748b),
                   ),
                 ),
             ],
@@ -860,14 +1028,21 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               labelText: 'Headline',
               hintText: 'Good afternoon,',
               filled: true,
-              fillColor: isDark ? const Color(0xFF1f2a3d) : const Color(0xFFf8fafc),
+              fillColor:
+                  isDark ? const Color(0xFF1f2a3d) : const Color(0xFFf8fafc),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFe2e8f0)),
+                borderSide: BorderSide(
+                    color: isDark
+                        ? const Color(0xFF334155)
+                        : const Color(0xFFe2e8f0)),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFe2e8f0)),
+                borderSide: BorderSide(
+                    color: isDark
+                        ? const Color(0xFF334155)
+                        : const Color(0xFFe2e8f0)),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
@@ -907,7 +1082,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               isDark,
               primaryColor,
               label: 'Hero subtitle',
-              hint: 'An immersive AI companion designed to extend the therapeutic relationship beyond the session.',
+              hint:
+                  'An immersive AI companion designed to extend the therapeutic relationship beyond the session.',
             ),
           ),
           const SizedBox(height: 14),
@@ -974,24 +1150,31 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                     ? const SizedBox(
                         width: 16,
                         height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white),
                       )
                     : const Icon(Icons.save_rounded),
                 label: Text(_landingSaving ? 'Saving...' : 'Save'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primaryColor,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
                 ),
               ),
               OutlinedButton.icon(
-                onPressed: _landingLoading || _landingSaving ? null : _loadLandingContent,
+                onPressed: _landingLoading || _landingSaving
+                    ? null
+                    : _loadLandingContent,
                 icon: const Icon(Icons.refresh_rounded),
                 label: const Text('Reset'),
                 style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
                 ),
               ),
               TextButton.icon(
@@ -1006,7 +1189,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     );
   }
 
-  Widget _buildActionCardsGrid(ThemeData theme, bool isDark, Color primaryColor) {
+  Widget _buildActionCardsGrid(
+      ThemeData theme, bool isDark, Color primaryColor) {
     final cards = [
       _ActionCard(
         title: 'Therapist Approvals',
@@ -1032,7 +1216,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       ),
       _ActionCard(
         title: 'Sessions',
-        subtitle: _loadingCounts ? 'Loading...' : '$_humanConversationCount active sessions today',
+        subtitle: _loadingCounts
+            ? 'Loading...'
+            : '$_humanConversationCount active sessions today',
         icon: Icons.forum_outlined,
         isPrimary: false,
         primaryColor: primaryColor,
@@ -1041,12 +1227,23 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       ),
       _ActionCard(
         title: 'AI Chats',
-        subtitle: _loadingCounts ? 'Loading...' : '$_aiConversationCount assistant interactions',
+        subtitle: _loadingCounts
+            ? 'Loading...'
+            : '$_aiConversationCount assistant interactions',
         icon: Icons.smart_toy_outlined,
         isPrimary: false,
         primaryColor: primaryColor,
         isDark: isDark,
         onTap: _loadCounts,
+      ),
+      _ActionCard(
+        title: 'User Access',
+        subtitle: 'Grant Stripe-linked timed access',
+        icon: Icons.workspace_premium_outlined,
+        isPrimary: false,
+        primaryColor: primaryColor,
+        isDark: isDark,
+        onTap: _scrollToUserAccessPanel,
       ),
       _ActionCard(
         title: 'Edit Text Content',
@@ -1080,10 +1277,12 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
         if (crossAxisCount == 1) {
           return Column(
-            children: cards.map((card) => Padding(
-              padding: EdgeInsets.only(bottom: spacing),
-              child: card,
-            )).toList(),
+            children: cards
+                .map((card) => Padding(
+                      padding: EdgeInsets.only(bottom: spacing),
+                      child: card,
+                    ))
+                .toList(),
           );
         }
 
@@ -1095,17 +1294,428 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           physics: const NeverScrollableScrollPhysics(),
           childAspectRatio: crossAxisCount >= 5
               ? 1.28
-              : (crossAxisCount == 4 ? 1.18 : (crossAxisCount == 3 ? 1.14 : 1.2)),
+              : (crossAxisCount == 4
+                  ? 1.18
+                  : (crossAxisCount == 3 ? 1.14 : 1.2)),
           children: cards,
         );
       },
     );
   }
 
-  Widget _buildPendingApprovalsTable(ThemeData theme, bool isDark, Color primaryColor) {
+  Widget _buildUserAccessPanel(
+      ThemeData theme, bool isDark, Color primaryColor) {
+    return Container(
+      key: _userAccessSectionKey,
+      decoration: BoxDecoration(
+        color: isDark
+            ? const Color(0xFF1e293b).withValues(alpha: 0.4)
+            : Colors.white,
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(
+          color: isDark ? const Color(0xFF334155) : const Color(0xFFe2e8f0),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? const Color(0xFF1e293b)
+                      : const Color(0xFFdbeafe),
+                  shape: BoxShape.circle,
+                ),
+                child:
+                    Icon(Icons.workspace_premium_outlined, color: primaryColor),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'User Access',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: isDark ? Colors.white : const Color(0xFF0f172a),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Create Stripe-linked timed access grants for a specific user and define how long the access stays active.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: isDark
+                            ? const Color(0xFF94a3b8)
+                            : const Color(0xFF64748b),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final stacked = constraints.maxWidth < 860;
+              final form = _buildUserAccessForm(theme, isDark, primaryColor);
+              final list = _buildUserAccessHistory(theme, isDark, primaryColor);
+              if (stacked) {
+                return Column(
+                  children: [
+                    form,
+                    const SizedBox(height: 20),
+                    list,
+                  ],
+                );
+              }
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(flex: 6, child: form),
+                  const SizedBox(width: 20),
+                  Expanded(flex: 5, child: list),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUserAccessForm(
+      ThemeData theme, bool isDark, Color primaryColor) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF162133) : const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextField(
+            controller: _accessEmailController,
+            decoration: _textFieldDecoration(
+              isDark,
+              primaryColor,
+              label: 'User Email',
+              hint: 'patient@example.com',
+            ),
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: _accessStripeCustomerController,
+            decoration: _textFieldDecoration(
+              isDark,
+              primaryColor,
+              label: 'Stripe Customer ID',
+              hint: 'cus_1234 or leave blank',
+            ),
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: _accessStripeConfigController,
+            decoration: _textFieldDecoration(
+              isDark,
+              primaryColor,
+              label: 'Stripe Config Reference',
+              hint: 'Promotion code, checkout ref, or billing note',
+            ),
+          ),
+          const SizedBox(height: 14),
+          DropdownButtonFormField<String>(
+            value: _selectedAccessTier,
+            decoration: _textFieldDecoration(
+              isDark,
+              primaryColor,
+              label: 'Access Tier',
+              hint: 'Select access tier',
+            ),
+            items: const [
+              DropdownMenuItem(value: 'Premium', child: Text('Premium')),
+              DropdownMenuItem(value: 'Pro', child: Text('Pro')),
+              DropdownMenuItem(
+                  value: 'Trial Extension', child: Text('Trial Extension')),
+              DropdownMenuItem(
+                  value: 'Special Access', child: Text('Special Access')),
+            ],
+            onChanged: (value) {
+              if (value == null) return;
+              setState(() => _selectedAccessTier = value);
+            },
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: _accessDurationController,
+            keyboardType: TextInputType.number,
+            decoration: _textFieldDecoration(
+              isDark,
+              primaryColor,
+              label: 'Duration (Days)',
+              hint: '30',
+            ),
+            onChanged: (value) {
+              final parsed = int.tryParse(value.trim());
+              if (parsed != null && parsed > 0) {
+                _accessDurationDays = parsed;
+              }
+            },
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: _accessNotesController,
+            maxLines: 3,
+            decoration: _textFieldDecoration(
+              isDark,
+              primaryColor,
+              label: 'Notes',
+              hint:
+                  'Reason for grant, Stripe billing context, or internal note',
+            ),
+          ),
+          const SizedBox(height: 18),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF0F172A) : const Color(0xFFEFF6FF),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color:
+                    isDark ? const Color(0xFF334155) : const Color(0xFFBFDBFE),
+              ),
+            ),
+            child: Text(
+              'Grant will start immediately and expire after $_accessDurationDays day${_accessDurationDays == 1 ? '' : 's'}. Store Stripe references here so billing operations can reconcile the manual access window.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                height: 1.5,
+                color:
+                    isDark ? const Color(0xFFCBD5E1) : const Color(0xFF1E3A8A),
+              ),
+            ),
+          ),
+          const SizedBox(height: 18),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: _accessGranting ? null : _grantTimedUserAccess,
+              icon: _accessGranting
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Icon(Icons.check_circle_outline_rounded),
+              label: Text(_accessGranting
+                  ? 'Granting Access...'
+                  : 'Grant Timed Access'),
+              style: FilledButton.styleFrom(
+                backgroundColor: primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUserAccessHistory(
+      ThemeData theme, bool isDark, Color primaryColor) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF162133) : const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Recent Grants',
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: isDark ? Colors.white : const Color(0xFF0f172a),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Latest Stripe-linked access overrides issued by admins.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+            ),
+          ),
+          const SizedBox(height: 16),
+          StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+            stream: _firestore
+                .collection('admin_settings')
+                .doc('user_access')
+                .collection('grants')
+                .orderBy('granted_at', descending: true)
+                .limit(6)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 40),
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              }
+
+              if (snapshot.hasError) {
+                return Text(
+                  'Unable to load grants. ${snapshot.error}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.error,
+                  ),
+                );
+              }
+
+              final docs = snapshot.data?.docs ?? const [];
+              if (docs.isEmpty) {
+                return Text(
+                  'No timed access grants yet.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: isDark
+                        ? const Color(0xFF94A3B8)
+                        : const Color(0xFF64748B),
+                  ),
+                );
+              }
+
+              return Column(
+                children: docs.map((doc) {
+                  final data = doc.data();
+                  final grantedAt =
+                      (data['granted_at'] as Timestamp?)?.toDate();
+                  final expiresAt =
+                      (data['expires_at'] as Timestamp?)?.toDate();
+                  final email = (data['email'] as String?) ?? 'Unknown user';
+                  final tier = (data['access_tier'] as String?) ?? 'Access';
+                  final status = (data['status'] as String?) ?? 'active';
+                  final stripeCustomer =
+                      (data['stripe_customer_id'] as String?) ?? '';
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF0F172A) : Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: isDark
+                            ? const Color(0xFF334155)
+                            : const Color(0xFFE2E8F0),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                email,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: isDark
+                                      ? Colors.white
+                                      : const Color(0xFF0F172A),
+                                ),
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: primaryColor.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Text(
+                                tier,
+                                style: TextStyle(
+                                  color: primaryColor,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Status: ${status.toUpperCase()}',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: isDark
+                                ? const Color(0xFFCBD5E1)
+                                : const Color(0xFF475569),
+                          ),
+                        ),
+                        if (stripeCustomer.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            'Stripe customer: $stripeCustomer',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: isDark
+                                  ? const Color(0xFF94A3B8)
+                                  : const Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                        if (grantedAt != null && expiresAt != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            'Window: ${_formatDate(grantedAt)} to ${expiresAt.month}/${expiresAt.day}/${expiresAt.year}',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: isDark
+                                  ? const Color(0xFF94A3B8)
+                                  : const Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  );
+                }).toList(),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPendingApprovalsTable(
+      ThemeData theme, bool isDark, Color primaryColor) {
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1e293b).withValues(alpha: 0.3) : Colors.white,
+        color: isDark
+            ? const Color(0xFF1e293b).withValues(alpha: 0.3)
+            : Colors.white,
         borderRadius: BorderRadius.circular(32),
         border: Border.all(
           color: isDark ? const Color(0xFF1e293b) : const Color(0xFFe2e8f0),
@@ -1138,7 +1748,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 const Spacer(),
                 TextButton(
                   onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const TherapistApprovalsPage()),
+                    MaterialPageRoute(
+                        builder: (_) => const TherapistApprovalsPage()),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -1172,19 +1783,28 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               if (snapshot.hasError) {
                 return Padding(
                   padding: const EdgeInsets.all(32),
-                  child: _errorState(theme, 'Unable to load therapist submissions. ${snapshot.error}'),
+                  child: _errorState(theme,
+                      'Unable to load therapist submissions. ${snapshot.error}'),
                 );
               }
               final docs = snapshot.data?.docs ?? [];
               final pending = docs.where((doc) {
-                final status = (doc.data()['approval_status'] as String?)?.toLowerCase();
-                return status == null || status == 'pending' || status == 'resubmitted' || status == 'needs_review';
+                final status =
+                    (doc.data()['approval_status'] as String?)?.toLowerCase();
+                return status == null ||
+                    status == 'pending' ||
+                    status == 'resubmitted' ||
+                    status == 'needs_review';
               }).toList()
                 ..sort((a, b) {
-                  final aTs = a.data()['approval_requested_at'] as Timestamp? ?? a.data()['created_at'] as Timestamp?;
-                  final bTs = b.data()['approval_requested_at'] as Timestamp? ?? b.data()['created_at'] as Timestamp?;
-                  final aDate = aTs?.toDate() ?? DateTime.fromMillisecondsSinceEpoch(0);
-                  final bDate = bTs?.toDate() ?? DateTime.fromMillisecondsSinceEpoch(0);
+                  final aTs = a.data()['approval_requested_at'] as Timestamp? ??
+                      a.data()['created_at'] as Timestamp?;
+                  final bTs = b.data()['approval_requested_at'] as Timestamp? ??
+                      b.data()['created_at'] as Timestamp?;
+                  final aDate =
+                      aTs?.toDate() ?? DateTime.fromMillisecondsSinceEpoch(0);
+                  final bDate =
+                      bTs?.toDate() ?? DateTime.fromMillisecondsSinceEpoch(0);
                   return bDate.compareTo(aDate);
                 });
 
@@ -1205,7 +1825,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                       Icon(
                         Icons.check_circle_outline,
                         size: 48,
-                        color: isDark ? const Color(0xFF64748b) : const Color(0xFF94a3b8),
+                        color: isDark
+                            ? const Color(0xFF64748b)
+                            : const Color(0xFF94a3b8),
                       ),
                       const SizedBox(height: 16),
                       Text(
@@ -1213,7 +1835,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
-                          color: isDark ? Colors.white : const Color(0xFF0f172a),
+                          color:
+                              isDark ? Colors.white : const Color(0xFF0f172a),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -1221,7 +1844,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                         'Great job! You\'re all caught up.',
                         style: TextStyle(
                           fontSize: 14,
-                          color: isDark ? const Color(0xFF64748b) : const Color(0xFF94a3b8),
+                          color: isDark
+                              ? const Color(0xFF64748b)
+                              : const Color(0xFF94a3b8),
                         ),
                       ),
                     ],
@@ -1235,7 +1860,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 builder: (context, constraints) {
                   const tableMinWidth = 980.0;
                   final tableWidth = constraints.maxWidth.isFinite
-                      ? (constraints.maxWidth > tableMinWidth ? constraints.maxWidth : tableMinWidth)
+                      ? (constraints.maxWidth > tableMinWidth
+                          ? constraints.maxWidth
+                          : tableMinWidth)
                       : tableMinWidth;
 
                   return SingleChildScrollView(
@@ -1248,9 +1875,13 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                           // Table Header
                           Container(
                             width: double.infinity,
-                            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 32, vertical: 20),
                             decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF1e293b).withValues(alpha: 0.5) : const Color(0xFFF8FAFC),
+                              color: isDark
+                                  ? const Color(0xFF1e293b)
+                                      .withValues(alpha: 0.5)
+                                  : const Color(0xFFF8FAFC),
                             ),
                             child: Row(
                               children: [
@@ -1287,7 +1918,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                           // Table Rows
                           ...displayList.map((doc) {
                             final data = doc.data();
-                            return _buildTableRow(doc.id, data, isDark, primaryColor);
+                            return _buildTableRow(
+                                doc.id, data, isDark, primaryColor);
                           }),
                         ],
                       ),
@@ -1303,22 +1935,29 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             decoration: BoxDecoration(
               border: Border(
                 top: BorderSide(
-                  color: isDark ? const Color(0xFF1e293b) : const Color(0xFFe2e8f0),
+                  color: isDark
+                      ? const Color(0xFF1e293b)
+                      : const Color(0xFFe2e8f0),
                 ),
               ),
             ),
             child: Center(
               child: OutlinedButton.icon(
                 onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const TherapistApprovalsPage()),
+                  MaterialPageRoute(
+                      builder: (_) => const TherapistApprovalsPage()),
                 ),
                 icon: const Icon(Icons.history, size: 18),
                 label: const Text('View Full History'),
                 style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24)),
                   side: BorderSide(
-                    color: isDark ? const Color(0xFF334155) : const Color(0xFFe2e8f0),
+                    color: isDark
+                        ? const Color(0xFF334155)
+                        : const Color(0xFFe2e8f0),
                   ),
                 ),
               ),
@@ -1329,15 +1968,18 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     );
   }
 
-  Widget _buildTableRow(String docId, Map<String, dynamic> data, bool isDark, Color primaryColor) {
+  Widget _buildTableRow(String docId, Map<String, dynamic> data, bool isDark,
+      Color primaryColor) {
     final name = (data['full_name'] ?? 'New Applicant').toString();
     final id = data['license_number']?.toString() ?? docId.substring(0, 8);
     final city = (data['city'] ?? '').toString();
     final state = (data['state'] ?? '').toString();
     final location = [city, state].where((s) => s.isNotEmpty).join(', ');
-    
-    final timestamp = data['approval_requested_at'] as Timestamp? ?? data['created_at'] as Timestamp?;
-    final dateStr = timestamp != null ? _formatTimeAgo(timestamp.toDate()) : 'Unknown';
+
+    final timestamp = data['approval_requested_at'] as Timestamp? ??
+        data['created_at'] as Timestamp?;
+    final dateStr =
+        timestamp != null ? _formatTimeAgo(timestamp.toDate()) : 'Unknown';
 
     return InkWell(
       onTap: () => _showTherapistDetails(data),
@@ -1362,7 +2004,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1e3a5f) : const Color(0xFFdbeafe),
+                      color: isDark
+                          ? const Color(0xFF1e3a5f)
+                          : const Color(0xFFdbeafe),
                       shape: BoxShape.circle,
                     ),
                     child: Center(
@@ -1399,7 +2043,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 id,
                 style: TextStyle(
                   fontSize: 14,
-                  color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF64748b),
+                  color: isDark
+                      ? const Color(0xFF94a3b8)
+                      : const Color(0xFF64748b),
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -1412,7 +2058,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 location.isNotEmpty ? location : '—',
                 style: TextStyle(
                   fontSize: 14,
-                  color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF64748b),
+                  color: isDark
+                      ? const Color(0xFF94a3b8)
+                      : const Color(0xFF64748b),
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -1425,7 +2073,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 dateStr,
                 style: TextStyle(
                   fontSize: 14,
-                  color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF64748b),
+                  color: isDark
+                      ? const Color(0xFF94a3b8)
+                      : const Color(0xFF64748b),
                 ),
               ),
             ),
@@ -1441,19 +2091,24 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF334155) : const Color(0xFFf1f5f9),
+                      color: isDark
+                          ? const Color(0xFF334155)
+                          : const Color(0xFFf1f5f9),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: IconButton(
                       icon: Icon(
                         Icons.close,
                         size: 16,
-                        color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF64748b),
+                        color: isDark
+                            ? const Color(0xFF94a3b8)
+                            : const Color(0xFF64748b),
                       ),
                       onPressed: () => _rejectTherapist(docId),
                       tooltip: 'Reject',
                       padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                      constraints:
+                          const BoxConstraints(minWidth: 36, minHeight: 36),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -1494,18 +2149,24 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     );
   }
 
-  Widget _buildAnalyticsActivityRow(ThemeData theme, bool isDark, Color primaryColor) {
+  Widget _buildAnalyticsActivityRow(
+      ThemeData theme, bool isDark, Color primaryColor) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isWide = constraints.maxWidth > 900;
-        
+
         if (isWide) {
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(flex: 3, child: _buildAnalyticsSection(theme, isDark, primaryColor)),
+              Expanded(
+                  flex: 3,
+                  child: _buildAnalyticsSection(theme, isDark, primaryColor)),
               const SizedBox(width: 24),
-              Expanded(flex: 2, child: _buildRecentActivitySection(theme, isDark, primaryColor)),
+              Expanded(
+                  flex: 2,
+                  child:
+                      _buildRecentActivitySection(theme, isDark, primaryColor)),
             ],
           );
         } else {
@@ -1521,10 +2182,13 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     );
   }
 
-  Widget _buildAnalyticsSection(ThemeData theme, bool isDark, Color primaryColor) {
+  Widget _buildAnalyticsSection(
+      ThemeData theme, bool isDark, Color primaryColor) {
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1e293b).withValues(alpha: 0.3) : Colors.white,
+        color: isDark
+            ? const Color(0xFF1e293b).withValues(alpha: 0.3)
+            : Colors.white,
         borderRadius: BorderRadius.circular(32),
         border: Border.all(
           color: isDark ? const Color(0xFF1e293b) : const Color(0xFFe2e8f0),
@@ -1556,7 +2220,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 ),
                 const Spacer(),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: const Color(0xFF10b981).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
@@ -1594,7 +2259,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 final cardWidth = constraints.maxWidth > 600
                     ? (constraints.maxWidth - 48) / 3
                     : (constraints.maxWidth - 16) / 2;
-                
+
                 return Wrap(
                   spacing: 16,
                   runSpacing: 16,
@@ -1648,7 +2313,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF64748b),
+                        color: isDark
+                            ? const Color(0xFF94a3b8)
+                            : const Color(0xFF64748b),
                       ),
                     ),
                     Text(
@@ -1667,13 +2334,16 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 Container(
                   height: 8,
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF334155) : const Color(0xFFe2e8f0),
+                    color: isDark
+                        ? const Color(0xFF334155)
+                        : const Color(0xFFe2e8f0),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: FractionallySizedBox(
                     alignment: Alignment.centerLeft,
                     widthFactor: _totalTherapists > 0
-                        ? (_approvedTherapists / _totalTherapists).clamp(0.0, 1.0)
+                        ? (_approvedTherapists / _totalTherapists)
+                            .clamp(0.0, 1.0)
                         : 0,
                     child: Container(
                       decoration: BoxDecoration(
@@ -1693,10 +2363,13 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     );
   }
 
-  Widget _buildRecentActivitySection(ThemeData theme, bool isDark, Color primaryColor) {
+  Widget _buildRecentActivitySection(
+      ThemeData theme, bool isDark, Color primaryColor) {
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1e293b).withValues(alpha: 0.3) : Colors.white,
+        color: isDark
+            ? const Color(0xFF1e293b).withValues(alpha: 0.3)
+            : Colors.white,
         borderRadius: BorderRadius.circular(32),
         border: Border.all(
           color: isDark ? const Color(0xFF1e293b) : const Color(0xFFe2e8f0),
@@ -1732,7 +2405,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             ),
           ),
           StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-            stream: _firestore.collection('therapists')
+            stream: _firestore
+                .collection('therapists')
                 .orderBy('updated_at', descending: true)
                 .limit(5)
                 .snapshots(),
@@ -1743,9 +2417,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                   child: Center(child: CircularProgressIndicator()),
                 );
               }
-              
+
               final docs = snapshot.data?.docs ?? [];
-              
+
               if (docs.isEmpty) {
                 return Padding(
                   padding: const EdgeInsets.all(32),
@@ -1755,13 +2429,17 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                         Icon(
                           Icons.inbox_outlined,
                           size: 40,
-                          color: isDark ? const Color(0xFF64748b) : const Color(0xFF94a3b8),
+                          color: isDark
+                              ? const Color(0xFF64748b)
+                              : const Color(0xFF94a3b8),
                         ),
                         const SizedBox(height: 12),
                         Text(
                           'No recent activity',
                           style: TextStyle(
-                            color: isDark ? const Color(0xFF64748b) : const Color(0xFF94a3b8),
+                            color: isDark
+                                ? const Color(0xFF64748b)
+                                : const Color(0xFF94a3b8),
                           ),
                         ),
                       ],
@@ -1769,20 +2447,24 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                   ),
                 );
               }
-              
+
               return Column(
                 children: [
                   ...docs.map((doc) {
                     final data = doc.data();
-                    final status = (data['approval_status'] as String?)?.toLowerCase() ?? 'pending';
+                    final status =
+                        (data['approval_status'] as String?)?.toLowerCase() ??
+                            'pending';
                     final name = data['full_name'] ?? 'Unknown';
                     final timestamp = data['updated_at'] as Timestamp?;
-                    final timeStr = timestamp != null ? _formatTimeAgo(timestamp.toDate()) : 'Unknown';
-                    
+                    final timeStr = timestamp != null
+                        ? _formatTimeAgo(timestamp.toDate())
+                        : 'Unknown';
+
                     IconData icon;
                     Color iconColor;
                     String action;
-                    
+
                     switch (status) {
                       case 'approved':
                         icon = Icons.check_circle;
@@ -1804,13 +2486,16 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                         iconColor = primaryColor;
                         action = 'submitted application';
                     }
-                    
+
                     return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 32, vertical: 16),
                       decoration: BoxDecoration(
                         border: Border(
                           top: BorderSide(
-                            color: isDark ? const Color(0xFF1e293b) : const Color(0xFFe2e8f0),
+                            color: isDark
+                                ? const Color(0xFF1e293b)
+                                : const Color(0xFFe2e8f0),
                           ),
                         ),
                       ),
@@ -1834,17 +2519,22 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                                   text: TextSpan(
                                     style: TextStyle(
                                       fontSize: 13,
-                                      color: isDark ? Colors.white : const Color(0xFF0f172a),
+                                      color: isDark
+                                          ? Colors.white
+                                          : const Color(0xFF0f172a),
                                     ),
                                     children: [
                                       TextSpan(
                                         text: name,
-                                        style: const TextStyle(fontWeight: FontWeight.w600),
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.w600),
                                       ),
                                       TextSpan(
                                         text: ' $action',
                                         style: TextStyle(
-                                          color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF64748b),
+                                          color: isDark
+                                              ? const Color(0xFF94a3b8)
+                                              : const Color(0xFF64748b),
                                         ),
                                       ),
                                     ],
@@ -1855,7 +2545,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                                   timeStr,
                                   style: TextStyle(
                                     fontSize: 11,
-                                    color: isDark ? const Color(0xFF64748b) : const Color(0xFF94a3b8),
+                                    color: isDark
+                                        ? const Color(0xFF64748b)
+                                        : const Color(0xFF94a3b8),
                                   ),
                                 ),
                               ],
@@ -1905,7 +2597,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           Expanded(
             child: Text(
               message,
-              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onErrorContainer),
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(color: theme.colorScheme.onErrorContainer),
             ),
           ),
         ],
@@ -1916,11 +2609,13 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   String _formatTimeAgo(DateTime date) {
     final now = DateTime.now();
     final diff = now.difference(date);
-    
+
     if (diff.inMinutes < 1) return 'Just now';
     if (diff.inMinutes < 60) return '${diff.inMinutes} mins ago';
-    if (diff.inHours < 24) return '${diff.inHours} hour${diff.inHours > 1 ? 's' : ''} ago';
-    if (diff.inDays < 7) return '${diff.inDays} day${diff.inDays > 1 ? 's' : ''} ago';
+    if (diff.inHours < 24)
+      return '${diff.inHours} hour${diff.inHours > 1 ? 's' : ''} ago';
+    if (diff.inDays < 7)
+      return '${diff.inDays} day${diff.inDays > 1 ? 's' : ''} ago';
     return '${date.day}/${date.month}/${date.year}';
   }
 
@@ -1956,7 +2651,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
   static String _formatEducationMap(Map<String, dynamic> map) {
     final qualification = (map['qualification'] ?? '').toString().trim();
-    final institution = (map['institution'] ?? map['university'] ?? '').toString().trim();
+    final institution =
+        (map['institution'] ?? map['university'] ?? '').toString().trim();
     final year = map['year_completed']?.toString().trim();
     final parts = [
       if (qualification.isNotEmpty) qualification,
@@ -1992,7 +2688,9 @@ class _NavLink extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: isActive ? primaryColor.withValues(alpha: 0.1) : Colors.transparent,
+            color: isActive
+                ? primaryColor.withValues(alpha: 0.1)
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
@@ -2002,7 +2700,9 @@ class _NavLink extends StatelessWidget {
               fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
               color: isActive
                   ? primaryColor
-                  : (isDark ? const Color(0xFF64748b) : const Color(0xFF64748b)),
+                  : (isDark
+                      ? const Color(0xFF64748b)
+                      : const Color(0xFF64748b)),
             ),
           ),
         ),
@@ -2048,10 +2748,14 @@ class _ActionCardState extends State<_ActionCard> {
         child: Material(
           color: widget.isPrimary
               ? widget.primaryColor
-              : (widget.isDark ? const Color(0xFF1e293b).withValues(alpha: 0.5) : Colors.white),
+              : (widget.isDark
+                  ? const Color(0xFF1e293b).withValues(alpha: 0.5)
+                  : Colors.white),
           borderRadius: BorderRadius.circular(32),
           elevation: widget.isPrimary ? 8 : 0,
-          shadowColor: widget.isPrimary ? widget.primaryColor.withValues(alpha: 0.3) : Colors.transparent,
+          shadowColor: widget.isPrimary
+              ? widget.primaryColor.withValues(alpha: 0.3)
+              : Colors.transparent,
           child: InkWell(
             onTap: widget.onTap,
             borderRadius: BorderRadius.circular(32),
@@ -2064,7 +2768,9 @@ class _ActionCardState extends State<_ActionCard> {
                     : Border.all(
                         color: _isHovered
                             ? widget.primaryColor.withValues(alpha: 0.5)
-                            : (widget.isDark ? const Color(0xFF1e293b) : const Color(0xFFe2e8f0)),
+                            : (widget.isDark
+                                ? const Color(0xFF1e293b)
+                                : const Color(0xFFe2e8f0)),
                       ),
               ),
               child: Column(
@@ -2081,20 +2787,24 @@ class _ActionCardState extends State<_ActionCard> {
                           color: widget.isPrimary
                               ? Colors.white.withValues(alpha: 0.2)
                               : (widget.isDark
-                                  ? const Color(0xFF1e3a5f).withValues(alpha: 0.3)
+                                  ? const Color(0xFF1e3a5f)
+                                      .withValues(alpha: 0.3)
                                   : const Color(0xFFdbeafe)),
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Icon(
                           widget.icon,
-                          color: widget.isPrimary ? Colors.white : widget.primaryColor,
+                          color: widget.isPrimary
+                              ? Colors.white
+                              : widget.primaryColor,
                           size: 24,
                         ),
                       ),
                       if (widget.isPrimary)
                         AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
-                          transform: Matrix4.translationValues(_isHovered ? 4 : 0, 0, 0),
+                          transform: Matrix4.translationValues(
+                              _isHovered ? 4 : 0, 0, 0),
                           child: Icon(
                             Icons.arrow_forward,
                             color: Colors.white.withValues(alpha: 0.5),
@@ -2116,7 +2826,9 @@ class _ActionCardState extends State<_ActionCard> {
                           fontWeight: FontWeight.bold,
                           color: widget.isPrimary
                               ? Colors.white
-                              : (widget.isDark ? Colors.white : const Color(0xFF0f172a)),
+                              : (widget.isDark
+                                  ? Colors.white
+                                  : const Color(0xFF0f172a)),
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -2128,7 +2840,9 @@ class _ActionCardState extends State<_ActionCard> {
                           fontSize: 12,
                           color: widget.isPrimary
                               ? Colors.white.withValues(alpha: 0.8)
-                              : (widget.isDark ? const Color(0xFF64748b) : const Color(0xFF94a3b8)),
+                              : (widget.isDark
+                                  ? const Color(0xFF64748b)
+                                  : const Color(0xFF94a3b8)),
                         ),
                       ),
                     ],
@@ -2195,7 +2909,7 @@ class _DetailItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (value == null || value!.isEmpty) return const SizedBox.shrink();
-    
+
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -2204,7 +2918,8 @@ class _DetailItem extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.only(top: 2),
-            child: Icon(icon, size: 18, color: theme.colorScheme.onSurfaceVariant),
+            child:
+                Icon(icon, size: 18, color: theme.colorScheme.onSurfaceVariant),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -2261,7 +2976,9 @@ class _AnalyticCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF334155).withValues(alpha: 0.3) : const Color(0xFFF8FAFC),
+          color: isDark
+              ? const Color(0xFF334155).withValues(alpha: 0.3)
+              : const Color(0xFFF8FAFC),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isDark ? const Color(0xFF334155) : const Color(0xFFe2e8f0),
@@ -2283,7 +3000,8 @@ class _AnalyticCard extends StatelessWidget {
                 ),
                 const Spacer(),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: isPositive
                         ? const Color(0xFF10b981).withValues(alpha: 0.1)
@@ -2296,7 +3014,9 @@ class _AnalyticCard extends StatelessWidget {
                       Icon(
                         isPositive ? Icons.trending_up : Icons.trending_down,
                         size: 12,
-                        color: isPositive ? const Color(0xFF10b981) : const Color(0xFFef4444),
+                        color: isPositive
+                            ? const Color(0xFF10b981)
+                            : const Color(0xFFef4444),
                       ),
                       const SizedBox(width: 4),
                       Text(
@@ -2304,7 +3024,9 @@ class _AnalyticCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: isPositive ? const Color(0xFF10b981) : const Color(0xFFef4444),
+                          color: isPositive
+                              ? const Color(0xFF10b981)
+                              : const Color(0xFFef4444),
                         ),
                       ),
                     ],
@@ -2326,7 +3048,8 @@ class _AnalyticCard extends StatelessWidget {
               title,
               style: TextStyle(
                 fontSize: 13,
-                color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF64748b),
+                color:
+                    isDark ? const Color(0xFF94a3b8) : const Color(0xFF64748b),
               ),
             ),
           ],

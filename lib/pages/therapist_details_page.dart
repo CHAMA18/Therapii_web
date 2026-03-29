@@ -4,7 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:therapii/auth/firebase_auth_manager.dart';
 import 'package:therapii/data/universities.dart';
+import 'package:therapii/pages/landing_page.dart';
 import 'package:therapii/pages/therapist_practice_page.dart';
 import 'package:therapii/widgets/primary_button.dart';
 
@@ -43,10 +45,12 @@ class EducationEntry {
         'university': university.trim(),
         'institution': resolvedInstitution,
         'year_completed': yearCompleted,
-      }..removeWhere((key, value) => value == null || (value is String && value.isEmpty));
+      }..removeWhere(
+          (key, value) => value == null || (value is String && value.isEmpty));
 
   static EducationEntry fromJson(Map<String, dynamic> json) {
-    final university = (json['university'] ?? json['institution'] ?? '').toString();
+    final university =
+        (json['university'] ?? json['institution'] ?? '').toString();
     int? year;
     final rawYear = json['year_completed'];
     if (rawYear is int) {
@@ -57,9 +61,14 @@ class EducationEntry {
       year = null;
     }
     return EducationEntry(
-      qualification: (json['qualification'] ?? json['degree'] ?? json['title'] ?? '').toString(),
+      qualification:
+          (json['qualification'] ?? json['degree'] ?? json['title'] ?? '')
+              .toString(),
       university: university,
-      institutionOverride: json['institution'] != null && json['institution'] != university ? json['institution'].toString() : json['institution_override']?.toString(),
+      institutionOverride:
+          json['institution'] != null && json['institution'] != university
+              ? json['institution'].toString()
+              : json['institution_override']?.toString(),
       yearCompleted: year,
     );
   }
@@ -143,7 +152,10 @@ class _TherapistDetailsPageState extends State<TherapistDetailsPage> {
     final user = firebase_auth.FirebaseAuth.instance.currentUser;
     if (user == null) return;
     try {
-      final doc = await FirebaseFirestore.instance.collection('therapists').doc(user.uid).get();
+      final doc = await FirebaseFirestore.instance
+          .collection('therapists')
+          .doc(user.uid)
+          .get();
       if (!doc.exists) return;
       final data = doc.data() ?? <String, dynamic>{};
       if (!mounted) return;
@@ -155,14 +167,15 @@ class _TherapistDetailsPageState extends State<TherapistDetailsPage> {
         _zipCtrl.text = (data['zip_code'] ?? '').toString();
         _emailCtrl.text = (data['contact_email'] ?? '').toString();
         _phoneCtrl.text = (data['contact_phone'] ?? '').toString();
-        
+
         _profilePhotoUrl = data['profile_photo_url'] as String?;
         _qualificationUrl = data['qualification_file_url'] as String?;
         _idPhotoUrl = data['id_photo_url'] as String?;
 
         _stateLicensures
           ..clear()
-          ..addAll(List<String>.from(data['state_licensures'] ?? const <String>[]));
+          ..addAll(
+              List<String>.from(data['state_licensures'] ?? const <String>[]));
         _educations
           ..clear()
           ..addAll(_decodeEducationEntries(data));
@@ -189,7 +202,8 @@ class _TherapistDetailsPageState extends State<TherapistDetailsPage> {
     }
     if (_qualificationUrl == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please upload your qualification document.')),
+        const SnackBar(
+            content: Text('Please upload your qualification document.')),
       );
       return;
     }
@@ -200,13 +214,16 @@ class _TherapistDetailsPageState extends State<TherapistDetailsPage> {
       return;
     }
 
-    final docRef = FirebaseFirestore.instance.collection('therapists').doc(user.uid);
+    final docRef =
+        FirebaseFirestore.instance.collection('therapists').doc(user.uid);
     setState(() => _submitting = true);
     try {
       final snapshot = await docRef.get();
 
-      final educationSummaries = _educations.map((e) => e.displayLabel).toList(growable: false);
-      final educationEntries = _educations.map((e) => e.toJson()).toList(growable: false);
+      final educationSummaries =
+          _educations.map((e) => e.displayLabel).toList(growable: false);
+      final educationEntries =
+          _educations.map((e) => e.toJson()).toList(growable: false);
 
       final data = <String, dynamic>{
         'user_id': user.uid,
@@ -230,7 +247,8 @@ class _TherapistDetailsPageState extends State<TherapistDetailsPage> {
         data['created_at'] = FieldValue.serverTimestamp();
       }
 
-      final existingStatus = (snapshot.data()?['approval_status'] as String?)?.toLowerCase();
+      final existingStatus =
+          (snapshot.data()?['approval_status'] as String?)?.toLowerCase();
       if (existingStatus == 'approved') {
         data['approval_status'] = 'approved';
       } else {
@@ -250,12 +268,15 @@ class _TherapistDetailsPageState extends State<TherapistDetailsPage> {
     } on FirebaseException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Unable to save your details right now. ${e.message ?? e.code}')),
+        SnackBar(
+            content: Text(
+                'Unable to save your details right now. ${e.message ?? e.code}')),
       );
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Something went wrong. Please try again.')),
+        const SnackBar(
+            content: Text('Something went wrong. Please try again.')),
       );
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -264,13 +285,17 @@ class _TherapistDetailsPageState extends State<TherapistDetailsPage> {
 
   Future<void> _logout() async {
     try {
-      await firebase_auth.FirebaseAuth.instance.signOut();
+      await FirebaseAuthManager().signOut();
       if (!mounted) return;
-      Navigator.of(context).popUntil((route) => route.isFirst);
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LandingPage()),
+        (route) => false,
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to log out right now. Please try again.')),
+        const SnackBar(
+            content: Text('Unable to log out right now. Please try again.')),
       );
     }
   }
@@ -295,7 +320,8 @@ class _TherapistDetailsPageState extends State<TherapistDetailsPage> {
     if (structured is Iterable) {
       for (final item in structured) {
         if (item is Map) {
-          final entry = EducationEntry.fromJson(Map<String, dynamic>.from(item));
+          final entry =
+              EducationEntry.fromJson(Map<String, dynamic>.from(item));
           final label = entry.displayLabel;
           if (label.trim().isEmpty) continue;
           if (seen.add(label)) {
@@ -422,8 +448,10 @@ class _TherapistDetailsPageState extends State<TherapistDetailsPage> {
       barrierDismissible: false,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) {
-          final showOtherQualField = isOtherQualification(qualificationController?.text);
-          final showOtherUniField = isOtherUniversity(universityController?.text);
+          final showOtherQualField =
+              isOtherQualification(qualificationController?.text);
+          final showOtherUniField =
+              isOtherUniversity(universityController?.text);
           return AlertDialog(
             title: const Text('Add Education'),
             content: Form(
@@ -477,7 +505,8 @@ class _TherapistDetailsPageState extends State<TherapistDetailsPage> {
                       }
                       setDialogState(() {});
                     },
-                    fieldViewBuilder: (context, controller, focusNode, onSubmitted) {
+                    fieldViewBuilder:
+                        (context, controller, focusNode, onSubmitted) {
                       if (!qualListenerAttached) {
                         qualListenerAttached = true;
                         controller.addListener(() {
@@ -514,7 +543,9 @@ class _TherapistDetailsPageState extends State<TherapistDetailsPage> {
                           elevation: 4,
                           borderRadius: BorderRadius.circular(12),
                           child: SizedBox(
-                            height: entries.length > 8 ? 280 : entries.length * 48.0,
+                            height: entries.length > 8
+                                ? 280
+                                : entries.length * 48.0,
                             width: 420,
                             child: ListView.builder(
                               padding: EdgeInsets.zero,
@@ -543,7 +574,9 @@ class _TherapistDetailsPageState extends State<TherapistDetailsPage> {
                       ),
                       textCapitalization: TextCapitalization.sentences,
                       validator: (value) {
-                        if (isOtherQualification(qualificationController?.text) && (value == null || value.trim().isEmpty)) {
+                        if (isOtherQualification(
+                                qualificationController?.text) &&
+                            (value == null || value.trim().isEmpty)) {
                           return 'Please specify your qualification';
                         }
                         return null;
@@ -573,7 +606,8 @@ class _TherapistDetailsPageState extends State<TherapistDetailsPage> {
                       }
                       setDialogState(() {});
                     },
-                    fieldViewBuilder: (context, controller, focusNode, onSubmitted) {
+                    fieldViewBuilder:
+                        (context, controller, focusNode, onSubmitted) {
                       if (!uniListenerAttached) {
                         uniListenerAttached = true;
                         controller.addListener(() {
@@ -600,7 +634,8 @@ class _TherapistDetailsPageState extends State<TherapistDetailsPage> {
                             return 'Please choose a university';
                           }
                           if (!isOtherUniversity(text) &&
-                              !kUniversities.any((option) => option.toLowerCase() == text.toLowerCase())) {
+                              !kUniversities.any((option) =>
+                                  option.toLowerCase() == text.toLowerCase())) {
                             return 'Select from the list or choose "Others"';
                           }
                           return null;
@@ -615,7 +650,9 @@ class _TherapistDetailsPageState extends State<TherapistDetailsPage> {
                           elevation: 4,
                           borderRadius: BorderRadius.circular(12),
                           child: SizedBox(
-                            height: entries.length > 8 ? 280 : entries.length * 48.0,
+                            height: entries.length > 8
+                                ? 280
+                                : entries.length * 48.0,
                             width: 420,
                             child: ListView.builder(
                               padding: EdgeInsets.zero,
@@ -643,7 +680,8 @@ class _TherapistDetailsPageState extends State<TherapistDetailsPage> {
                         border: OutlineInputBorder(),
                       ),
                       validator: (value) {
-                        if (isOtherUniversity(universityController?.text) && (value == null || value.trim().isEmpty)) {
+                        if (isOtherUniversity(universityController?.text) &&
+                            (value == null || value.trim().isEmpty)) {
                           return 'Please specify your university';
                         }
                         return null;
@@ -660,7 +698,10 @@ class _TherapistDetailsPageState extends State<TherapistDetailsPage> {
                     ),
                     keyboardType: TextInputType.number,
                     maxLength: 4,
-                    buildCounter: (_, {required int currentLength, required bool isFocused, required int? maxLength}) =>
+                    buildCounter: (_,
+                            {required int currentLength,
+                            required bool isFocused,
+                            required int? maxLength}) =>
                         const SizedBox.shrink(),
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     validator: (value) {
@@ -670,7 +711,9 @@ class _TherapistDetailsPageState extends State<TherapistDetailsPage> {
                       }
                       final parsed = int.tryParse(text);
                       final currentYear = DateTime.now().year;
-                      if (parsed == null || parsed < 1900 || parsed > currentYear) {
+                      if (parsed == null ||
+                          parsed < 1900 ||
+                          parsed > currentYear) {
                         return 'Enter a valid year between 1900 and $currentYear';
                       }
                       return null;
@@ -687,13 +730,20 @@ class _TherapistDetailsPageState extends State<TherapistDetailsPage> {
               FilledButton(
                 onPressed: () {
                   if (!formKey.currentState!.validate()) return;
-                  final selectedQualification = qualificationController?.text.trim() ?? '';
-                  final isOtherQual = isOtherQualification(selectedQualification);
-                  final qualification = isOtherQual ? otherQualificationController.text.trim() : selectedQualification;
-                  
-                  final selectedUniversity = universityController?.text.trim() ?? '';
+                  final selectedQualification =
+                      qualificationController?.text.trim() ?? '';
+                  final isOtherQual =
+                      isOtherQualification(selectedQualification);
+                  final qualification = isOtherQual
+                      ? otherQualificationController.text.trim()
+                      : selectedQualification;
+
+                  final selectedUniversity =
+                      universityController?.text.trim() ?? '';
                   final isOtherUni = isOtherUniversity(selectedUniversity);
-                  final institution = isOtherUni ? otherUniversityController.text.trim() : selectedUniversity;
+                  final institution = isOtherUni
+                      ? otherUniversityController.text.trim()
+                      : selectedUniversity;
                   final yearText = yearController.text.trim();
                   final year = yearText.isEmpty ? null : int.tryParse(yearText);
 
@@ -737,12 +787,12 @@ class _TherapistDetailsPageState extends State<TherapistDetailsPage> {
         final name = file.name;
 
         if (bytes != null) {
-          final ref = FirebaseStorage.instance
-              .ref()
-              .child('therapists/${user.uid}/uploads/${DateTime.now().millisecondsSinceEpoch}_$name');
-          
-          final metadata = SettableMetadata(contentType: type == 'qualification' ? null : 'image/jpeg');
-          
+          final ref = FirebaseStorage.instance.ref().child(
+              'therapists/${user.uid}/uploads/${DateTime.now().millisecondsSinceEpoch}_$name');
+
+          final metadata = SettableMetadata(
+              contentType: type == 'qualification' ? null : 'image/jpeg');
+
           final task = await ref.putData(bytes, metadata);
           final url = await task.ref.getDownloadURL();
 
@@ -786,10 +836,14 @@ class _TherapistDetailsPageState extends State<TherapistDetailsPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+        Text(title,
+            style: theme.textTheme.titleSmall
+                ?.copyWith(fontWeight: FontWeight.w700)),
         if (subtitle != null) ...[
           const SizedBox(height: 4),
-          Text(subtitle, style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurface.withValues(alpha: 0.6))),
+          Text(subtitle,
+              style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurface.withValues(alpha: 0.6))),
         ],
         const SizedBox(height: 8),
         InkWell(
@@ -801,7 +855,9 @@ class _TherapistDetailsPageState extends State<TherapistDetailsPage> {
               color: colorScheme.surface,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: hasFile ? colorScheme.primary : colorScheme.outline.withValues(alpha: 0.3),
+                color: hasFile
+                    ? colorScheme.primary
+                    : colorScheme.outline.withValues(alpha: 0.3),
                 width: hasFile ? 1.5 : 1,
               ),
             ),
@@ -810,18 +866,23 @@ class _TherapistDetailsPageState extends State<TherapistDetailsPage> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: hasFile ? colorScheme.primary.withValues(alpha: 0.1) : colorScheme.surfaceContainerHighest,
+                    color: hasFile
+                        ? colorScheme.primary.withValues(alpha: 0.1)
+                        : colorScheme.surfaceContainerHighest,
                     shape: BoxShape.circle,
                   ),
                   child: isLoading
                       ? SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: colorScheme.primary),
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: colorScheme.primary),
                         )
                       : Icon(
                           hasFile ? Icons.check : icon,
-                          color: hasFile ? colorScheme.primary : colorScheme.onSurfaceVariant,
+                          color: hasFile
+                              ? colorScheme.primary
+                              : colorScheme.onSurfaceVariant,
                           size: 20,
                         ),
                 ),
@@ -833,23 +894,29 @@ class _TherapistDetailsPageState extends State<TherapistDetailsPage> {
                       Text(
                         hasFile ? 'File Uploaded' : 'Tap to upload',
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: hasFile ? FontWeight.w600 : FontWeight.w500,
-                          color: hasFile ? colorScheme.primary : colorScheme.onSurface,
+                          fontWeight:
+                              hasFile ? FontWeight.w600 : FontWeight.w500,
+                          color: hasFile
+                              ? colorScheme.primary
+                              : colorScheme.onSurface,
                         ),
                       ),
                       if (hasFile)
                         Text(
                           'Click to replace',
-                          style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                          style: theme.textTheme.bodySmall
+                              ?.copyWith(color: colorScheme.onSurfaceVariant),
                         ),
                     ],
                   ),
                 ),
-                if (hasFile && (title.contains('Photo') || title.contains('ID'))) ...[
-                   ClipRRect(
-                     borderRadius: BorderRadius.circular(4),
-                     child: Image.network(url, width: 40, height: 40, fit: BoxFit.cover),
-                   ),
+                if (hasFile &&
+                    (title.contains('Photo') || title.contains('ID'))) ...[
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: Image.network(url,
+                        width: 40, height: 40, fit: BoxFit.cover),
+                  ),
                 ]
               ],
             ),
@@ -872,7 +939,8 @@ class _TherapistDetailsPageState extends State<TherapistDetailsPage> {
         hintText: hintText,
         filled: true,
         fillColor: Theme.of(context).colorScheme.surface,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(color: borderColor),
@@ -883,7 +951,9 @@ class _TherapistDetailsPageState extends State<TherapistDetailsPage> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)),
+          borderSide: BorderSide(
+              color:
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)),
         ),
       ),
     );
@@ -920,7 +990,8 @@ class _TherapistDetailsPageState extends State<TherapistDetailsPage> {
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.2)),
+          border: Border.all(
+              color: Theme.of(context).colorScheme.outline.withOpacity(0.2)),
         ),
         child: Text(
           'Add your academic qualifications so patients can see your expertise at a glance.',
@@ -952,7 +1023,10 @@ class _TherapistDetailsPageState extends State<TherapistDetailsPage> {
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: colorScheme.outlineVariant.withOpacity(0.4)),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 4)),
+          BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 4)),
         ],
       ),
       child: Padding(
@@ -970,22 +1044,27 @@ class _TherapistDetailsPageState extends State<TherapistDetailsPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    entry.qualification.trim().isNotEmpty ? entry.qualification.trim() : institution,
-                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                    entry.qualification.trim().isNotEmpty
+                        ? entry.qualification.trim()
+                        : institution,
+                    style: theme.textTheme.titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w700),
                   ),
-                  if (institution.isNotEmpty && entry.qualification.trim() != institution) ...[
+                  if (institution.isNotEmpty &&
+                      entry.qualification.trim() != institution) ...[
                     const SizedBox(height: 4),
                     Text(
                       institution,
                       style: theme.textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurface.withOpacity(0.7),
-                          ),
+                        color: colorScheme.onSurface.withOpacity(0.7),
+                      ),
                     ),
                   ],
                   if (entry.yearCompleted != null) ...[
                     const SizedBox(height: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
                         color: colorScheme.primary.withOpacity(0.08),
                         borderRadius: BorderRadius.circular(999),
@@ -993,9 +1072,9 @@ class _TherapistDetailsPageState extends State<TherapistDetailsPage> {
                       child: Text(
                         'Class of ${entry.yearCompleted}',
                         style: theme.textTheme.labelMedium?.copyWith(
-                              color: colorScheme.primary,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ]
@@ -1053,18 +1132,21 @@ class _TherapistDetailsPageState extends State<TherapistDetailsPage> {
                     children: [
                       Text(
                         'Therapii',
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              color: colorScheme.primary,
-                              fontWeight: FontWeight.w800,
-                            ),
+                        style:
+                            Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                  color: colorScheme.primary,
+                                  fontWeight: FontWeight.w800,
+                                ),
                       ),
                       OutlinedButton.icon(
                         onPressed: _logout,
                         icon: const Icon(Icons.logout, size: 18),
                         label: const Text('Logout'),
                         style: OutlinedButton.styleFrom(
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
                         ),
                       ),
                     ],
@@ -1072,26 +1154,46 @@ class _TherapistDetailsPageState extends State<TherapistDetailsPage> {
                   const SizedBox(height: 28),
                   Text(
                     'Contact and Licensure Information',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+                    style: Theme.of(context)
+                        .textTheme
+                        .headlineSmall
+                        ?.copyWith(fontWeight: FontWeight.w800),
                   ),
                   const SizedBox(height: 24),
-                  _buildInputField(controller: _nameCtrl, hintText: 'Full Name'),
+                  _buildInputField(
+                      controller: _nameCtrl, hintText: 'Full Name'),
                   const SizedBox(height: 16),
-                  _buildInputField(controller: _practiceCtrl, hintText: 'Practice / Office Name'),
+                  _buildInputField(
+                      controller: _practiceCtrl,
+                      hintText: 'Practice / Office Name'),
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      Expanded(child: _buildInputField(controller: _cityCtrl, hintText: 'City')),
+                      Expanded(
+                          child: _buildInputField(
+                              controller: _cityCtrl, hintText: 'City')),
                       const SizedBox(width: 12),
-                      SizedBox(width: 120, child: _buildInputField(controller: _stateCtrl, hintText: 'State')),
+                      SizedBox(
+                          width: 120,
+                          child: _buildInputField(
+                              controller: _stateCtrl, hintText: 'State')),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  _buildInputField(controller: _zipCtrl, hintText: 'Zip Code', keyboardType: TextInputType.number),
+                  _buildInputField(
+                      controller: _zipCtrl,
+                      hintText: 'Zip Code',
+                      keyboardType: TextInputType.number),
                   const SizedBox(height: 16),
-                  _buildInputField(controller: _emailCtrl, hintText: 'Email Address', keyboardType: TextInputType.emailAddress),
+                  _buildInputField(
+                      controller: _emailCtrl,
+                      hintText: 'Email Address',
+                      keyboardType: TextInputType.emailAddress),
                   const SizedBox(height: 16),
-                  _buildInputField(controller: _phoneCtrl, hintText: 'Phone Number', keyboardType: TextInputType.phone),
+                  _buildInputField(
+                      controller: _phoneCtrl,
+                      hintText: 'Phone Number',
+                      keyboardType: TextInputType.phone),
                   const SizedBox(height: 24),
                   _buildUploadSection(
                     title: 'Profile Photo',
@@ -1113,7 +1215,8 @@ class _TherapistDetailsPageState extends State<TherapistDetailsPage> {
                   const SizedBox(height: 16),
                   _buildUploadSection(
                     title: 'Government ID',
-                    subtitle: 'Upload a photo of your ID (Passport, License, etc).',
+                    subtitle:
+                        'Upload a photo of your ID (Passport, License, etc).',
                     url: _idPhotoUrl,
                     isLoading: _isUploadingId,
                     onUpload: () => _pickAndUpload('id'),
@@ -1125,7 +1228,10 @@ class _TherapistDetailsPageState extends State<TherapistDetailsPage> {
                     children: [
                       Text(
                         'State Licensure',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w700),
                       ),
                       IconButton(
                         onPressed: _addStateLicensure,
@@ -1157,7 +1263,10 @@ class _TherapistDetailsPageState extends State<TherapistDetailsPage> {
                     children: [
                       Text(
                         'Education',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w700),
                       ),
                       IconButton(
                         onPressed: _addEducation,
@@ -1197,10 +1306,11 @@ class _TherapistDetailsPageState extends State<TherapistDetailsPage> {
                         onPressed: () => Navigator.of(context).maybePop(),
                         child: Text(
                           'Go Back',
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                color: colorScheme.primary,
-                                fontWeight: FontWeight.w600,
-                              ),
+                          style:
+                              Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                    color: colorScheme.primary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                         ),
                       ),
                     ],

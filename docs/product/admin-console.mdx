@@ -1,0 +1,74 @@
+---
+title: Admin Console
+description: Platform administration, therapist approvals, content settings, analytics, and special access grants.
+---
+
+# Admin Console
+
+## Main admin dashboard
+
+The primary admin screen is `lib/pages/admin_dashboard_page.dart`.
+
+It aggregates:
+
+- therapist approval counts
+- total therapists and clients
+- conversation totals
+- landing content management
+- user access grant controls
+
+## Access control
+
+Admin access is email-allowlist based.
+
+The allowlist exists in two places and both must stay aligned:
+
+- `lib/utils/admin_access.dart`
+- `firestore.rules`
+
+If one is updated without the other, UI access and backend authorization drift apart.
+
+## Therapist approvals
+
+Admin review flows use:
+
+- `therapist_approvals_page.dart`
+
+This area handles clinician review and approval state transitions for therapist accounts.
+
+## Landing content management
+
+Admins can edit marketing and landing copy stored in:
+
+- `admin_settings/landing_content`
+
+Managed fields include:
+
+- headlines
+- hero content
+- CTA labels
+- navigation labels
+
+## User access grants
+
+The admin dashboard includes a `User Access` panel for special account access.
+
+The panel stores timed grants under:
+
+- `admin_settings/user_access/grants`
+
+Fields include:
+
+- target email
+- Stripe customer reference
+- Stripe config or reference value
+- access tier
+- grant duration
+- notes
+- audit metadata
+
+Billing callable functions can use active grants to reflect paid access even if a normal Stripe subscription is not present.
+
+## Journal admin surfaces
+
+The journal administration pages are part of the broader admin toolset, but functionally form their own content-management subsystem.

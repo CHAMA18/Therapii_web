@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart' as FirebaseAuth;
 import 'package:therapii/auth/firebase_auth_manager.dart';
-import 'package:therapii/pages/auth_welcome_page.dart';
+import 'package:therapii/pages/landing_page.dart';
 import 'package:therapii/pages/new_patient_confirm_page.dart';
 import 'package:therapii/services/invitation_service.dart';
 
@@ -70,12 +70,16 @@ class _NewPatientInfoPageState extends State<NewPatientInfoPage> {
 
       // Extract first name from full name
       final fullName = _nameController.text.trim();
-      final parts = fullName.split(RegExp(r'\s+')).where((part) => part.isNotEmpty).toList();
+      final parts = fullName
+          .split(RegExp(r'\s+'))
+          .where((part) => part.isNotEmpty)
+          .toList();
       final firstName = parts.isNotEmpty ? parts.first : fullName;
       final lastName = parts.length > 1 ? parts.sublist(1).join(' ') : '';
 
       // Create invitation and send email
-      final createResult = await _invitationService.createInvitationAndSendEmail(
+      final createResult =
+          await _invitationService.createInvitationAndSendEmail(
         therapistId: currentUser.uid,
         patientEmail: _emailController.text.trim(),
         patientFirstName: firstName,
@@ -101,7 +105,8 @@ class _NewPatientInfoPageState extends State<NewPatientInfoPage> {
           context: context,
           builder: (ctx) => AlertDialog(
             title: const Text('Session Expired'),
-            content: const Text('Your session has expired. Please sign in again to continue.'),
+            content: const Text(
+                'Your session has expired. Please sign in again to continue.'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(false),
@@ -119,7 +124,7 @@ class _NewPatientInfoPageState extends State<NewPatientInfoPage> {
           await FirebaseAuthManager().signOut();
           if (mounted) {
             Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(builder: (_) => const AuthWelcomePage(initialTab: AuthTab.login)),
+              MaterialPageRoute(builder: (_) => const LandingPage()),
               (route) => false,
             );
           }
@@ -129,8 +134,8 @@ class _NewPatientInfoPageState extends State<NewPatientInfoPage> {
       if (mounted) {
         // Check if error message contains auth-related keywords
         final errorMsg = e.toString().toLowerCase();
-        if (errorMsg.contains('authorization') || 
-            errorMsg.contains('unauthenticated') || 
+        if (errorMsg.contains('authorization') ||
+            errorMsg.contains('unauthenticated') ||
             errorMsg.contains('expired') ||
             errorMsg.contains('revoked') ||
             errorMsg.contains('invalid')) {
@@ -139,7 +144,8 @@ class _NewPatientInfoPageState extends State<NewPatientInfoPage> {
             context: context,
             builder: (ctx) => AlertDialog(
               title: const Text('Session Expired'),
-              content: const Text('Your session has expired. Please sign in again to continue.'),
+              content: const Text(
+                  'Your session has expired. Please sign in again to continue.'),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(ctx).pop(false),
@@ -157,7 +163,7 @@ class _NewPatientInfoPageState extends State<NewPatientInfoPage> {
             await FirebaseAuthManager().signOut();
             if (mounted) {
               Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (_) => const AuthWelcomePage(initialTab: AuthTab.login)),
+                MaterialPageRoute(builder: (_) => const LandingPage()),
                 (route) => false,
               );
             }
@@ -198,7 +204,8 @@ class _NewPatientInfoPageState extends State<NewPatientInfoPage> {
           tooltip: 'Back',
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text('Invite Patient', style: TextStyle(fontWeight: FontWeight.w600)),
+        title: const Text('Invite Patient',
+            style: TextStyle(fontWeight: FontWeight.w600)),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 12),
@@ -207,16 +214,18 @@ class _NewPatientInfoPageState extends State<NewPatientInfoPage> {
                 await FirebaseAuthManager().signOut();
                 if (context.mounted) {
                   Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (_) => const AuthWelcomePage(initialTab: AuthTab.login)),
+                    MaterialPageRoute(builder: (_) => const LandingPage()),
                     (route) => false,
                   );
                 }
               },
               style: OutlinedButton.styleFrom(
                 visualDensity: VisualDensity.compact,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 side: BorderSide(color: scheme.outline.withOpacity(0.35)),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
                 backgroundColor: Colors.white,
               ),
               icon: const Icon(Icons.logout, size: 18),
@@ -245,24 +254,31 @@ class _NewPatientInfoPageState extends State<NewPatientInfoPage> {
                   const SizedBox(height: 20),
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 26),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 26),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: const [
-                        BoxShadow(color: Color(0x14000000), blurRadius: 18, offset: Offset(0, 12)),
+                        BoxShadow(
+                            color: Color(0x14000000),
+                            blurRadius: 18,
+                            offset: Offset(0, 12)),
                       ],
-                      border: Border.all(color: scheme.outline.withOpacity(0.12)),
+                      border:
+                          Border.all(color: scheme.outline.withOpacity(0.12)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('New Patient Info',
-                            style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
+                            style: theme.textTheme.headlineSmall
+                                ?.copyWith(fontWeight: FontWeight.w800)),
                         const SizedBox(height: 8),
                         Text(
                           'Please enter the information in the form below then hit submit to generate an invitation.',
-                          style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurface.withOpacity(0.6)),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                              color: scheme.onSurface.withOpacity(0.6)),
                         ),
                         const SizedBox(height: 24),
                         Form(
@@ -272,15 +288,24 @@ class _NewPatientInfoPageState extends State<NewPatientInfoPage> {
                             children: [
                               TextFormField(
                                 controller: _nameController,
-                                decoration: _fieldDecoration("Patient's Full Name", prefix: const Icon(Icons.person)),
-                                validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter a name' : null,
+                                decoration: _fieldDecoration(
+                                    "Patient's Full Name",
+                                    prefix: const Icon(Icons.person)),
+                                validator: (v) =>
+                                    (v == null || v.trim().isEmpty)
+                                        ? 'Please enter a name'
+                                        : null,
                               ),
                               const SizedBox(height: 14),
                               TextFormField(
                                 controller: _emailController,
-                                decoration: _fieldDecoration('Patient Email', prefix: const Icon(Icons.email_outlined)),
+                                decoration: _fieldDecoration('Patient Email',
+                                    prefix: const Icon(Icons.email_outlined)),
                                 keyboardType: TextInputType.emailAddress,
-                                validator: (v) => (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
+                                validator: (v) =>
+                                    (v == null || !v.contains('@'))
+                                        ? 'Enter a valid email'
+                                        : null,
                               ),
                               const SizedBox(height: 18),
                               Row(
@@ -288,17 +313,22 @@ class _NewPatientInfoPageState extends State<NewPatientInfoPage> {
                                 children: [
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           'Offer free credits',
-                                          style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                                          style: theme.textTheme.titleSmall
+                                              ?.copyWith(
+                                                  fontWeight: FontWeight.w700),
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
                                           'Each credit is worth one free month',
-                                          style: theme.textTheme.bodySmall?.copyWith(
-                                            color: scheme.onSurface.withOpacity(0.6),
+                                          style: theme.textTheme.bodySmall
+                                              ?.copyWith(
+                                            color: scheme.onSurface
+                                                .withOpacity(0.6),
                                           ),
                                         ),
                                       ],
@@ -306,19 +336,24 @@ class _NewPatientInfoPageState extends State<NewPatientInfoPage> {
                                   ),
                                   Switch(
                                     value: _offerCredits,
-                                    thumbColor: WidgetStateProperty.resolveWith((states) {
-                                      if (states.contains(WidgetState.selected)) {
+                                    thumbColor: WidgetStateProperty.resolveWith(
+                                        (states) {
+                                      if (states
+                                          .contains(WidgetState.selected)) {
                                         return Colors.white;
                                       }
                                       return null;
                                     }),
-                                    trackColor: WidgetStateProperty.resolveWith((states) {
-                                      if (states.contains(WidgetState.selected)) {
+                                    trackColor: WidgetStateProperty.resolveWith(
+                                        (states) {
+                                      if (states
+                                          .contains(WidgetState.selected)) {
                                         return primary;
                                       }
                                       return null;
                                     }),
-                                    onChanged: (v) => setState(() => _offerCredits = v),
+                                    onChanged: (v) =>
+                                        setState(() => _offerCredits = v),
                                   ),
                                 ],
                               ),
@@ -326,16 +361,29 @@ class _NewPatientInfoPageState extends State<NewPatientInfoPage> {
                               DropdownButtonFormField<int>(
                                 value: _offerCredits ? _selectedCredits : null,
                                 items: const [
-                                  DropdownMenuItem(value: 1, child: Text('1 Credit (1 Month)')),
-                                  DropdownMenuItem(value: 3, child: Text('3 Credits (3 Months)')),
-                                  DropdownMenuItem(value: 6, child: Text('6 Credits (6 Months)')),
-                                  DropdownMenuItem(value: 12, child: Text('12 Credits (1 Year)')),
+                                  DropdownMenuItem(
+                                      value: 1,
+                                      child: Text('1 Credit (1 Month)')),
+                                  DropdownMenuItem(
+                                      value: 3,
+                                      child: Text('3 Credits (3 Months)')),
+                                  DropdownMenuItem(
+                                      value: 6,
+                                      child: Text('6 Credits (6 Months)')),
+                                  DropdownMenuItem(
+                                      value: 12,
+                                      child: Text('12 Credits (1 Year)')),
                                 ],
-                                onChanged: _offerCredits ? (v) => setState(() => _selectedCredits = v) : null,
-                                decoration: _fieldDecoration('Select number of credits...'),
+                                onChanged: _offerCredits
+                                    ? (v) =>
+                                        setState(() => _selectedCredits = v)
+                                    : null,
+                                decoration: _fieldDecoration(
+                                    'Select number of credits...'),
                                 validator: (v) {
                                   if (!_offerCredits) return null;
-                                  if (v == null) return 'Select the number of credits';
+                                  if (v == null)
+                                    return 'Select the number of credits';
                                   return null;
                                 },
                               ),
@@ -360,12 +408,16 @@ class _NewPatientInfoPageState extends State<NewPatientInfoPage> {
                               SizedBox(
                                 width: double.infinity,
                                 child: ElevatedButton(
-                                  onPressed: _isSubmitting ? null : _handleSubmit,
+                                  onPressed:
+                                      _isSubmitting ? null : _handleSubmit,
                                   style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 16),
                                     backgroundColor: const Color(0xFF3B6CC3),
                                     foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(22)),
                                     shadowColor: const Color(0x4D3B6CC3),
                                     elevation: 4,
                                   ),
@@ -373,9 +425,13 @@ class _NewPatientInfoPageState extends State<NewPatientInfoPage> {
                                       ? const SizedBox(
                                           height: 22,
                                           width: 22,
-                                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                          child: CircularProgressIndicator(
+                                              color: Colors.white,
+                                              strokeWidth: 2),
                                         )
-                                      : const Text('Submit Invite', style: TextStyle(fontWeight: FontWeight.w700)),
+                                      : const Text('Submit Invite',
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.w700)),
                                 ),
                               ),
                             ],

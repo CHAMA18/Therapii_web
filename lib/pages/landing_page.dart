@@ -7,6 +7,7 @@ import 'package:therapii/auth/firebase_auth_manager.dart';
 import 'package:therapii/models/user.dart' as app_user;
 import 'package:therapii/pages/journal_admin_studio_page.dart';
 import 'package:therapii/pages/journal_portal_page.dart';
+import 'package:therapii/services/app_page_state_service.dart';
 import 'package:therapii/services/user_service.dart';
 import 'package:therapii/utils/admin_access.dart';
 
@@ -30,7 +31,8 @@ class LandingPage extends StatefulWidget {
   State<LandingPage> createState() => _LandingPageState();
 }
 
-class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin {
+class _LandingPageState extends State<LandingPage>
+    with TickerProviderStateMixin {
   late AnimationController _shimmerController;
   late AnimationController _floatController;
   late AnimationController _glowController;
@@ -40,7 +42,8 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
   final _kickerController = TextEditingController(text: 'The Future of');
   final _titleController = TextEditingController(text: 'Emotional Care');
   final _subtitleController = TextEditingController(
-    text: 'An immersive AI companion designed to extend the therapeutic relationship beyond the session.',
+    text:
+        'An immersive AI companion designed to extend the therapeutic relationship beyond the session.',
   );
   final _ctaPrimaryController = TextEditingController(text: 'Begin Experience');
   final _ctaSecondaryController = TextEditingController(text: 'Sign In');
@@ -52,36 +55,51 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
   );
   final _supportStatusController = TextEditingController(text: 'AI ACTIVE NOW');
   final _supportDescriptionController = TextEditingController(
-    text: 'Your personalized AI support system, floating in the space between sessions. Available on iOS and Android.',
+    text:
+        'Your personalized AI support system, floating in the space between sessions. Available on iOS and Android.',
   );
-  final _supportTitlePrefixController = TextEditingController(text: 'Support in\nthe ');
+  final _supportTitlePrefixController =
+      TextEditingController(text: 'Support in\nthe ');
   final _supportTitleHighlightController = TextEditingController(text: 'Void.');
   final _downloadIosController = TextEditingController(text: 'Download iOS');
   final _downloadAndroidController = TextEditingController(text: 'Android');
-  final _adaptiveLabelController = TextEditingController(text: 'INTELLIGENCE LEVELS');
-  final _adaptiveTitleController = TextEditingController(text: 'Adaptive Consciousness');
-  final _feature1TitleController = TextEditingController(text: 'Foundational Care');
+  final _adaptiveLabelController =
+      TextEditingController(text: 'INTELLIGENCE LEVELS');
+  final _adaptiveTitleController =
+      TextEditingController(text: 'Adaptive Consciousness');
+  final _feature1TitleController =
+      TextEditingController(text: 'Foundational Care');
   final _feature1DescController = TextEditingController(
-    text: 'Immediate support trained on global therapeutic modalities. Always present, always aware.',
+    text:
+        'Immediate support trained on global therapeutic modalities. Always present, always aware.',
   );
-  final _feature2TitleController = TextEditingController(text: 'Therapist Mirroring');
+  final _feature2TitleController =
+      TextEditingController(text: 'Therapist Mirroring');
   final _feature2DescController = TextEditingController(
-    text: 'The AI studies your therapist\'s voice, engagement style, and specialization to create a seamless extension of care.',
+    text:
+        'The AI studies your therapist\'s voice, engagement style, and specialization to create a seamless extension of care.',
   );
-  final _feature3TitleController = TextEditingController(text: 'Deep Resonance');
+  final _feature3TitleController =
+      TextEditingController(text: 'Deep Resonance');
   final _feature3DescController = TextEditingController(
-    text: 'Hyper-personalized engagement based on long-term patient history, evolving needs, and subtle emotional cues.',
+    text:
+        'Hyper-personalized engagement based on long-term patient history, evolving needs, and subtle emotional cues.',
   );
   final _premiumBadgeController = TextEditingController(text: 'EXCLUSIVE BETA');
-  final _premiumTitleController = TextEditingController(text: 'Therapii Premium');
+  final _premiumTitleController =
+      TextEditingController(text: 'Therapii Premium');
   final _premiumSubtitleController = TextEditingController(
-    text: 'Unrestricted access to the world\'s most advanced emotional intelligence engine.',
+    text:
+        'Unrestricted access to the world\'s most advanced emotional intelligence engine.',
   );
   final _premiumPriceController = TextEditingController(text: '\$150');
   final _premiumPeriodController = TextEditingController(text: '/ month');
-  final _premiumFeature1Controller = TextEditingController(text: '24/7 Deep Learning Analysis');
-  final _premiumFeature2Controller = TextEditingController(text: 'Therapist Dashboard Integration');
-  final _premiumFeature3Controller = TextEditingController(text: 'Unlimited Voice & Text Interaction');
+  final _premiumFeature1Controller =
+      TextEditingController(text: '24/7 Deep Learning Analysis');
+  final _premiumFeature2Controller =
+      TextEditingController(text: 'Therapist Dashboard Integration');
+  final _premiumFeature3Controller =
+      TextEditingController(text: 'Unlimited Voice & Text Interaction');
   final _premiumCtaController = TextEditingController(text: 'Request Access');
   final _footerBrandController = TextEditingController(text: 'Therapii');
   final _footerLocationsController = TextEditingController(
@@ -89,14 +107,19 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
   );
   final _footerLink1Controller = TextEditingController(text: 'Instagram');
   final _footerLink2Controller = TextEditingController(text: 'Twitter');
-  final _footerCopyrightController = TextEditingController(text: '© 2025 Therapii Inc.');
+  final _footerCopyrightController =
+      TextEditingController(text: '© 2025 Therapii Inc.');
   final _message1Controller = TextEditingController(
-    text: 'Sarah, take a deep breath. Based on your heart rate, you seem elevated.',
+    text:
+        'Sarah, take a deep breath. Based on your heart rate, you seem elevated.',
   );
-  final _message2Controller = TextEditingController(text: 'I\'m anxious about the presentation.');
-  final _message3Controller =
-      TextEditingController(text: 'Let\'s visualize the outcome together. What is the best case scenario?');
-  final _messagePlaceholderController = TextEditingController(text: 'Type a message...');
+  final _message2Controller =
+      TextEditingController(text: 'I\'m anxious about the presentation.');
+  final _message3Controller = TextEditingController(
+      text:
+          'Let\'s visualize the outcome together. What is the best case scenario?');
+  final _messagePlaceholderController =
+      TextEditingController(text: 'Type a message...');
 
   bool _loadingCopy = true;
   bool _savingCopy = false;
@@ -224,132 +247,177 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
   Future<void> _loadLandingCopy() async {
     setState(() => _loadingCopy = true);
     try {
-      final doc = await _firestore.collection('admin_settings').doc('landing_content').get();
+      final doc = await _firestore
+          .collection('admin_settings')
+          .doc('landing_content')
+          .get();
       final data = doc.data();
       if (data != null) {
-        _kickerController.text = (data['hero_kicker'] as String?)?.trim().isNotEmpty == true
-            ? data['hero_kicker']
-            : _kickerController.text;
-        _titleController.text = (data['hero_title'] as String?)?.trim().isNotEmpty == true
-            ? data['hero_title']
-            : _titleController.text;
-        _subtitleController.text = (data['hero_subtitle'] as String?)?.trim().isNotEmpty == true
-            ? data['hero_subtitle']
-            : _subtitleController.text;
-        _ctaPrimaryController.text = (data['cta_primary'] as String?)?.trim().isNotEmpty == true
-            ? data['cta_primary']
-            : _ctaPrimaryController.text;
-        _ctaSecondaryController.text = (data['cta_secondary'] as String?)?.trim().isNotEmpty == true
-            ? data['cta_secondary']
-            : _ctaSecondaryController.text;
-        _nav1Controller.text = (data['nav_1'] as String?)?.trim().isNotEmpty == true
-            ? data['nav_1']
-            : _nav1Controller.text;
-        _nav2Controller.text = (data['nav_2'] as String?)?.trim().isNotEmpty == true
-            ? data['nav_2']
-            : _nav2Controller.text;
-        _nav3Controller.text = (data['nav_3'] as String?)?.trim().isNotEmpty == true
-            ? data['nav_3']
-            : _nav3Controller.text;
-        _supportQuoteController.text = (data['support_quote'] as String?)?.trim().isNotEmpty == true
-            ? data['support_quote']
-            : _supportQuoteController.text;
-        _supportStatusController.text = (data['support_status'] as String?)?.trim().isNotEmpty == true
-            ? data['support_status']
-            : _supportStatusController.text;
-        _supportDescriptionController.text = (data['support_description'] as String?)?.trim().isNotEmpty == true
-            ? data['support_description']
-            : _supportDescriptionController.text;
-        _supportTitlePrefixController.text = (data['support_title_prefix'] as String?)?.trim().isNotEmpty == true
-            ? data['support_title_prefix']
-            : _supportTitlePrefixController.text;
-        _supportTitleHighlightController.text = (data['support_title_highlight'] as String?)?.trim().isNotEmpty == true
-            ? data['support_title_highlight']
-            : _supportTitleHighlightController.text;
-        _downloadIosController.text = (data['download_ios'] as String?)?.trim().isNotEmpty == true
-            ? data['download_ios']
-            : _downloadIosController.text;
-        _downloadAndroidController.text = (data['download_android'] as String?)?.trim().isNotEmpty == true
-            ? data['download_android']
-            : _downloadAndroidController.text;
-        _adaptiveLabelController.text = (data['adaptive_label'] as String?)?.trim().isNotEmpty == true
-            ? data['adaptive_label']
-            : _adaptiveLabelController.text;
-        _adaptiveTitleController.text = (data['adaptive_title'] as String?)?.trim().isNotEmpty == true
-            ? data['adaptive_title']
-            : _adaptiveTitleController.text;
-        _feature1TitleController.text = (data['feature1_title'] as String?)?.trim().isNotEmpty == true
-            ? data['feature1_title']
-            : _feature1TitleController.text;
-        _feature1DescController.text = (data['feature1_desc'] as String?)?.trim().isNotEmpty == true
-            ? data['feature1_desc']
-            : _feature1DescController.text;
-        _feature2TitleController.text = (data['feature2_title'] as String?)?.trim().isNotEmpty == true
-            ? data['feature2_title']
-            : _feature2TitleController.text;
-        _feature2DescController.text = (data['feature2_desc'] as String?)?.trim().isNotEmpty == true
-            ? data['feature2_desc']
-            : _feature2DescController.text;
-        _feature3TitleController.text = (data['feature3_title'] as String?)?.trim().isNotEmpty == true
-            ? data['feature3_title']
-            : _feature3TitleController.text;
-        _feature3DescController.text = (data['feature3_desc'] as String?)?.trim().isNotEmpty == true
-            ? data['feature3_desc']
-            : _feature3DescController.text;
-        _premiumBadgeController.text = (data['premium_badge'] as String?)?.trim().isNotEmpty == true
-            ? data['premium_badge']
-            : _premiumBadgeController.text;
-        _premiumTitleController.text = (data['premium_title'] as String?)?.trim().isNotEmpty == true
-            ? data['premium_title']
-            : _premiumTitleController.text;
-        _premiumSubtitleController.text = (data['premium_subtitle'] as String?)?.trim().isNotEmpty == true
-            ? data['premium_subtitle']
-            : _premiumSubtitleController.text;
-        _premiumPriceController.text = (data['premium_price'] as String?)?.trim().isNotEmpty == true
-            ? data['premium_price']
-            : _premiumPriceController.text;
-        _premiumPeriodController.text = (data['premium_period'] as String?)?.trim().isNotEmpty == true
-            ? data['premium_period']
-            : _premiumPeriodController.text;
-        _premiumFeature1Controller.text = (data['premium_feature1'] as String?)?.trim().isNotEmpty == true
-            ? data['premium_feature1']
-            : _premiumFeature1Controller.text;
-        _premiumFeature2Controller.text = (data['premium_feature2'] as String?)?.trim().isNotEmpty == true
-            ? data['premium_feature2']
-            : _premiumFeature2Controller.text;
-        _premiumFeature3Controller.text = (data['premium_feature3'] as String?)?.trim().isNotEmpty == true
-            ? data['premium_feature3']
-            : _premiumFeature3Controller.text;
-        _premiumCtaController.text = (data['premium_cta'] as String?)?.trim().isNotEmpty == true
-            ? data['premium_cta']
-            : _premiumCtaController.text;
-        _footerBrandController.text = (data['footer_brand'] as String?)?.trim().isNotEmpty == true
-            ? data['footer_brand']
-            : _footerBrandController.text;
-        _footerLocationsController.text = (data['footer_locations'] as String?)?.trim().isNotEmpty == true
-            ? data['footer_locations']
-            : _footerLocationsController.text;
-        _footerLink1Controller.text = (data['footer_link1'] as String?)?.trim().isNotEmpty == true
-            ? data['footer_link1']
-            : _footerLink1Controller.text;
-        _footerLink2Controller.text = (data['footer_link2'] as String?)?.trim().isNotEmpty == true
-            ? data['footer_link2']
-            : _footerLink2Controller.text;
-        _footerCopyrightController.text = (data['footer_copyright'] as String?)?.trim().isNotEmpty == true
-            ? data['footer_copyright']
-            : _footerCopyrightController.text;
-        _message1Controller.text = (data['message1'] as String?)?.trim().isNotEmpty == true
-            ? data['message1']
-            : _message1Controller.text;
-        _message2Controller.text = (data['message2'] as String?)?.trim().isNotEmpty == true
-            ? data['message2']
-            : _message2Controller.text;
-        _message3Controller.text = (data['message3'] as String?)?.trim().isNotEmpty == true
-            ? data['message3']
-            : _message3Controller.text;
-        _messagePlaceholderController.text = (data['message_placeholder'] as String?)?.trim().isNotEmpty == true
-            ? data['message_placeholder']
-            : _messagePlaceholderController.text;
+        _kickerController.text =
+            (data['hero_kicker'] as String?)?.trim().isNotEmpty == true
+                ? data['hero_kicker']
+                : _kickerController.text;
+        _titleController.text =
+            (data['hero_title'] as String?)?.trim().isNotEmpty == true
+                ? data['hero_title']
+                : _titleController.text;
+        _subtitleController.text =
+            (data['hero_subtitle'] as String?)?.trim().isNotEmpty == true
+                ? data['hero_subtitle']
+                : _subtitleController.text;
+        _ctaPrimaryController.text =
+            (data['cta_primary'] as String?)?.trim().isNotEmpty == true
+                ? data['cta_primary']
+                : _ctaPrimaryController.text;
+        _ctaSecondaryController.text =
+            (data['cta_secondary'] as String?)?.trim().isNotEmpty == true
+                ? data['cta_secondary']
+                : _ctaSecondaryController.text;
+        _nav1Controller.text =
+            (data['nav_1'] as String?)?.trim().isNotEmpty == true
+                ? data['nav_1']
+                : _nav1Controller.text;
+        _nav2Controller.text =
+            (data['nav_2'] as String?)?.trim().isNotEmpty == true
+                ? data['nav_2']
+                : _nav2Controller.text;
+        _nav3Controller.text =
+            (data['nav_3'] as String?)?.trim().isNotEmpty == true
+                ? data['nav_3']
+                : _nav3Controller.text;
+        _supportQuoteController.text =
+            (data['support_quote'] as String?)?.trim().isNotEmpty == true
+                ? data['support_quote']
+                : _supportQuoteController.text;
+        _supportStatusController.text =
+            (data['support_status'] as String?)?.trim().isNotEmpty == true
+                ? data['support_status']
+                : _supportStatusController.text;
+        _supportDescriptionController.text =
+            (data['support_description'] as String?)?.trim().isNotEmpty == true
+                ? data['support_description']
+                : _supportDescriptionController.text;
+        _supportTitlePrefixController.text =
+            (data['support_title_prefix'] as String?)?.trim().isNotEmpty == true
+                ? data['support_title_prefix']
+                : _supportTitlePrefixController.text;
+        _supportTitleHighlightController.text =
+            (data['support_title_highlight'] as String?)?.trim().isNotEmpty ==
+                    true
+                ? data['support_title_highlight']
+                : _supportTitleHighlightController.text;
+        _downloadIosController.text =
+            (data['download_ios'] as String?)?.trim().isNotEmpty == true
+                ? data['download_ios']
+                : _downloadIosController.text;
+        _downloadAndroidController.text =
+            (data['download_android'] as String?)?.trim().isNotEmpty == true
+                ? data['download_android']
+                : _downloadAndroidController.text;
+        _adaptiveLabelController.text =
+            (data['adaptive_label'] as String?)?.trim().isNotEmpty == true
+                ? data['adaptive_label']
+                : _adaptiveLabelController.text;
+        _adaptiveTitleController.text =
+            (data['adaptive_title'] as String?)?.trim().isNotEmpty == true
+                ? data['adaptive_title']
+                : _adaptiveTitleController.text;
+        _feature1TitleController.text =
+            (data['feature1_title'] as String?)?.trim().isNotEmpty == true
+                ? data['feature1_title']
+                : _feature1TitleController.text;
+        _feature1DescController.text =
+            (data['feature1_desc'] as String?)?.trim().isNotEmpty == true
+                ? data['feature1_desc']
+                : _feature1DescController.text;
+        _feature2TitleController.text =
+            (data['feature2_title'] as String?)?.trim().isNotEmpty == true
+                ? data['feature2_title']
+                : _feature2TitleController.text;
+        _feature2DescController.text =
+            (data['feature2_desc'] as String?)?.trim().isNotEmpty == true
+                ? data['feature2_desc']
+                : _feature2DescController.text;
+        _feature3TitleController.text =
+            (data['feature3_title'] as String?)?.trim().isNotEmpty == true
+                ? data['feature3_title']
+                : _feature3TitleController.text;
+        _feature3DescController.text =
+            (data['feature3_desc'] as String?)?.trim().isNotEmpty == true
+                ? data['feature3_desc']
+                : _feature3DescController.text;
+        _premiumBadgeController.text =
+            (data['premium_badge'] as String?)?.trim().isNotEmpty == true
+                ? data['premium_badge']
+                : _premiumBadgeController.text;
+        _premiumTitleController.text =
+            (data['premium_title'] as String?)?.trim().isNotEmpty == true
+                ? data['premium_title']
+                : _premiumTitleController.text;
+        _premiumSubtitleController.text =
+            (data['premium_subtitle'] as String?)?.trim().isNotEmpty == true
+                ? data['premium_subtitle']
+                : _premiumSubtitleController.text;
+        _premiumPriceController.text =
+            (data['premium_price'] as String?)?.trim().isNotEmpty == true
+                ? data['premium_price']
+                : _premiumPriceController.text;
+        _premiumPeriodController.text =
+            (data['premium_period'] as String?)?.trim().isNotEmpty == true
+                ? data['premium_period']
+                : _premiumPeriodController.text;
+        _premiumFeature1Controller.text =
+            (data['premium_feature1'] as String?)?.trim().isNotEmpty == true
+                ? data['premium_feature1']
+                : _premiumFeature1Controller.text;
+        _premiumFeature2Controller.text =
+            (data['premium_feature2'] as String?)?.trim().isNotEmpty == true
+                ? data['premium_feature2']
+                : _premiumFeature2Controller.text;
+        _premiumFeature3Controller.text =
+            (data['premium_feature3'] as String?)?.trim().isNotEmpty == true
+                ? data['premium_feature3']
+                : _premiumFeature3Controller.text;
+        _premiumCtaController.text =
+            (data['premium_cta'] as String?)?.trim().isNotEmpty == true
+                ? data['premium_cta']
+                : _premiumCtaController.text;
+        _footerBrandController.text =
+            (data['footer_brand'] as String?)?.trim().isNotEmpty == true
+                ? data['footer_brand']
+                : _footerBrandController.text;
+        _footerLocationsController.text =
+            (data['footer_locations'] as String?)?.trim().isNotEmpty == true
+                ? data['footer_locations']
+                : _footerLocationsController.text;
+        _footerLink1Controller.text =
+            (data['footer_link1'] as String?)?.trim().isNotEmpty == true
+                ? data['footer_link1']
+                : _footerLink1Controller.text;
+        _footerLink2Controller.text =
+            (data['footer_link2'] as String?)?.trim().isNotEmpty == true
+                ? data['footer_link2']
+                : _footerLink2Controller.text;
+        _footerCopyrightController.text =
+            (data['footer_copyright'] as String?)?.trim().isNotEmpty == true
+                ? data['footer_copyright']
+                : _footerCopyrightController.text;
+        _message1Controller.text =
+            (data['message1'] as String?)?.trim().isNotEmpty == true
+                ? data['message1']
+                : _message1Controller.text;
+        _message2Controller.text =
+            (data['message2'] as String?)?.trim().isNotEmpty == true
+                ? data['message2']
+                : _message2Controller.text;
+        _message3Controller.text =
+            (data['message3'] as String?)?.trim().isNotEmpty == true
+                ? data['message3']
+                : _message3Controller.text;
+        _messagePlaceholderController.text =
+            (data['message_placeholder'] as String?)?.trim().isNotEmpty == true
+                ? data['message_placeholder']
+                : _messagePlaceholderController.text;
         _updatedBy = data['updated_by'] as String?;
         final ts = data['updated_at'] as Timestamp?;
         _updatedAt = ts?.toDate();
@@ -505,13 +573,15 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
     final email = FirebaseAuthManager().currentUser?.email;
     if (!AdminAccess.isAdminEmail(email)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Admin sign-in required to save landing content.')),
+        const SnackBar(
+            content: Text('Admin sign-in required to save landing content.')),
       );
     }
     setState(() => _editMode = true);
   }
 
-  Future<void> _openEditDialog(String label, TextEditingController controller, {bool multiline = false}) async {
+  Future<void> _openEditDialog(String label, TextEditingController controller,
+      {bool multiline = false}) async {
     final temp = TextEditingController(text: controller.text);
     await showDialog(
       context: context,
@@ -551,7 +621,9 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
 
   void _navigateToAuth() {
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (context) => const AuthWelcomePage(initialTab: AuthTab.login)),
+      MaterialPageRoute(
+          builder: (context) =>
+              const AuthWelcomePage(initialTab: AuthTab.login)),
     );
   }
 
@@ -584,17 +656,21 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
         return;
       }
 
-      final destination = _buildPortalDestination(authUser: authUser, profile: profile);
+      final destination =
+          _buildPortalDestination(authUser: authUser, profile: profile);
       if (destination == null) {
         _navigateToJournalAuth();
         return;
       }
 
-      Navigator.of(context).push(MaterialPageRoute(builder: (_) => destination));
+      Navigator.of(context)
+          .push(MaterialPageRoute(builder: (_) => destination));
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to open Journal portal right now. Please try again.')),
+        const SnackBar(
+            content: Text(
+                'Unable to open Journal portal right now. Please try again.')),
       );
     }
   }
@@ -621,198 +697,251 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
     final nav2 = _nav2Controller.text;
     final nav3 = _nav3Controller.text;
 
-    return Scaffold(
-      backgroundColor: LandingColors.dark,
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            child: Column(
-              children: [
-                _HeroSection(
-                  shimmerController: _shimmerController,
-                  floatController: _floatController,
-                  onSignIn: _navigateToAuth,
-                  onBeginExperience: _navigateToAuth,
-                  kicker: kicker,
-                  title: title,
-                  subtitle: subtitle,
-                  ctaPrimary: ctaPrimary,
-                  ctaSecondary: ctaSecondary,
-                  editMode: _editMode,
-                  onEditKicker: () => _openEditDialog('Kicker', _kickerController),
-                  onEditTitle: () => _openEditDialog('Title', _titleController),
-                  onEditSubtitle: () => _openEditDialog('Subtitle', _subtitleController, multiline: true),
-                  onEditPrimaryCta: () => _openEditDialog('Primary CTA', _ctaPrimaryController),
-                  onEditSecondaryCta: () => _openEditDialog('Secondary CTA', _ctaSecondaryController),
-                  floatingQuote: _supportQuoteController.text,
-                  floatingStatus: _supportStatusController.text,
-                  onEditFloatingQuote: () => _openEditDialog('Floating Quote', _supportQuoteController, multiline: true),
-                  onEditFloatingStatus: () => _openEditDialog('Floating Status', _supportStatusController),
-                ),
-                _AdaptiveConsciousnessSection(
-                  label: _adaptiveLabelController.text,
-                  title: _adaptiveTitleController.text,
-                  feature1Title: _feature1TitleController.text,
-                  feature1Desc: _feature1DescController.text,
-                  feature2Title: _feature2TitleController.text,
-                  feature2Desc: _feature2DescController.text,
-                  feature3Title: _feature3TitleController.text,
-                  feature3Desc: _feature3DescController.text,
-                  editMode: _editMode,
-                  onEditLabel: () => _openEditDialog('Adaptive Label', _adaptiveLabelController),
-                  onEditTitle: () => _openEditDialog('Adaptive Title', _adaptiveTitleController),
-                  onEditFeature1Title: () => _openEditDialog('Feature I Title', _feature1TitleController),
-                  onEditFeature1Desc: () => _openEditDialog('Feature I Description', _feature1DescController, multiline: true),
-                  onEditFeature2Title: () => _openEditDialog('Feature II Title', _feature2TitleController),
-                  onEditFeature2Desc: () => _openEditDialog('Feature II Description', _feature2DescController, multiline: true),
-                  onEditFeature3Title: () => _openEditDialog('Feature III Title', _feature3TitleController),
-                  onEditFeature3Desc: () => _openEditDialog('Feature III Description', _feature3DescController, multiline: true),
-                ),
-                _SupportInTheVoidSection(
-                  floatController: _floatController,
-                  glowController: _glowController,
-                  titlePrefix: _supportTitlePrefixController.text,
-                  titleHighlight: _supportTitleHighlightController.text,
-                  quote: _supportQuoteController.text,
-                  status: _supportStatusController.text,
-                  description: _supportDescriptionController.text,
-                  editMode: _editMode,
-                  onEditQuote: () => _openEditDialog('Support Quote', _supportQuoteController, multiline: true),
-                  onEditStatus: () => _openEditDialog('Support Status', _supportStatusController),
-                  onEditDescription: () =>
-                      _openEditDialog('Support Description', _supportDescriptionController, multiline: true),
-                  onEditTitlePrefix: () =>
-                      _openEditDialog('Support Title Prefix', _supportTitlePrefixController, multiline: true),
-                  onEditTitleHighlight: () =>
-                      _openEditDialog('Support Title Highlight', _supportTitleHighlightController),
-                  onEditDownloadIos: () => _openEditDialog('Download iOS', _downloadIosController),
-                  onEditDownloadAndroid: () => _openEditDialog('Download Android', _downloadAndroidController),
-                  downloadIos: _downloadIosController.text,
-                  downloadAndroid: _downloadAndroidController.text,
-                  message1: _message1Controller.text,
-                  message2: _message2Controller.text,
-                  message3: _message3Controller.text,
-                  messagePlaceholder: _messagePlaceholderController.text,
-                  onEditMessage1: () => _openEditDialog('Message 1', _message1Controller, multiline: true),
-                  onEditMessage2: () => _openEditDialog('Message 2', _message2Controller, multiline: true),
-                  onEditMessage3: () => _openEditDialog('Message 3', _message3Controller, multiline: true),
-                  onEditMessagePlaceholder: () =>
-                      _openEditDialog('Message Placeholder', _messagePlaceholderController),
-                ),
-                _PremiumSection(
-                  onRequestAccess: _navigateToAuth,
-                  badge: _premiumBadgeController.text,
-                  title: _premiumTitleController.text,
-                  subtitle: _premiumSubtitleController.text,
-                  price: _premiumPriceController.text,
-                  period: _premiumPeriodController.text,
-                  features: [
-                    _premiumFeature1Controller.text,
-                    _premiumFeature2Controller.text,
-                    _premiumFeature3Controller.text,
-                  ],
-                  cta: _premiumCtaController.text,
-                  editMode: _editMode,
-                  onEditBadge: () => _openEditDialog('Premium Badge', _premiumBadgeController),
-                  onEditTitle: () => _openEditDialog('Premium Title', _premiumTitleController),
-                  onEditSubtitle: () => _openEditDialog('Premium Subtitle', _premiumSubtitleController, multiline: true),
-                  onEditPrice: () => _openEditDialog('Premium Price', _premiumPriceController),
-                  onEditPeriod: () => _openEditDialog('Premium Period', _premiumPeriodController),
-                  onEditFeature1: () => _openEditDialog('Premium Feature 1', _premiumFeature1Controller),
-                  onEditFeature2: () => _openEditDialog('Premium Feature 2', _premiumFeature2Controller),
-                  onEditFeature3: () => _openEditDialog('Premium Feature 3', _premiumFeature3Controller),
-                  onEditCta: () => _openEditDialog('Premium CTA', _premiumCtaController),
-                ),
-                _FooterSection(
-                  brand: _footerBrandController.text,
-                  locations: _footerLocationsController.text,
-                  link1: _footerLink1Controller.text,
-                  link2: _footerLink2Controller.text,
-                  copyright: _footerCopyrightController.text,
-                  editMode: _editMode,
-                  onEditBrand: () => _openEditDialog('Footer Brand', _footerBrandController),
-                  onEditLocations: () => _openEditDialog('Footer Locations', _footerLocationsController, multiline: true),
-                  onEditLink1: () => _openEditDialog('Footer Link 1', _footerLink1Controller),
-                  onEditLink2: () => _openEditDialog('Footer Link 2', _footerLink2Controller),
-                  onEditCopyright: () =>
-                      _openEditDialog('Footer Copyright', _footerCopyrightController),
-                ),
-              ],
+    return RememberAppPage(
+      pageId: AppPageId.landing,
+      child: Scaffold(
+        backgroundColor: LandingColors.dark,
+        body: Stack(
+          children: [
+            SingleChildScrollView(
+              child: Column(
+                children: [
+                  _HeroSection(
+                    shimmerController: _shimmerController,
+                    floatController: _floatController,
+                    onSignIn: _navigateToAuth,
+                    onBeginExperience: _navigateToAuth,
+                    kicker: kicker,
+                    title: title,
+                    subtitle: subtitle,
+                    ctaPrimary: ctaPrimary,
+                    ctaSecondary: ctaSecondary,
+                    editMode: _editMode,
+                    onEditKicker: () =>
+                        _openEditDialog('Kicker', _kickerController),
+                    onEditTitle: () =>
+                        _openEditDialog('Title', _titleController),
+                    onEditSubtitle: () => _openEditDialog(
+                        'Subtitle', _subtitleController,
+                        multiline: true),
+                    onEditPrimaryCta: () =>
+                        _openEditDialog('Primary CTA', _ctaPrimaryController),
+                    onEditSecondaryCta: () => _openEditDialog(
+                        'Secondary CTA', _ctaSecondaryController),
+                    floatingQuote: _supportQuoteController.text,
+                    floatingStatus: _supportStatusController.text,
+                    onEditFloatingQuote: () => _openEditDialog(
+                        'Floating Quote', _supportQuoteController,
+                        multiline: true),
+                    onEditFloatingStatus: () => _openEditDialog(
+                        'Floating Status', _supportStatusController),
+                  ),
+                  _AdaptiveConsciousnessSection(
+                    label: _adaptiveLabelController.text,
+                    title: _adaptiveTitleController.text,
+                    feature1Title: _feature1TitleController.text,
+                    feature1Desc: _feature1DescController.text,
+                    feature2Title: _feature2TitleController.text,
+                    feature2Desc: _feature2DescController.text,
+                    feature3Title: _feature3TitleController.text,
+                    feature3Desc: _feature3DescController.text,
+                    editMode: _editMode,
+                    onEditLabel: () => _openEditDialog(
+                        'Adaptive Label', _adaptiveLabelController),
+                    onEditTitle: () => _openEditDialog(
+                        'Adaptive Title', _adaptiveTitleController),
+                    onEditFeature1Title: () => _openEditDialog(
+                        'Feature I Title', _feature1TitleController),
+                    onEditFeature1Desc: () => _openEditDialog(
+                        'Feature I Description', _feature1DescController,
+                        multiline: true),
+                    onEditFeature2Title: () => _openEditDialog(
+                        'Feature II Title', _feature2TitleController),
+                    onEditFeature2Desc: () => _openEditDialog(
+                        'Feature II Description', _feature2DescController,
+                        multiline: true),
+                    onEditFeature3Title: () => _openEditDialog(
+                        'Feature III Title', _feature3TitleController),
+                    onEditFeature3Desc: () => _openEditDialog(
+                        'Feature III Description', _feature3DescController,
+                        multiline: true),
+                  ),
+                  _SupportInTheVoidSection(
+                    floatController: _floatController,
+                    glowController: _glowController,
+                    titlePrefix: _supportTitlePrefixController.text,
+                    titleHighlight: _supportTitleHighlightController.text,
+                    quote: _supportQuoteController.text,
+                    status: _supportStatusController.text,
+                    description: _supportDescriptionController.text,
+                    editMode: _editMode,
+                    onEditQuote: () => _openEditDialog(
+                        'Support Quote', _supportQuoteController,
+                        multiline: true),
+                    onEditStatus: () => _openEditDialog(
+                        'Support Status', _supportStatusController),
+                    onEditDescription: () => _openEditDialog(
+                        'Support Description', _supportDescriptionController,
+                        multiline: true),
+                    onEditTitlePrefix: () => _openEditDialog(
+                        'Support Title Prefix', _supportTitlePrefixController,
+                        multiline: true),
+                    onEditTitleHighlight: () => _openEditDialog(
+                        'Support Title Highlight',
+                        _supportTitleHighlightController),
+                    onEditDownloadIos: () =>
+                        _openEditDialog('Download iOS', _downloadIosController),
+                    onEditDownloadAndroid: () => _openEditDialog(
+                        'Download Android', _downloadAndroidController),
+                    downloadIos: _downloadIosController.text,
+                    downloadAndroid: _downloadAndroidController.text,
+                    message1: _message1Controller.text,
+                    message2: _message2Controller.text,
+                    message3: _message3Controller.text,
+                    messagePlaceholder: _messagePlaceholderController.text,
+                    onEditMessage1: () => _openEditDialog(
+                        'Message 1', _message1Controller,
+                        multiline: true),
+                    onEditMessage2: () => _openEditDialog(
+                        'Message 2', _message2Controller,
+                        multiline: true),
+                    onEditMessage3: () => _openEditDialog(
+                        'Message 3', _message3Controller,
+                        multiline: true),
+                    onEditMessagePlaceholder: () => _openEditDialog(
+                        'Message Placeholder', _messagePlaceholderController),
+                  ),
+                  _PremiumSection(
+                    onRequestAccess: _navigateToAuth,
+                    badge: _premiumBadgeController.text,
+                    title: _premiumTitleController.text,
+                    subtitle: _premiumSubtitleController.text,
+                    price: _premiumPriceController.text,
+                    period: _premiumPeriodController.text,
+                    features: [
+                      _premiumFeature1Controller.text,
+                      _premiumFeature2Controller.text,
+                      _premiumFeature3Controller.text,
+                    ],
+                    cta: _premiumCtaController.text,
+                    editMode: _editMode,
+                    onEditBadge: () => _openEditDialog(
+                        'Premium Badge', _premiumBadgeController),
+                    onEditTitle: () => _openEditDialog(
+                        'Premium Title', _premiumTitleController),
+                    onEditSubtitle: () => _openEditDialog(
+                        'Premium Subtitle', _premiumSubtitleController,
+                        multiline: true),
+                    onEditPrice: () => _openEditDialog(
+                        'Premium Price', _premiumPriceController),
+                    onEditPeriod: () => _openEditDialog(
+                        'Premium Period', _premiumPeriodController),
+                    onEditFeature1: () => _openEditDialog(
+                        'Premium Feature 1', _premiumFeature1Controller),
+                    onEditFeature2: () => _openEditDialog(
+                        'Premium Feature 2', _premiumFeature2Controller),
+                    onEditFeature3: () => _openEditDialog(
+                        'Premium Feature 3', _premiumFeature3Controller),
+                    onEditCta: () =>
+                        _openEditDialog('Premium CTA', _premiumCtaController),
+                  ),
+                  _FooterSection(
+                    brand: _footerBrandController.text,
+                    locations: _footerLocationsController.text,
+                    link1: _footerLink1Controller.text,
+                    link2: _footerLink2Controller.text,
+                    copyright: _footerCopyrightController.text,
+                    editMode: _editMode,
+                    onEditBrand: () =>
+                        _openEditDialog('Footer Brand', _footerBrandController),
+                    onEditLocations: () => _openEditDialog(
+                        'Footer Locations', _footerLocationsController,
+                        multiline: true),
+                    onEditLink1: () => _openEditDialog(
+                        'Footer Link 1', _footerLink1Controller),
+                    onEditLink2: () => _openEditDialog(
+                        'Footer Link 2', _footerLink2Controller),
+                    onEditCopyright: () => _openEditDialog(
+                        'Footer Copyright', _footerCopyrightController),
+                  ),
+                ],
+              ),
             ),
-          ),
-          _NavBar(
-            onJournalSignIn: _openJournalPortal,
-            onSignIn: _navigateToAuth,
-            onNav1Tap: _openJournalPortal,
-            onBrandTap: _handleBrandTap,
-            brandText: _footerBrandController.text,
-            nav1: nav1,
-            nav2: nav2,
-            nav3: nav3,
-            signInLabel: ctaSecondary,
-            editMode: _editMode,
-            onEditNav1: () => _openEditDialog('Nav 1', _nav1Controller),
-            onEditNav2: () => _openEditDialog('Nav 2', _nav2Controller),
-            onEditNav3: () => _openEditDialog('Nav 3', _nav3Controller),
-          ),
-          if (_editMode)
-            _EditChip(
-              onDone: () => setState(() => _editMode = false),
-              onReset: _loadLandingCopy,
+            _NavBar(
+              onJournalSignIn: _openJournalPortal,
+              onSignIn: _navigateToAuth,
+              onNav1Tap: _openJournalPortal,
+              onBrandTap: _handleBrandTap,
+              brandText: _footerBrandController.text,
+              nav1: nav1,
+              nav2: nav2,
+              nav3: nav3,
+              signInLabel: ctaSecondary,
+              editMode: _editMode,
+              onEditNav1: () => _openEditDialog('Nav 1', _nav1Controller),
+              onEditNav2: () => _openEditDialog('Nav 2', _nav2Controller),
+              onEditNav3: () => _openEditDialog('Nav 3', _nav3Controller),
             ),
-          if (_editMode || widget.editable)
-            _EditOverlay(
-              loading: _loadingCopy,
-              saving: _savingCopy,
-              kickerController: _kickerController,
-              titleController: _titleController,
-              subtitleController: _subtitleController,
-              ctaPrimaryController: _ctaPrimaryController,
-              ctaSecondaryController: _ctaSecondaryController,
-              nav1Controller: _nav1Controller,
-              nav2Controller: _nav2Controller,
-              nav3Controller: _nav3Controller,
-              supportQuoteController: _supportQuoteController,
-              supportStatusController: _supportStatusController,
-              supportDescriptionController: _supportDescriptionController,
-              supportTitlePrefixController: _supportTitlePrefixController,
-              supportTitleHighlightController: _supportTitleHighlightController,
-              downloadIosController: _downloadIosController,
-              downloadAndroidController: _downloadAndroidController,
-              adaptiveLabelController: _adaptiveLabelController,
-              adaptiveTitleController: _adaptiveTitleController,
-              feature1TitleController: _feature1TitleController,
-              feature1DescController: _feature1DescController,
-              feature2TitleController: _feature2TitleController,
-              feature2DescController: _feature2DescController,
-              feature3TitleController: _feature3TitleController,
-              feature3DescController: _feature3DescController,
-              premiumBadgeController: _premiumBadgeController,
-              premiumTitleController: _premiumTitleController,
-              premiumSubtitleController: _premiumSubtitleController,
-              premiumPriceController: _premiumPriceController,
-              premiumPeriodController: _premiumPeriodController,
-              premiumFeature1Controller: _premiumFeature1Controller,
-              premiumFeature2Controller: _premiumFeature2Controller,
-              premiumFeature3Controller: _premiumFeature3Controller,
-              premiumCtaController: _premiumCtaController,
-              footerBrandController: _footerBrandController,
-              footerLocationsController: _footerLocationsController,
-              footerLink1Controller: _footerLink1Controller,
-              footerLink2Controller: _footerLink2Controller,
-              footerCopyrightController: _footerCopyrightController,
-              message1Controller: _message1Controller,
-              message2Controller: _message2Controller,
-              message3Controller: _message3Controller,
-              messagePlaceholderController: _messagePlaceholderController,
-              onSave: _saveLandingCopy,
-              onReset: _loadLandingCopy,
-              onClose: () => setState(() => _editMode = false),
-              updatedBy: _updatedBy,
-              updatedAt: _updatedAt,
-              showReset: true,
-            ),
-        ],
+            if (_editMode)
+              _EditChip(
+                onDone: () => setState(() => _editMode = false),
+                onReset: _loadLandingCopy,
+              ),
+            if (_editMode || widget.editable)
+              _EditOverlay(
+                loading: _loadingCopy,
+                saving: _savingCopy,
+                kickerController: _kickerController,
+                titleController: _titleController,
+                subtitleController: _subtitleController,
+                ctaPrimaryController: _ctaPrimaryController,
+                ctaSecondaryController: _ctaSecondaryController,
+                nav1Controller: _nav1Controller,
+                nav2Controller: _nav2Controller,
+                nav3Controller: _nav3Controller,
+                supportQuoteController: _supportQuoteController,
+                supportStatusController: _supportStatusController,
+                supportDescriptionController: _supportDescriptionController,
+                supportTitlePrefixController: _supportTitlePrefixController,
+                supportTitleHighlightController:
+                    _supportTitleHighlightController,
+                downloadIosController: _downloadIosController,
+                downloadAndroidController: _downloadAndroidController,
+                adaptiveLabelController: _adaptiveLabelController,
+                adaptiveTitleController: _adaptiveTitleController,
+                feature1TitleController: _feature1TitleController,
+                feature1DescController: _feature1DescController,
+                feature2TitleController: _feature2TitleController,
+                feature2DescController: _feature2DescController,
+                feature3TitleController: _feature3TitleController,
+                feature3DescController: _feature3DescController,
+                premiumBadgeController: _premiumBadgeController,
+                premiumTitleController: _premiumTitleController,
+                premiumSubtitleController: _premiumSubtitleController,
+                premiumPriceController: _premiumPriceController,
+                premiumPeriodController: _premiumPeriodController,
+                premiumFeature1Controller: _premiumFeature1Controller,
+                premiumFeature2Controller: _premiumFeature2Controller,
+                premiumFeature3Controller: _premiumFeature3Controller,
+                premiumCtaController: _premiumCtaController,
+                footerBrandController: _footerBrandController,
+                footerLocationsController: _footerLocationsController,
+                footerLink1Controller: _footerLink1Controller,
+                footerLink2Controller: _footerLink2Controller,
+                footerCopyrightController: _footerCopyrightController,
+                message1Controller: _message1Controller,
+                message2Controller: _message2Controller,
+                message3Controller: _message3Controller,
+                messagePlaceholderController: _messagePlaceholderController,
+                onSave: _saveLandingCopy,
+                onReset: _loadLandingCopy,
+                onClose: () => setState(() => _editMode = false),
+                updatedBy: _updatedBy,
+                updatedAt: _updatedAt,
+                showReset: true,
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -843,7 +972,9 @@ class _EditChip extends StatelessWidget {
             children: [
               const Icon(Icons.edit, color: Colors.white, size: 16),
               const SizedBox(width: 6),
-              const Text('Edit Mode', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+              const Text('Edit Mode',
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.w600)),
               const SizedBox(width: 10),
               TextButton(
                 onPressed: onReset,
@@ -862,6 +993,7 @@ class _EditChip extends StatelessWidget {
     );
   }
 }
+
 class _NavBar extends StatelessWidget {
   final VoidCallback onJournalSignIn;
   final VoidCallback onSignIn;
@@ -916,7 +1048,8 @@ class _NavBar extends StatelessWidget {
                     height: 40,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.2)),
                       color: Colors.white.withValues(alpha: 0.05),
                     ),
                     child: ClipOval(
@@ -948,7 +1081,8 @@ class _NavBar extends StatelessWidget {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white.withOpacity(0.08),
                       foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(horizontal: isWide ? 30 : 18, vertical: 12),
+                      padding: EdgeInsets.symmetric(
+                          horizontal: isWide ? 30 : 18, vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                         side: const BorderSide(color: Colors.white24),
@@ -956,7 +1090,8 @@ class _NavBar extends StatelessWidget {
                     ),
                     child: Text(
                       'Sign In - Journal Portal',
-                      style: GoogleFonts.dmSans(fontSize: 14, fontWeight: FontWeight.w600),
+                      style: GoogleFonts.dmSans(
+                          fontSize: 14, fontWeight: FontWeight.w600),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -965,12 +1100,15 @@ class _NavBar extends StatelessWidget {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       foregroundColor: Colors.black,
-                      padding: EdgeInsets.symmetric(horizontal: isWide ? 32 : 20, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                      padding: EdgeInsets.symmetric(
+                          horizontal: isWide ? 32 : 20, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30)),
                     ),
                     child: Text(
                       signInLabel,
-                      style: GoogleFonts.dmSans(fontSize: 14, fontWeight: FontWeight.w500),
+                      style: GoogleFonts.dmSans(
+                          fontSize: 14, fontWeight: FontWeight.w500),
                     ),
                   ),
                 ],
@@ -987,7 +1125,8 @@ class _NavLink extends StatelessWidget {
   final bool editMode;
   final VoidCallback? onEdit;
   final VoidCallback? onTap;
-  const _NavLink({required this.label, required this.editMode, this.onEdit, this.onTap});
+  const _NavLink(
+      {required this.label, required this.editMode, this.onEdit, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -1088,7 +1227,8 @@ class _HeroSection extends StatelessWidget {
               child: Image.network(
                 'https://lh3.googleusercontent.com/aida-public/AB6AXuD_AyA4AzHap25bGQWLucbmtBG3ukuCBXN7qPIrzM31wNFblW6bVY9bw8vxQA9y3iAnNT4G0cf9EmsesYT9KTEEnJVzDA4o7m-j1KHumoaLAu3dD6ylx0hgMc5PbXjGygq6crdfNw0IffAq9PakzyCP38AW-UF4RA4cXdO7eN5I0eP98QaXxhq7C_83XbQh4HTTlX_1nAgBPaJ-zK46x2qNmooFUG6w5TpuFMqP7BA0NS1LH-Fsc-fIPFbMIeZ3GZStay9hb8b_Q9w',
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(color: LandingColors.dark),
+                errorBuilder: (_, __, ___) =>
+                    Container(color: LandingColors.dark),
               ),
             ),
           ),
@@ -1153,9 +1293,11 @@ class _HeroSection extends StatelessWidget {
                 animation: floatController,
                 builder: (context, child) {
                   final offset = Tween<double>(begin: 0, end: -20)
-                      .animate(CurvedAnimation(parent: floatController, curve: Curves.easeInOut))
+                      .animate(CurvedAnimation(
+                          parent: floatController, curve: Curves.easeInOut))
                       .value;
-                  return Transform.translate(offset: Offset(0, offset), child: child);
+                  return Transform.translate(
+                      offset: Offset(0, offset), child: child);
                 },
                 child: _FloatingMessageCard(
                   quote: floatingQuote,
@@ -1274,7 +1416,9 @@ class _GlassButtonState extends State<_GlassButton> {
           duration: const Duration(milliseconds: 300),
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
           decoration: BoxDecoration(
-            color: _isHovered ? Colors.white.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.05),
+            color: _isHovered
+                ? Colors.white.withValues(alpha: 0.1)
+                : Colors.white.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(30),
             border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
           ),
@@ -1398,7 +1542,8 @@ class _EditOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final panelWidth = (MediaQuery.of(context).size.width - 48).clamp(320.0, 430.0).toDouble();
+    final panelWidth =
+        (MediaQuery.of(context).size.width - 48).clamp(320.0, 430.0).toDouble();
     final stats = _completionStats();
 
     return Positioned(
@@ -1433,13 +1578,17 @@ class _EditOverlay extends StatelessWidget {
                     color: const Color(0xFF1D78FF).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.edit_note_rounded, color: Color(0xFF1D78FF), size: 20),
+                  child: const Icon(Icons.edit_note_rounded,
+                      color: Color(0xFF1D78FF), size: 20),
                 ),
                 const SizedBox(width: 10),
                 const Expanded(
                   child: Text(
                     'Landing Content Studio',
-                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: Color(0xFF111827)),
+                    style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 18,
+                        color: Color(0xFF111827)),
                   ),
                 ),
                 IconButton(
@@ -1460,9 +1609,13 @@ class _EditOverlay extends StatelessWidget {
               spacing: 8,
               runSpacing: 8,
               children: [
-                _statusPill(Icons.check_circle_outline, '${stats.$1}/${stats.$2} fields complete'),
-                _statusPill(Icons.priority_high_rounded, '${stats.$3} required missing', warn: stats.$3 > 0),
-                _statusPill(Icons.auto_awesome_outlined, 'Live preview enabled'),
+                _statusPill(Icons.check_circle_outline,
+                    '${stats.$1}/${stats.$2} fields complete'),
+                _statusPill(
+                    Icons.priority_high_rounded, '${stats.$3} required missing',
+                    warn: stats.$3 > 0),
+                _statusPill(
+                    Icons.auto_awesome_outlined, 'Live preview enabled'),
               ],
             ),
             const SizedBox(height: 10),
@@ -1476,18 +1629,23 @@ class _EditOverlay extends StatelessWidget {
                       title: 'Hero Section',
                       subtitle: 'Above-the-fold headline and primary actions.',
                       children: [
-                        _field('Kicker', kickerController, isRequired: true, recommendedMax: 28),
-                        _field('Title', titleController, isRequired: true, recommendedMax: 34),
+                        _field('Kicker', kickerController,
+                            isRequired: true, recommendedMax: 28),
+                        _field('Title', titleController,
+                            isRequired: true, recommendedMax: 34),
                         _field(
                           'Subtitle',
                           subtitleController,
                           maxLines: 3,
                           isRequired: true,
                           recommendedMax: 140,
-                          helperText: 'Keep concise for stronger readability on mobile screens.',
+                          helperText:
+                              'Keep concise for stronger readability on mobile screens.',
                         ),
-                        _field('Primary CTA', ctaPrimaryController, isRequired: true, recommendedMax: 24),
-                        _field('Secondary CTA', ctaSecondaryController, isRequired: true, recommendedMax: 18),
+                        _field('Primary CTA', ctaPrimaryController,
+                            isRequired: true, recommendedMax: 24),
+                        _field('Secondary CTA', ctaSecondaryController,
+                            isRequired: true, recommendedMax: 18),
                       ],
                     ),
                     _section(
@@ -1497,21 +1655,36 @@ class _EditOverlay extends StatelessWidget {
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(child: _field('Nav 1', nav1Controller, dense: true, isRequired: true, recommendedMax: 16)),
+                            Expanded(
+                                child: _field('Nav 1', nav1Controller,
+                                    dense: true,
+                                    isRequired: true,
+                                    recommendedMax: 16)),
                             const SizedBox(width: 8),
-                            Expanded(child: _field('Nav 2', nav2Controller, dense: true, isRequired: true, recommendedMax: 16)),
+                            Expanded(
+                                child: _field('Nav 2', nav2Controller,
+                                    dense: true,
+                                    isRequired: true,
+                                    recommendedMax: 16)),
                             const SizedBox(width: 8),
-                            Expanded(child: _field('Nav 3', nav3Controller, dense: true, isRequired: true, recommendedMax: 16)),
+                            Expanded(
+                                child: _field('Nav 3', nav3Controller,
+                                    dense: true,
+                                    isRequired: true,
+                                    recommendedMax: 16)),
                           ],
                         ),
                       ],
                     ),
                     _section(
                       title: 'Support Spotlight',
-                      subtitle: 'Floating support module and app-download labels.',
+                      subtitle:
+                          'Floating support module and app-download labels.',
                       children: [
-                        _field('Support Quote', supportQuoteController, maxLines: 2, isRequired: true, recommendedMax: 80),
-                        _field('Support Status', supportStatusController, isRequired: true, recommendedMax: 24),
+                        _field('Support Quote', supportQuoteController,
+                            maxLines: 2, isRequired: true, recommendedMax: 80),
+                        _field('Support Status', supportStatusController,
+                            isRequired: true, recommendedMax: 24),
                         _field(
                           'Support Description',
                           supportDescriptionController,
@@ -1519,60 +1692,95 @@ class _EditOverlay extends StatelessWidget {
                           isRequired: true,
                           recommendedMax: 140,
                         ),
-                        _field('Support Title Prefix', supportTitlePrefixController, maxLines: 2, recommendedMax: 24),
-                        _field('Support Title Highlight', supportTitleHighlightController, recommendedMax: 14),
-                        _field('Download iOS Label', downloadIosController, recommendedMax: 20),
-                        _field('Download Android Label', downloadAndroidController, recommendedMax: 20),
+                        _field('Support Title Prefix',
+                            supportTitlePrefixController,
+                            maxLines: 2, recommendedMax: 24),
+                        _field('Support Title Highlight',
+                            supportTitleHighlightController,
+                            recommendedMax: 14),
+                        _field('Download iOS Label', downloadIosController,
+                            recommendedMax: 20),
+                        _field(
+                            'Download Android Label', downloadAndroidController,
+                            recommendedMax: 20),
                       ],
                     ),
                     _section(
                       title: 'Adaptive Intelligence',
                       subtitle: 'Section title, label, and feature blocks.',
                       children: [
-                        _field('Adaptive Label', adaptiveLabelController, isRequired: true, recommendedMax: 22),
-                        _field('Adaptive Title', adaptiveTitleController, isRequired: true, recommendedMax: 40),
-                        _field('Feature I Title', feature1TitleController, isRequired: true, recommendedMax: 28),
-                        _field('Feature I Description', feature1DescController, maxLines: 3, isRequired: true, recommendedMax: 120),
-                        _field('Feature II Title', feature2TitleController, isRequired: true, recommendedMax: 28),
-                        _field('Feature II Description', feature2DescController, maxLines: 3, isRequired: true, recommendedMax: 120),
-                        _field('Feature III Title', feature3TitleController, isRequired: true, recommendedMax: 28),
-                        _field('Feature III Description', feature3DescController, maxLines: 3, isRequired: true, recommendedMax: 120),
+                        _field('Adaptive Label', adaptiveLabelController,
+                            isRequired: true, recommendedMax: 22),
+                        _field('Adaptive Title', adaptiveTitleController,
+                            isRequired: true, recommendedMax: 40),
+                        _field('Feature I Title', feature1TitleController,
+                            isRequired: true, recommendedMax: 28),
+                        _field('Feature I Description', feature1DescController,
+                            maxLines: 3, isRequired: true, recommendedMax: 120),
+                        _field('Feature II Title', feature2TitleController,
+                            isRequired: true, recommendedMax: 28),
+                        _field('Feature II Description', feature2DescController,
+                            maxLines: 3, isRequired: true, recommendedMax: 120),
+                        _field('Feature III Title', feature3TitleController,
+                            isRequired: true, recommendedMax: 28),
+                        _field(
+                            'Feature III Description', feature3DescController,
+                            maxLines: 3, isRequired: true, recommendedMax: 120),
                       ],
                     ),
                     _section(
                       title: 'Conversation Preview',
                       subtitle: 'Chat simulation shown in the support area.',
                       children: [
-                        _field('Message 1', message1Controller, maxLines: 3, recommendedMax: 100),
-                        _field('Message 2', message2Controller, maxLines: 2, recommendedMax: 80),
-                        _field('Message 3', message3Controller, maxLines: 3, recommendedMax: 100),
-                        _field('Message Placeholder', messagePlaceholderController, recommendedMax: 30),
+                        _field('Message 1', message1Controller,
+                            maxLines: 3, recommendedMax: 100),
+                        _field('Message 2', message2Controller,
+                            maxLines: 2, recommendedMax: 80),
+                        _field('Message 3', message3Controller,
+                            maxLines: 3, recommendedMax: 100),
+                        _field(
+                            'Message Placeholder', messagePlaceholderController,
+                            recommendedMax: 30),
                       ],
                     ),
                     _section(
                       title: 'Premium Section',
                       subtitle: 'Pricing, value proposition, and premium CTA.',
                       children: [
-                        _field('Premium Badge', premiumBadgeController, isRequired: true, recommendedMax: 22),
-                        _field('Premium Title', premiumTitleController, isRequired: true, recommendedMax: 32),
-                        _field('Premium Subtitle', premiumSubtitleController, maxLines: 3, isRequired: true, recommendedMax: 130),
-                        _field('Premium Price', premiumPriceController, isRequired: true, recommendedMax: 8),
-                        _field('Premium Period', premiumPeriodController, isRequired: true, recommendedMax: 14),
-                        _field('Premium Feature 1', premiumFeature1Controller, recommendedMax: 54),
-                        _field('Premium Feature 2', premiumFeature2Controller, recommendedMax: 54),
-                        _field('Premium Feature 3', premiumFeature3Controller, recommendedMax: 54),
-                        _field('Premium CTA', premiumCtaController, isRequired: true, recommendedMax: 24),
+                        _field('Premium Badge', premiumBadgeController,
+                            isRequired: true, recommendedMax: 22),
+                        _field('Premium Title', premiumTitleController,
+                            isRequired: true, recommendedMax: 32),
+                        _field('Premium Subtitle', premiumSubtitleController,
+                            maxLines: 3, isRequired: true, recommendedMax: 130),
+                        _field('Premium Price', premiumPriceController,
+                            isRequired: true, recommendedMax: 8),
+                        _field('Premium Period', premiumPeriodController,
+                            isRequired: true, recommendedMax: 14),
+                        _field('Premium Feature 1', premiumFeature1Controller,
+                            recommendedMax: 54),
+                        _field('Premium Feature 2', premiumFeature2Controller,
+                            recommendedMax: 54),
+                        _field('Premium Feature 3', premiumFeature3Controller,
+                            recommendedMax: 54),
+                        _field('Premium CTA', premiumCtaController,
+                            isRequired: true, recommendedMax: 24),
                       ],
                     ),
                     _section(
                       title: 'Footer',
                       subtitle: 'Brand, legal line, and social labels.',
                       children: [
-                        _field('Footer Brand', footerBrandController, isRequired: true, recommendedMax: 18),
-                        _field('Footer Locations', footerLocationsController, maxLines: 2, recommendedMax: 80),
-                        _field('Footer Link 1', footerLink1Controller, recommendedMax: 20),
-                        _field('Footer Link 2', footerLink2Controller, recommendedMax: 20),
-                        _field('Footer Copyright', footerCopyrightController, recommendedMax: 52),
+                        _field('Footer Brand', footerBrandController,
+                            isRequired: true, recommendedMax: 18),
+                        _field('Footer Locations', footerLocationsController,
+                            maxLines: 2, recommendedMax: 80),
+                        _field('Footer Link 1', footerLink1Controller,
+                            recommendedMax: 20),
+                        _field('Footer Link 2', footerLink2Controller,
+                            recommendedMax: 20),
+                        _field('Footer Copyright', footerCopyrightController,
+                            recommendedMax: 52),
                       ],
                     ),
                   ],
@@ -1589,15 +1797,18 @@ class _EditOverlay extends StatelessWidget {
                         ? const SizedBox(
                             width: 14,
                             height: 14,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white),
                           )
                         : const Icon(Icons.save_rounded, size: 18),
                     label: Text(saving ? 'Saving...' : 'Save Changes'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF1D78FF),
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 13),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
                 ),
@@ -1725,7 +1936,8 @@ class _EditOverlay extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             text,
-            style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.w600),
+            style: TextStyle(
+                fontSize: 12, color: color, fontWeight: FontWeight.w600),
           ),
         ],
       ),
@@ -1801,7 +2013,8 @@ class _EditOverlay extends StatelessWidget {
               if (isRequired)
                 Container(
                   margin: const EdgeInsets.only(left: 6),
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
                     color: const Color(0xFFDBEAFE),
                     borderRadius: BorderRadius.circular(999),
@@ -1821,7 +2034,9 @@ class _EditOverlay extends StatelessWidget {
                   '$count/$recommendedMax',
                   style: TextStyle(
                     fontSize: 11,
-                    color: overLimit ? const Color(0xFFB91C1C) : const Color(0xFF6B7280),
+                    color: overLimit
+                        ? const Color(0xFFB91C1C)
+                        : const Color(0xFF6B7280),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1842,7 +2057,8 @@ class _EditOverlay extends StatelessWidget {
               hintText: 'Enter $label',
               filled: true,
               fillColor: const Color(0xFFF9FAFB),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
@@ -1850,7 +2066,9 @@ class _EditOverlay extends StatelessWidget {
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: overLimit ? const Color(0xFFDC2626) : const Color(0xFF1D78FF),
+                  color: overLimit
+                      ? const Color(0xFFDC2626)
+                      : const Color(0xFF1D78FF),
                   width: 1.3,
                 ),
               ),
@@ -1888,7 +2106,8 @@ class _UserAvatar extends StatelessWidget {
       ),
       child: ClipOval(
         child: ColorFiltered(
-          colorFilter: const ColorFilter.mode(Colors.grey, BlendMode.saturation),
+          colorFilter:
+              const ColorFilter.mode(Colors.grey, BlendMode.saturation),
           child: Opacity(
             opacity: 0.6,
             child: Image.network(imageUrl, fit: BoxFit.cover),
@@ -1923,7 +2142,9 @@ class _FloatingMessageCard extends StatelessWidget {
         color: Colors.white.withValues(alpha: 0.03),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 30)],
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 30)
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1932,7 +2153,9 @@ class _FloatingMessageCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.only(left: 4),
             decoration: BoxDecoration(
-              border: Border(left: BorderSide(color: Colors.white.withValues(alpha: 0.5), width: 4)),
+              border: Border(
+                  left: BorderSide(
+                      color: Colors.white.withValues(alpha: 0.5), width: 4)),
             ),
             child: GestureDetector(
               onTap: editMode ? onEditQuote : null,
@@ -2058,7 +2281,8 @@ class _AdaptiveConsciousnessSection extends StatelessWidget {
           Container(
             padding: const EdgeInsets.only(left: 16),
             decoration: BoxDecoration(
-              border: Border(left: BorderSide(color: Colors.white.withValues(alpha: 0.2))),
+              border: Border(
+                  left: BorderSide(color: Colors.white.withValues(alpha: 0.2))),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -2202,7 +2426,11 @@ class _FeatureCardState extends State<_FeatureCard> {
                 : Colors.white.withValues(alpha: 0.08),
           ),
           boxShadow: widget.data.isHighlighted
-              ? [BoxShadow(color: Colors.white.withValues(alpha: 0.05), blurRadius: 50)]
+              ? [
+                  BoxShadow(
+                      color: Colors.white.withValues(alpha: 0.05),
+                      blurRadius: 50)
+                ]
               : null,
         ),
         child: Stack(
@@ -2215,7 +2443,10 @@ class _FeatureCardState extends State<_FeatureCard> {
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [Colors.transparent, Colors.black.withValues(alpha: 0.8)],
+                    colors: [
+                      Colors.transparent,
+                      Colors.black.withValues(alpha: 0.8)
+                    ],
                   ),
                 ),
               ),
@@ -2239,13 +2470,21 @@ class _FeatureCardState extends State<_FeatureCard> {
                       Colors.white.withValues(alpha: 0.01),
                     ],
                   ),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-                  boxShadow: [BoxShadow(color: Colors.white.withValues(alpha: 0.05), blurRadius: 10, spreadRadius: -5)],
+                  border:
+                      Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                  boxShadow: [
+                    BoxShadow(
+                        color: Colors.white.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                        spreadRadius: -5)
+                  ],
                 ),
                 child: Icon(
                   widget.data.icon,
                   size: 40,
-                  color: widget.data.isHighlighted ? Colors.white : Colors.white.withValues(alpha: 0.8),
+                  color: widget.data.isHighlighted
+                      ? Colors.white
+                      : Colors.white.withValues(alpha: 0.8),
                 ),
               ),
             ),
@@ -2503,7 +2742,9 @@ class _VoidTextContent extends StatelessWidget {
               WidgetSpan(
                 child: GestureDetector(
                   onTap: editMode ? onEditTitlePrefix : null,
-                  child: Text(titlePrefix, style: GoogleFonts.playfairDisplay(fontSize: 56, color: Colors.white)),
+                  child: Text(titlePrefix,
+                      style: GoogleFonts.playfairDisplay(
+                          fontSize: 56, color: Colors.white)),
                 ),
               ),
               WidgetSpan(
@@ -2549,21 +2790,27 @@ class _VoidTextContent extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30)),
                 ),
-                child: Text(downloadIos, style: GoogleFonts.dmSans(fontWeight: FontWeight.w500)),
+                child: Text(downloadIos,
+                    style: GoogleFonts.dmSans(fontWeight: FontWeight.w500)),
               ),
             if (downloadAndroid.trim().isNotEmpty)
               OutlinedButton(
                 onPressed: editMode ? onEditDownloadAndroid : () {},
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30)),
                   side: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
                 ),
-                child: Text(downloadAndroid, style: GoogleFonts.dmSans(fontWeight: FontWeight.w500)),
+                child: Text(downloadAndroid,
+                    style: GoogleFonts.dmSans(fontWeight: FontWeight.w500)),
               ),
           ],
         ),
@@ -2663,14 +2910,16 @@ class _PhoneMockup extends StatelessWidget {
             animation: glowController,
             builder: (context, child) {
               final opacity = Tween<double>(begin: 0.4, end: 0.8)
-                  .animate(CurvedAnimation(parent: glowController, curve: Curves.easeInOut))
+                  .animate(CurvedAnimation(
+                      parent: glowController, curve: Curves.easeInOut))
                   .value;
               return Container(
                 width: 400,
                 height: 400,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFF3B82F6).withValues(alpha: opacity * 0.2),
+                  color:
+                      const Color(0xFF3B82F6).withValues(alpha: opacity * 0.2),
                 ),
               );
             },
@@ -2680,9 +2929,11 @@ class _PhoneMockup extends StatelessWidget {
             animation: floatController,
             builder: (context, child) {
               final offset = Tween<double>(begin: 0, end: -20)
-                  .animate(CurvedAnimation(parent: floatController, curve: Curves.easeInOut))
+                  .animate(CurvedAnimation(
+                      parent: floatController, curve: Curves.easeInOut))
                   .value;
-              return Transform.translate(offset: Offset(0, offset), child: child);
+              return Transform.translate(
+                  offset: Offset(0, offset), child: child);
             },
             child: Container(
               width: 280,
@@ -2692,7 +2943,10 @@ class _PhoneMockup extends StatelessWidget {
                 borderRadius: BorderRadius.circular(48),
                 border: Border.all(color: const Color(0xFF374151), width: 8),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 40, spreadRadius: 10),
+                  BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.5),
+                      blurRadius: 40,
+                      spreadRadius: 10),
                 ],
               ),
               child: ClipRRect(
@@ -2716,13 +2970,16 @@ class _PhoneMockup extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            Icon(Icons.menu, color: Colors.white.withValues(alpha: 0.5), size: 20),
+                            Icon(Icons.menu,
+                                color: Colors.white.withValues(alpha: 0.5),
+                                size: 20),
                             Container(
                               width: 32,
                               height: 32,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                                border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.2)),
                               ),
                               child: ClipOval(
                                 child: Image.network(
@@ -2743,17 +3000,20 @@ class _PhoneMockup extends StatelessWidget {
                             children: [
                               GestureDetector(
                                 onTap: editMode ? onEditMessage1 : null,
-                                child: _ChatBubble(isAi: true, message: message1),
+                                child:
+                                    _ChatBubble(isAi: true, message: message1),
                               ),
                               const SizedBox(height: 16),
                               GestureDetector(
                                 onTap: editMode ? onEditMessage2 : null,
-                                child: _ChatBubble(isAi: false, message: message2),
+                                child:
+                                    _ChatBubble(isAi: false, message: message2),
                               ),
                               const SizedBox(height: 16),
                               GestureDetector(
                                 onTap: editMode ? onEditMessage3 : null,
-                                child: _ChatBubble(isAi: true, message: message3),
+                                child:
+                                    _ChatBubble(isAi: true, message: message3),
                               ),
                             ],
                           ),
@@ -2768,7 +3028,8 @@ class _PhoneMockup extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.05),
                             borderRadius: BorderRadius.circular(24),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                            border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.1)),
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -2783,7 +3044,9 @@ class _PhoneMockup extends StatelessWidget {
                                   ),
                                 ),
                               ),
-                              Icon(Icons.mic, color: Colors.white.withValues(alpha: 0.5), size: 16),
+                              Icon(Icons.mic,
+                                  color: Colors.white.withValues(alpha: 0.5),
+                                  size: 16),
                             ],
                           ),
                         ),
@@ -2809,9 +3072,11 @@ class _PhoneMockup extends StatelessWidget {
                       curve: Curves.easeInOut,
                     ))
                     .value;
-                return Transform.translate(offset: Offset(0, offset), child: child);
+                return Transform.translate(
+                    offset: Offset(0, offset), child: child);
               },
-              child: _FloatingIcon(icon: Icons.favorite, color: const Color(0xFF60A5FA)),
+              child: _FloatingIcon(
+                  icon: Icons.favorite, color: const Color(0xFF60A5FA)),
             ),
           ),
           Positioned(
@@ -2821,11 +3086,16 @@ class _PhoneMockup extends StatelessWidget {
               animation: floatController,
               builder: (context, child) {
                 final offset = Tween<double>(begin: 0, end: -20)
-                    .animate(CurvedAnimation(parent: floatController, curve: Curves.easeInOut))
+                    .animate(CurvedAnimation(
+                        parent: floatController, curve: Curves.easeInOut))
                     .value;
-                return Transform.translate(offset: Offset(0, offset), child: child);
+                return Transform.translate(
+                    offset: Offset(0, offset), child: child);
               },
-              child: _FloatingIcon(icon: Icons.graphic_eq, color: const Color(0xFFA78BFA), isBlurred: true),
+              child: _FloatingIcon(
+                  icon: Icons.graphic_eq,
+                  color: const Color(0xFFA78BFA),
+                  isBlurred: true),
             ),
           ),
         ],
@@ -2879,13 +3149,18 @@ class _ChatBubble extends StatelessWidget {
               ),
               boxShadow: isAi
                   ? null
-                  : [BoxShadow(color: const Color(0xFF3B82F6).withValues(alpha: 0.2), blurRadius: 15)],
+                  : [
+                      BoxShadow(
+                          color: const Color(0xFF3B82F6).withValues(alpha: 0.2),
+                          blurRadius: 15)
+                    ],
             ),
             child: Text(
               message,
               style: GoogleFonts.dmSans(
                 fontSize: 11,
-                color: isAi ? Colors.white.withValues(alpha: 0.8) : Colors.white,
+                color:
+                    isAi ? Colors.white.withValues(alpha: 0.8) : Colors.white,
               ),
             ),
           ),
@@ -2915,7 +3190,9 @@ class _FloatingIcon extends StatelessWidget {
         color: Colors.white.withValues(alpha: 0.03),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 30)],
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 30)
+        ],
       ),
       child: Icon(icon, color: color, size: isBlurred ? 24 : 32),
     );
@@ -2981,7 +3258,10 @@ class _PremiumSection extends StatelessWidget {
             color: Colors.black,
             borderRadius: BorderRadius.circular(48),
             border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-            boxShadow: [BoxShadow(color: Colors.white.withValues(alpha: 0.05), blurRadius: 40)],
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.white.withValues(alpha: 0.05), blurRadius: 40)
+            ],
           ),
           child: Stack(
             children: [
@@ -3001,7 +3281,8 @@ class _PremiumSection extends StatelessWidget {
                         Colors.transparent,
                       ],
                     ),
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(48)),
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(48)),
                   ),
                 ),
               ),
@@ -3014,11 +3295,13 @@ class _PremiumSection extends StatelessWidget {
                     GestureDetector(
                       onTap: editMode ? onEditBadge : null,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                          border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.1)),
                         ),
                         child: Text(
                           badge,
@@ -3093,30 +3376,31 @@ class _PremiumSection extends StatelessWidget {
                       final index = entry.key;
                       final f = entry.value;
                       return Padding(
-                              padding: const EdgeInsets.only(bottom: 16),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.check, color: Colors.white, size: 16),
-                                  const SizedBox(width: 12),
-                                  GestureDetector(
-                                    onTap: editMode
-                                        ? () {
-                                            if (index == 0) onEditFeature1();
-                                            if (index == 1) onEditFeature2();
-                                            if (index == 2) onEditFeature3();
-                                          }
-                                        : null,
-                                    child: Text(
-                                      f,
-                                      style: GoogleFonts.dmSans(
-                                        fontSize: 14,
-                                        color: Colors.white.withValues(alpha: 0.7),
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.check,
+                                color: Colors.white, size: 16),
+                            const SizedBox(width: 12),
+                            GestureDetector(
+                              onTap: editMode
+                                  ? () {
+                                      if (index == 0) onEditFeature1();
+                                      if (index == 1) onEditFeature2();
+                                      if (index == 2) onEditFeature3();
+                                    }
+                                  : null,
+                              child: Text(
+                                f,
+                                style: GoogleFonts.dmSans(
+                                  fontSize: 14,
+                                  color: Colors.white.withValues(alpha: 0.7),
+                                ),
                               ),
-                            );
+                            ),
+                          ],
+                        ),
+                      );
                     }),
                     const SizedBox(height: 24),
                     // CTA
@@ -3129,11 +3413,13 @@ class _PremiumSection extends StatelessWidget {
                             backgroundColor: Colors.white,
                             foregroundColor: Colors.black,
                             padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
                           ),
                           child: Text(
                             cta,
-                            style: GoogleFonts.dmSans(fontWeight: FontWeight.w500),
+                            style:
+                                GoogleFonts.dmSans(fontWeight: FontWeight.w500),
                           ),
                         ),
                       ),
@@ -3231,9 +3517,11 @@ class _FooterSection extends StatelessWidget {
                 // Social links
                 Row(
                   children: [
-                    _FooterLink(label: link1, editMode: editMode, onEdit: onEditLink1),
+                    _FooterLink(
+                        label: link1, editMode: editMode, onEdit: onEditLink1),
                     const SizedBox(width: 24),
-                    _FooterLink(label: link2, editMode: editMode, onEdit: onEditLink2),
+                    _FooterLink(
+                        label: link2, editMode: editMode, onEdit: onEditLink2),
                   ],
                 ),
               ],
@@ -3270,9 +3558,11 @@ class _FooterSection extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _FooterLink(label: link1, editMode: editMode, onEdit: onEditLink1),
+                    _FooterLink(
+                        label: link1, editMode: editMode, onEdit: onEditLink1),
                     const SizedBox(width: 24),
-                    _FooterLink(label: link2, editMode: editMode, onEdit: onEditLink2),
+                    _FooterLink(
+                        label: link2, editMode: editMode, onEdit: onEditLink2),
                   ],
                 ),
                 const SizedBox(height: 24),

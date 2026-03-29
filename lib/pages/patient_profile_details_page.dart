@@ -3,6 +3,7 @@ import 'package:therapii/models/ai_conversation_summary.dart';
 import 'package:therapii/models/chat_message.dart';
 import 'package:therapii/models/user.dart' as app_user;
 import 'package:therapii/models/voice_checkin.dart';
+import 'package:therapii/pages/ai_summary_detail_page.dart';
 import 'package:therapii/pages/patient_chat_page.dart';
 import 'package:therapii/services/ai_conversation_service.dart';
 import 'package:therapii/services/chat_service.dart';
@@ -22,7 +23,8 @@ class PatientProfileDetailsPage extends StatefulWidget {
   });
 
   @override
-  State<PatientProfileDetailsPage> createState() => _PatientProfileDetailsPageState();
+  State<PatientProfileDetailsPage> createState() =>
+      _PatientProfileDetailsPageState();
 }
 
 class _PatientProfileDetailsPageState extends State<PatientProfileDetailsPage> {
@@ -31,7 +33,6 @@ class _PatientProfileDetailsPageState extends State<PatientProfileDetailsPage> {
   final _voiceCheckinService = VoiceCheckinService();
 
   final _scrollController = ScrollController();
-  final _activeKey = GlobalKey();
   final _recentKey = GlobalKey();
   final _summaryKey = GlobalKey();
   final _voiceKey = GlobalKey();
@@ -43,14 +44,15 @@ class _PatientProfileDetailsPageState extends State<PatientProfileDetailsPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _jumpToTarget(widget.initialTarget));
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _jumpToTarget(widget.initialTarget));
   }
 
   void _jumpToTarget(SectionTarget target) {
     GlobalKey key;
     switch (target) {
       case SectionTarget.active:
-        key = _activeKey;
+        key = _recentKey;
         break;
       case SectionTarget.recent:
         key = _recentKey;
@@ -81,7 +83,8 @@ class _PatientProfileDetailsPageState extends State<PatientProfileDetailsPage> {
   }
 
   Future<void> _showFeedbackBottomSheet(AiConversationSummary summary) async {
-    final controller = TextEditingController(text: summary.therapistFeedback ?? '');
+    final controller =
+        TextEditingController(text: summary.therapistFeedback ?? '');
     final result = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
@@ -113,7 +116,8 @@ class _PatientProfileDetailsPageState extends State<PatientProfileDetailsPage> {
                       color: scheme.primary.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(Icons.rate_review_rounded, color: scheme.primary),
+                    child:
+                        Icon(Icons.rate_review_rounded, color: scheme.primary),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -121,13 +125,17 @@ class _PatientProfileDetailsPageState extends State<PatientProfileDetailsPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          summary.therapistFeedback != null ? 'Edit Model Feedback' : 'Provide Model Feedback',
-                          style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                          summary.therapistFeedback != null
+                              ? 'Edit Model Feedback'
+                              : 'Provide Model Feedback',
+                          style: theme.textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           'Help improve AI responses',
-                          style: theme.textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                          style: theme.textTheme.bodySmall
+                              ?.copyWith(color: scheme.onSurfaceVariant),
                         ),
                       ],
                     ),
@@ -144,7 +152,8 @@ class _PatientProfileDetailsPageState extends State<PatientProfileDetailsPage> {
                 maxLines: 5,
                 minLines: 3,
                 decoration: InputDecoration(
-                  hintText: 'E.g., "Use more empathetic language when discussing anxiety..."',
+                  hintText:
+                      'E.g., "Use more empathetic language when discussing anxiety..."',
                   filled: true,
                   fillColor: scheme.surfaceContainerHighest.withOpacity(0.5),
                   border: OutlineInputBorder(
@@ -165,7 +174,8 @@ class _PatientProfileDetailsPageState extends State<PatientProfileDetailsPage> {
                       onPressed: () => Navigator.of(ctx).pop(),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
                       child: const Text('Cancel'),
                     ),
@@ -173,10 +183,12 @@ class _PatientProfileDetailsPageState extends State<PatientProfileDetailsPage> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: FilledButton(
-                      onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
+                      onPressed: () =>
+                          Navigator.of(ctx).pop(controller.text.trim()),
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
                       child: const Text('Save Feedback'),
                     ),
@@ -223,7 +235,10 @@ class _PatientProfileDetailsPageState extends State<PatientProfileDetailsPage> {
         controller: _scrollController,
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         children: [
-          _ContextHeader(title: 'Context Vault', subtitle: 'Curate conversations and signals to inform the AI model.'),
+          _ContextHeader(
+              title: 'Context Vault',
+              subtitle:
+                  'Curate conversations and signals to inform the AI model.'),
           const SizedBox(height: 12),
           _ContextSection(
             key: _recentKey,
@@ -243,18 +258,22 @@ class _PatientProfileDetailsPageState extends State<PatientProfileDetailsPage> {
                 }
                 final messages = snapshot.data ?? [];
                 if (messages.isEmpty) {
-                  return Text('No messages yet.', style: theme.textTheme.bodyMedium);
+                  return Text('No messages yet.',
+                      style: theme.textTheme.bodyMedium);
                 }
                 return Column(
                   children: messages.reversed.take(10).map((m) {
                     final selected = _contextMessages.contains(m.id);
-                    final prefix = m.senderId == widget.therapistId ? 'You' : 'Patient';
-                    final ts = '${m.sentAt.month}/${m.sentAt.day} ${m.sentAt.hour.toString().padLeft(2, '0')}:${m.sentAt.minute.toString().padLeft(2, '0')}';
+                    final prefix =
+                        m.senderId == widget.therapistId ? 'You' : 'Patient';
+                    final ts =
+                        '${m.sentAt.month}/${m.sentAt.day} ${m.sentAt.hour.toString().padLeft(2, '0')}:${m.sentAt.minute.toString().padLeft(2, '0')}';
                     return _ContextTile(
                       title: '$prefix • $ts',
                       body: m.text.isEmpty ? '(Attachment)' : m.text,
                       selected: selected,
-                      onToggle: () => _toggleContext(_contextMessages, m.id, 'Message'),
+                      onToggle: () =>
+                          _toggleContext(_contextMessages, m.id, 'Message'),
                     );
                   }).toList(),
                 );
@@ -265,18 +284,21 @@ class _PatientProfileDetailsPageState extends State<PatientProfileDetailsPage> {
           _ContextSection(
             key: _summaryKey,
             title: 'AI Summaries',
-            description: 'Pin summaries to guide the next AI session.',
+            description:
+                'Review conversation summaries and open the full transcript detail.',
             icon: Icons.summarize_rounded,
             color: scheme.tertiary,
             child: StreamBuilder<List<AiConversationSummary>>(
-              stream: _aiConversationService.streamPatientSummaries(patientId: patient.id, limit: 10),
+              stream: _aiConversationService.streamPatientSummaries(
+                  patientId: patient.id, limit: 10),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const LoadingInfo(text: 'Loading summaries…');
                 }
                 final summaries = snapshot.data ?? [];
                 if (summaries.isEmpty) {
-                  return Text('No AI summaries yet.', style: theme.textTheme.bodyMedium);
+                  return Text('No AI summaries yet.',
+                      style: theme.textTheme.bodyMedium);
                 }
                 return Column(
                   children: summaries.map((s) {
@@ -286,7 +308,16 @@ class _PatientProfileDetailsPageState extends State<PatientProfileDetailsPage> {
                       title: 'Summary • $ts',
                       body: s.summary,
                       selected: selected,
-                      onToggle: () => _toggleContext(_contextSummaries, s.id, 'Summary'),
+                      onToggle: () =>
+                          _toggleContext(_contextSummaries, s.id, 'Summary'),
+                      actionLabel: 'View details',
+                      onAction: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => AiSummaryDetailPage(summary: s),
+                          ),
+                        );
+                      },
                     );
                   }).toList(),
                 );
@@ -312,17 +343,20 @@ class _PatientProfileDetailsPageState extends State<PatientProfileDetailsPage> {
                 }
                 final checkins = snapshot.data ?? [];
                 if (checkins.isEmpty) {
-                  return Text('No voice check-ins yet.', style: theme.textTheme.bodyMedium);
+                  return Text('No voice check-ins yet.',
+                      style: theme.textTheme.bodyMedium);
                 }
                 return Column(
                   children: checkins.map((c) {
                     final selected = _contextVoices.contains(c.id);
-                    final ts = '${c.createdAt.month}/${c.createdAt.day} • ${c.durationSeconds}s';
+                    final ts =
+                        '${c.createdAt.month}/${c.createdAt.day} • ${c.durationSeconds}s';
                     return _ContextTile(
                       title: 'Voice Check-in • $ts',
                       body: 'Audio recording (${c.durationSeconds}s)',
                       selected: selected,
-                      onToggle: () => _toggleContext(_contextVoices, c.id, 'Voice check-in'),
+                      onToggle: () => _toggleContext(
+                          _contextVoices, c.id, 'Voice check-in'),
                     );
                   }).toList(),
                 );
@@ -367,7 +401,10 @@ class _ContextHeader extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: const [BoxShadow(color: Color(0x12000000), blurRadius: 16, offset: Offset(0, 8))],
+        boxShadow: const [
+          BoxShadow(
+              color: Color(0x12000000), blurRadius: 16, offset: Offset(0, 8))
+        ],
       ),
       child: Row(
         children: [
@@ -384,9 +421,13 @@ class _ContextHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+                Text(title,
+                    style: theme.textTheme.titleLarge
+                        ?.copyWith(fontWeight: FontWeight.w800)),
                 const SizedBox(height: 4),
-                Text(subtitle, style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurface.withOpacity(0.65))),
+                Text(subtitle,
+                    style: theme.textTheme.bodyMedium
+                        ?.copyWith(color: scheme.onSurface.withOpacity(0.65))),
               ],
             ),
           ),
@@ -421,7 +462,10 @@ class _ContextSection extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        boxShadow: const [BoxShadow(color: Color(0x0F000000), blurRadius: 14, offset: Offset(0, 8))],
+        boxShadow: const [
+          BoxShadow(
+              color: Color(0x0F000000), blurRadius: 14, offset: Offset(0, 8))
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -440,8 +484,12 @@ class _ContextSection extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
-                  Text(description, style: theme.textTheme.bodySmall?.copyWith(color: scheme.onSurface.withOpacity(0.65))),
+                  Text(title,
+                      style: theme.textTheme.titleMedium
+                          ?.copyWith(fontWeight: FontWeight.w800)),
+                  Text(description,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurface.withOpacity(0.65))),
                 ],
               ),
             ],
@@ -459,12 +507,16 @@ class _ContextTile extends StatelessWidget {
   final String body;
   final bool selected;
   final VoidCallback onToggle;
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
   const _ContextTile({
     required this.title,
     required this.body,
     required this.selected,
     required this.onToggle,
+    this.actionLabel,
+    this.onAction,
   });
 
   @override
@@ -477,7 +529,10 @@ class _ContextTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: selected ? scheme.primary.withOpacity(0.08) : scheme.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: selected ? scheme.primary.withOpacity(0.3) : scheme.outline.withOpacity(0.08)),
+        border: Border.all(
+            color: selected
+                ? scheme.primary.withOpacity(0.3)
+                : scheme.outline.withOpacity(0.08)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -486,14 +541,38 @@ class _ContextTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700)),
+                Text(title,
+                    style: theme.textTheme.labelMedium
+                        ?.copyWith(fontWeight: FontWeight.w700)),
                 const SizedBox(height: 4),
-                Text(body, style: theme.textTheme.bodyMedium?.copyWith(height: 1.4), maxLines: 3, overflow: TextOverflow.ellipsis),
+                Text(body,
+                    style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis),
+                if (actionLabel != null && onAction != null) ...[
+                  const SizedBox(height: 10),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton(
+                      onPressed: onAction,
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 0, vertical: 4),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(actionLabel!),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
           const SizedBox(width: 8),
-          Switch.adaptive(value: selected, onChanged: (_) => onToggle(), activeColor: scheme.primary),
+          Switch.adaptive(
+              value: selected,
+              onChanged: (_) => onToggle(),
+              activeColor: scheme.primary),
         ],
       ),
     );

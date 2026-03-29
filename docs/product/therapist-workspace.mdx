@@ -1,0 +1,78 @@
+---
+title: Therapist Workspace
+description: Patient management, conversations, summaries, approvals, and therapist tools.
+---
+
+# Therapist Workspace
+
+## Main therapist hub
+
+The primary therapist workspace is `lib/pages/my_patients_page.dart`.
+
+Main functions:
+
+- load active patients linked to the current therapist
+- show pending invitations
+- open patient chat
+- open patient profile details
+- view active AI conversations
+- view AI conversation summaries
+- review voice check-ins
+
+## Therapist gating
+
+Therapist access is constrained by approval-aware UX.
+
+Relevant component:
+
+- `lib/widgets/therapist_approval_gate.dart`
+
+This allows the product to keep therapist setup visible while limiting full access until approval conditions are met.
+
+## Key supporting screens
+
+- `listen_page.dart`
+- `new_patient_info_page.dart`
+- `new_patient_confirm_page.dart`
+- `patient_profile_page.dart`
+- `patient_profile_details_page.dart`
+- `voice_checkin_detail_page.dart`
+- therapist profile and practice setup pages
+
+## Conversation model
+
+Human conversations are stored under:
+
+- `conversations/{conversationId}`
+- `conversations/{conversationId}/messages/{messageId}`
+
+The workspace uses `ChatService` to:
+
+- stream therapist conversations
+- stream per-patient unread counts
+- open linked chat threads
+
+## AI summaries and voice
+
+Therapists can review:
+
+- AI conversation summaries from `ai_conversation_summaries`
+- voice check-ins from `voice_checkins`
+
+Primary services:
+
+- `AiConversationService`
+- `VoiceCheckinService`
+
+## Therapist profile setup
+
+Therapist configuration pages shape downstream experiences, including what clients see and how AI training metadata is derived.
+
+Important profile-related screens include:
+
+- `therapist_details_page.dart`
+- `therapist_training_page.dart`
+- `therapist_specialization_page.dart`
+- `therapist_therapeutic_models_page.dart`
+- `therapist_practice_page.dart`
+- `therapist_practice_personalization_page.dart`

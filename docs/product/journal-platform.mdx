@@ -1,0 +1,66 @@
+---
+title: Journal Platform
+description: Reader portal, favorites, article pages, and journal administration.
+---
+
+# Journal Platform
+
+The journal system is a major product area implemented inside the same application.
+
+## Reader portal
+
+The main reader experience lives in `lib/pages/journal_portal_page.dart`.
+
+Capabilities include:
+
+- role-aware return path to the main Therapii session
+- home, journal, and favorites navigation
+- persisted sidebar width and portal destination
+- article browsing
+- favorites display
+
+## Favorites
+
+Users can save articles into:
+
+- `users/{uid}/favorite_journal_articles/{articleId}`
+
+The portal and feed surfaces now support direct favorite toggling from the bookmark icon.
+
+## Article detail
+
+Article detail rendering lives in:
+
+- `lib/pages/journal_article_page.dart`
+
+## Journal administration
+
+Journal admin tooling includes:
+
+- `journal_admin_dashboard_page.dart`
+- `journal_admin_studio_page.dart`
+- `journal_admin_analytics_page.dart`
+- `journal_admin_team_hub_page.dart`
+- `journal_admin_patients_hub_page.dart`
+- `journal_admin_settings_page.dart`
+
+## Content studio
+
+The content editor in `journal_admin_studio_page.dart` supports:
+
+- content library with article selection
+- draft and published filtering
+- creating, editing, and deleting entries
+- content library collapsed by default
+- large primary body editing area
+- article metadata and schedule-related controls
+
+Articles are stored under:
+
+- `admin_settings/journal_content/articles`
+
+## Operational notes
+
+- Journal admin data is Firestore-admin-only by rule
+- Reader favorites are per-user and self-scoped
+- The portal can route back into admin, therapist, or client workspace depending on the signed-in account

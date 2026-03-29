@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:therapii/auth/firebase_auth_manager.dart';
-import 'package:therapii/pages/auth_welcome_page.dart';
+import 'package:therapii/pages/landing_page.dart';
 import 'package:therapii/pages/new_patient_confirm_page.dart';
 
 class NewPatientPricingPage extends StatelessWidget {
@@ -19,7 +19,8 @@ class NewPatientPricingPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final primary = scheme.primary;
-    final brandTeal = scheme.tertiary; // matches the Therapii wordmark color in screenshots
+    final brandTeal =
+        scheme.tertiary; // matches the Therapii wordmark color in screenshots
     final greyText = Colors.grey.shade700;
 
     return Scaffold(
@@ -33,7 +34,11 @@ class NewPatientPricingPage extends StatelessWidget {
           tooltip: 'Back',
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: Text('Therapii', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: brandTeal, fontWeight: FontWeight.w700)),
+        title: Text('Therapii',
+            style: Theme.of(context)
+                .textTheme
+                .titleLarge
+                ?.copyWith(color: brandTeal, fontWeight: FontWeight.w700)),
         centerTitle: true,
         actions: [
           OutlinedButton.icon(
@@ -41,7 +46,7 @@ class NewPatientPricingPage extends StatelessWidget {
               await FirebaseAuthManager().signOut();
               if (context.mounted) {
                 Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const AuthWelcomePage(initialTab: AuthTab.login)),
+                  MaterialPageRoute(builder: (_) => const LandingPage()),
                   (route) => false,
                 );
               }
@@ -50,7 +55,8 @@ class NewPatientPricingPage extends StatelessWidget {
             label: const Text('Logout'),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
           ),
           const SizedBox(width: 12),
@@ -66,15 +72,20 @@ class NewPatientPricingPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 20),
-
-                  Text('New Patient Pricing', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+                  Text('New Patient Pricing',
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.w700)),
                   const SizedBox(height: 8),
                   Text(
                     'We offer standard pricing as well as a program to support patients who may need financial assistance.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: greyText),
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(color: greyText),
                   ),
                   const SizedBox(height: 16),
-
                   _InfoCard(children: [
                     Text(
                       'Our pricing is a \$150 monthly fee for unlimited use of Therapii. This fee is paid by the patient and can be canceled at any time. (Please note: we are unable to accept insurance at this time.)',
@@ -90,29 +101,39 @@ class NewPatientPricingPage extends StatelessWidget {
                       ),
                       child: Text(
                         'Therapii will retain \$50 of this fee for platform use. The remaining amount will be paid directly to you.',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade800),
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodyMedium
+                            ?.copyWith(color: Colors.grey.shade800),
                       ),
                     ),
                   ]),
-
                   const SizedBox(height: 16),
-
                   _InfoCard(children: [
-                    Text('As part of our launch, we are offering', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                    Text('As part of our launch, we are offering',
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w700)),
                     const SizedBox(height: 12),
-                    _Bullet(text: '12 free credits that you can extend to your patients, each good for one free month of Therapii', dotColor: primary),
-                    const SizedBox(height: 10),
-                    _Bullet(text: '12 additional credits for every new therapist you invite to join Therapil', dotColor: primary),
+                    _Bullet(
+                        text:
+                            '12 free credits that you can extend to your patients, each good for one free month of Therapii',
+                        dotColor: primary),
                     const SizedBox(height: 10),
                     _Bullet(
-                      text: 'If you need more free credits to support a patient in need, please contact us at support@therapii.com',
+                        text:
+                            '12 additional credits for every new therapist you invite to join Therapil',
+                        dotColor: primary),
+                    const SizedBox(height: 10),
+                    _Bullet(
+                      text:
+                          'If you need more free credits to support a patient in need, please contact us at support@therapii.com',
                       dotColor: primary,
                       highlight: 'support@therapii.com',
                     ),
                   ]),
-
                   const SizedBox(height: 24),
-
                   Center(
                     child: SizedBox(
                       width: 180,
@@ -132,10 +153,12 @@ class NewPatientPricingPage extends StatelessWidget {
                           backgroundColor: const Color(0xFF3F62A8),
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18)),
                           elevation: 2,
                         ),
-                        child: const Text('Continue', style: TextStyle(fontWeight: FontWeight.w700)),
+                        child: const Text('Continue',
+                            style: TextStyle(fontWeight: FontWeight.w700)),
                       ),
                     ),
                   ),
@@ -163,10 +186,14 @@ class _InfoCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 10, offset: const Offset(0, 6)),
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 6)),
         ],
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: children),
+      child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start, children: children),
     );
   }
 }
@@ -188,17 +215,27 @@ class _Bullet extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.only(top: 6),
-          child: Container(width: 10, height: 10, decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle)),
+          child: Container(
+              width: 10,
+              height: 10,
+              decoration:
+                  BoxDecoration(color: dotColor, shape: BoxShape.circle)),
         ),
         const SizedBox(width: 10),
         Expanded(
           child: RichText(
             text: TextSpan(
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.black87),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: Colors.black87),
               children: highlight != null && parts.length == 2
                   ? [
                       TextSpan(text: parts[0]),
-                      TextSpan(text: highlight!, style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+                      TextSpan(
+                          text: highlight!,
+                          style: TextStyle(
+                              color: Theme.of(context).colorScheme.primary)),
                       TextSpan(text: parts[1]),
                     ]
                   : [TextSpan(text: text)],

@@ -12,6 +12,7 @@ import 'package:therapii/pages/billing_page.dart';
 import 'package:therapii/pages/patient_chat_page.dart';
 import 'package:therapii/pages/patient_voice_conversation_page.dart';
 import 'package:therapii/pages/support_center_page.dart';
+import 'package:therapii/services/app_page_state_service.dart';
 import 'package:therapii/services/chat_service.dart';
 import 'package:therapii/services/invitation_service.dart';
 import 'package:therapii/services/user_service.dart';
@@ -85,7 +86,9 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
       setState(() {
         _patient = patient;
         _aiNotesController.text =
-            (patient.patientOnboardingData?['anything_else'] as String?)?.trim() ?? '';
+            (patient.patientOnboardingData?['anything_else'] as String?)
+                    ?.trim() ??
+                '';
       });
 
       await _loadAllTherapists(patient.id);
@@ -93,7 +96,8 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
 
       // If a specific therapistId was provided, select that therapist
       if (widget.therapistId?.trim().isNotEmpty ?? false) {
-        final idx = _therapistProfiles.indexWhere((p) => p.user.id == widget.therapistId!.trim());
+        final idx = _therapistProfiles
+            .indexWhere((p) => p.user.id == widget.therapistId!.trim());
         if (idx >= 0) {
           setState(() => _selectedTherapistIndex = idx);
         }
@@ -103,7 +107,8 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        _error = 'Something went wrong while loading your dashboard. Please try again.';
+        _error =
+            'Something went wrong while loading your dashboard. Please try again.';
         _loading = false;
       });
     }
@@ -113,11 +118,14 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
   Future<void> _loadAllTherapists(String patientId) async {
     if (!mounted) return;
 
-    debugPrint('[PatientDashboard] Loading all therapists for patient: $patientId');
+    debugPrint(
+        '[PatientDashboard] Loading all therapists for patient: $patientId');
 
     try {
-      final invitations = await _invitationService.getAcceptedInvitationsForPatient(patientId);
-      debugPrint('[PatientDashboard] Found ${invitations.length} accepted invitations');
+      final invitations =
+          await _invitationService.getAcceptedInvitationsForPatient(patientId);
+      debugPrint(
+          '[PatientDashboard] Found ${invitations.length} accepted invitations');
 
       final profiles = <TherapistProfile>[];
       for (final inv in invitations) {
@@ -125,14 +133,20 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
         if (therapistId.isEmpty) continue;
 
         try {
-          final userDoc = await FirebaseFirestore.instance.collection('users').doc(therapistId).get();
+          final userDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(therapistId)
+              .get();
           if (!userDoc.exists) continue;
           final therapistUser = app_user.User.fromJson(userDoc.data()!);
 
           // Load AI name from therapist's training profile
           String? aiName;
           try {
-            final therapistDoc = await FirebaseFirestore.instance.collection('therapists').doc(therapistId).get();
+            final therapistDoc = await FirebaseFirestore.instance
+                .collection('therapists')
+                .doc(therapistId)
+                .get();
             if (therapistDoc.exists) {
               final aiProfile = therapistDoc.data()?['ai_training_profile'];
               if (aiProfile is Map<String, dynamic>) {
@@ -143,12 +157,14 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
               }
             }
           } catch (e) {
-            debugPrint('[PatientDashboard] Failed to load AI name for $therapistId: $e');
+            debugPrint(
+                '[PatientDashboard] Failed to load AI name for $therapistId: $e');
           }
 
           profiles.add(TherapistProfile(user: therapistUser, aiName: aiName));
         } catch (e) {
-          debugPrint('[PatientDashboard] Error loading therapist $therapistId: $e');
+          debugPrint(
+              '[PatientDashboard] Error loading therapist $therapistId: $e');
         }
       }
 
@@ -157,7 +173,8 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
         _therapistProfiles = profiles;
         _selectedTherapistIndex = 0;
       });
-      debugPrint('[PatientDashboard] Loaded ${profiles.length} therapist profiles');
+      debugPrint(
+          '[PatientDashboard] Loaded ${profiles.length} therapist profiles');
     } catch (e) {
       debugPrint('[PatientDashboard] Error loading therapists: $e');
       if (!mounted) return;
@@ -170,7 +187,8 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
 
   TherapistProfile? get _currentTherapistProfile {
     if (_therapistProfiles.isEmpty) return null;
-    if (_selectedTherapistIndex < 0 || _selectedTherapistIndex >= _therapistProfiles.length) return null;
+    if (_selectedTherapistIndex < 0 ||
+        _selectedTherapistIndex >= _therapistProfiles.length) return null;
     return _therapistProfiles[_selectedTherapistIndex];
   }
 
@@ -215,7 +233,8 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
             const SizedBox(height: 16),
             Text(
               'Hide Daily Thought?',
-              style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+              style: theme.textTheme.titleLarge
+                  ?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
             Text(
@@ -233,7 +252,8 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
                     onPressed: () => Navigator.pop(context),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
                     child: const Text('Cancel'),
                   ),
@@ -248,7 +268,8 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
                     style: FilledButton.styleFrom(
                       backgroundColor: theme.colorScheme.error,
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
                     child: const Text('Hide'),
                   ),
@@ -276,10 +297,12 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
       barrierDismissible: true,
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text(
             'Enter Invitation Code',
-            style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+            style: theme.textTheme.titleLarge
+                ?.copyWith(fontWeight: FontWeight.w700),
           ),
           content: Form(
             key: formKey,
@@ -313,14 +336,17 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
                 if (digitsOnly != value) {
                   controller.value = TextEditingValue(
                     text: digitsOnly,
-                    selection: TextSelection.collapsed(offset: digitsOnly.length),
+                    selection:
+                        TextSelection.collapsed(offset: digitsOnly.length),
                   );
                 }
               },
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
+            TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel')),
             FilledButton(
               onPressed: () {
                 if (formKey.currentState?.validate() ?? false) {
@@ -342,7 +368,8 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
     setState(() => _processingCode = true);
 
     try {
-      final InvitationCode? invitation = await _invitationService.validateAndUseCode(
+      final InvitationCode? invitation =
+          await _invitationService.validateAndUseCode(
         code: result,
         patientId: patient.id,
       );
@@ -350,7 +377,9 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
       if (invitation == null) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Invalid or expired code. Please double-check with your therapist.')),
+            const SnackBar(
+                content: Text(
+                    'Invalid or expired code. Please double-check with your therapist.')),
           );
         }
         return;
@@ -371,7 +400,8 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
       if (!mounted) return;
 
       // Select the newly added therapist
-      final newIdx = _therapistProfiles.indexWhere((p) => p.user.id == invitation.therapistId);
+      final newIdx = _therapistProfiles
+          .indexWhere((p) => p.user.id == invitation.therapistId);
       if (newIdx >= 0) {
         setState(() => _selectedTherapistIndex = newIdx);
       }
@@ -380,7 +410,8 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('You are now connected to ${therapistUser?.fullName ?? 'your therapist'}!'),
+          content: Text(
+              'You are now connected to ${therapistUser?.fullName ?? 'your therapist'}!'),
         ),
       );
 
@@ -448,7 +479,8 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
               color: isDark ? const Color(0xFF0F172A) : Colors.white,
               borderRadius: BorderRadius.circular(28),
               border: Border.all(
-                color: isDark ? const Color(0xFF1F2937) : const Color(0xFFE2E8F0),
+                color:
+                    isDark ? const Color(0xFF1F2937) : const Color(0xFFE2E8F0),
               ),
               boxShadow: [
                 BoxShadow(
@@ -471,7 +503,8 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
                         color: colorScheme.primary.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(14),
                       ),
-                      child: Icon(Icons.edit_note_rounded, color: colorScheme.primary),
+                      child: Icon(Icons.edit_note_rounded,
+                          color: colorScheme.primary),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -485,7 +518,8 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
                     ),
                     IconButton(
                       onPressed: () => Navigator.of(sheetContext).pop(),
-                      icon: Icon(Icons.close_rounded, color: colorScheme.onSurface.withValues(alpha: 0.5)),
+                      icon: Icon(Icons.close_rounded,
+                          color: colorScheme.onSurface.withValues(alpha: 0.5)),
                     ),
                   ],
                 ),
@@ -501,10 +535,14 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF111827) : const Color(0xFFF8FAFC),
+                    color: isDark
+                        ? const Color(0xFF111827)
+                        : const Color(0xFFF8FAFC),
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
-                      color: isDark ? const Color(0xFF1F2937) : const Color(0xFFE2E8F0),
+                      color: isDark
+                          ? const Color(0xFF1F2937)
+                          : const Color(0xFFE2E8F0),
                     ),
                   ),
                   child: TextField(
@@ -514,7 +552,8 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
                       color: colorScheme.onSurface,
                     ),
                     decoration: InputDecoration(
-                      hintText: 'Example: I respond best to warm, encouraging language. Remind me to pause and breathe.',
+                      hintText:
+                          'Example: I respond best to warm, encouraging language. Remind me to pause and breathe.',
                       hintStyle: theme.textTheme.bodyMedium?.copyWith(
                         color: colorScheme.onSurface.withValues(alpha: 0.4),
                       ),
@@ -532,8 +571,11 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
                         },
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          side: BorderSide(color: colorScheme.primary.withValues(alpha: 0.3)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14)),
+                          side: BorderSide(
+                              color:
+                                  colorScheme.primary.withValues(alpha: 0.3)),
                         ),
                         child: Text(
                           'Clear',
@@ -548,42 +590,52 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () async {
-                          final firebaseUser = firebase_auth.FirebaseAuth.instance.currentUser;
+                          final firebaseUser =
+                              firebase_auth.FirebaseAuth.instance.currentUser;
                           if (firebaseUser == null) {
                             Navigator.of(sheetContext).pop();
                             return;
                           }
 
                           final existing = Map<String, dynamic>.from(
-                            _patient?.patientOnboardingData ?? <String, dynamic>{},
+                            _patient?.patientOnboardingData ??
+                                <String, dynamic>{},
                           );
-                          existing['anything_else'] = _aiNotesController.text.trim();
+                          existing['anything_else'] =
+                              _aiNotesController.text.trim();
 
                           try {
                             await _userService.savePatientOnboardingData(
                               userId: firebaseUser.uid,
                               data: existing,
-                              completed: _patient?.patientOnboardingCompleted ?? false,
+                              completed:
+                                  _patient?.patientOnboardingCompleted ?? false,
                             );
                             if (!mounted) return;
                             setState(() {
-                              _patient = _patient?.copyWith(patientOnboardingData: existing);
+                              _patient = _patient?.copyWith(
+                                  patientOnboardingData: existing);
                             });
                             Navigator.of(sheetContext).pop();
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Notes saved to your AI profile.')),
+                              const SnackBar(
+                                  content:
+                                      Text('Notes saved to your AI profile.')),
                             );
                           } catch (error) {
                             if (!mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Unable to save notes right now.')),
+                              const SnackBar(
+                                  content:
+                                      Text('Unable to save notes right now.')),
                             );
                           }
                         },
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           backgroundColor: colorScheme.primary,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14)),
                           elevation: 0,
                         ),
                         child: Text(
@@ -607,7 +659,8 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
 
   void _openVoiceRecording(app_user.User therapist) {
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => PatientVoiceConversationPage(therapist: therapist)),
+      MaterialPageRoute(
+          builder: (_) => PatientVoiceConversationPage(therapist: therapist)),
     );
   }
 
@@ -679,15 +732,14 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Icon(Icons.error_outline_rounded, size: 48, color: Theme.of(context).colorScheme.error),
+              Icon(Icons.error_outline_rounded,
+                  size: 48, color: Theme.of(context).colorScheme.error),
               const SizedBox(height: 16),
               Text(
                 _error!,
                 textAlign: TextAlign.center,
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyLarge
-                    ?.copyWith(color: Theme.of(context).colorScheme.error, height: 1.4),
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.error, height: 1.4),
               ),
               const SizedBox(height: 16),
               FilledButton(
@@ -761,7 +813,8 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
                               hasMultipleTherapists: hasMultipleTherapists,
                               therapistProfiles: _therapistProfiles,
                               selectedIndex: _selectedTherapistIndex,
-                              onTherapistChanged: (index) => setState(() => _selectedTherapistIndex = index),
+                              onTherapistChanged: (index) => setState(
+                                  () => _selectedTherapistIndex = index),
                               onTap: _openAiTherapist,
                               onNotesTap: _showAiNotesSheet,
                               isDisabled: _therapistUser == null,
@@ -779,7 +832,8 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
                                   ? _showTherapistRequiredSnack
                                   : () => _handleMessageTap(_therapistUser!),
                               isDisabled: _therapistUser == null,
-                              actionLabel: _therapistUser == null ? 'Connect' : null,
+                              actionLabel:
+                                  _therapistUser == null ? 'Connect' : null,
                             ),
                           ),
                         ],
@@ -791,7 +845,8 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
                         hasMultipleTherapists: hasMultipleTherapists,
                         therapistProfiles: _therapistProfiles,
                         selectedIndex: _selectedTherapistIndex,
-                        onTherapistChanged: (index) => setState(() => _selectedTherapistIndex = index),
+                        onTherapistChanged: (index) =>
+                            setState(() => _selectedTherapistIndex = index),
                         onTap: _openAiTherapist,
                         onNotesTap: _showAiNotesSheet,
                         isDisabled: _therapistUser == null,
@@ -813,7 +868,8 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
                     const SizedBox(height: 18),
                     _PatientVoiceCard(
                       title: 'Voice Session',
-                      subtitle: 'Record and share your thoughts in a safe space',
+                      subtitle:
+                          'Record and share your thoughts in a safe space',
                       onTap: _therapistUser == null
                           ? _showTherapistRequiredSnack
                           : () => _openVoiceRecording(_therapistUser!),
@@ -829,7 +885,9 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
                               title: 'Billing',
                               subtitle: 'Manage subscription',
                               icon: Icons.credit_card_rounded,
-                              onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BillingPage())),
+                              onTap: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                      builder: (_) => const BillingPage())),
                             ),
                           ),
                           const SizedBox(width: 16),
@@ -838,7 +896,10 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
                               title: 'Support Center',
                               subtitle: 'FAQs and resources',
                               icon: Icons.help_outline_rounded,
-                              onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SupportCenterPage())),
+                              onTap: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                      builder: (_) =>
+                                          const SupportCenterPage())),
                             ),
                           ),
                         ],
@@ -848,20 +909,25 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
                         title: 'Billing',
                         subtitle: 'Manage subscription',
                         icon: Icons.credit_card_rounded,
-                        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BillingPage())),
+                        onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                                builder: (_) => const BillingPage())),
                       ),
                       const SizedBox(height: 12),
                       _PatientMiniCard(
                         title: 'Support Center',
                         subtitle: 'FAQs and resources',
                         icon: Icons.help_outline_rounded,
-                        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SupportCenterPage())),
+                        onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                                builder: (_) => const SupportCenterPage())),
                       ),
                     ],
                     const SizedBox(height: 24),
                     if (_showDailyThought)
                       GestureDetector(
-                        onLongPress: () => _showDeleteDailyThoughtDialog(context),
+                        onLongPress: () =>
+                            _showDeleteDailyThoughtDialog(context),
                         child: _PatientThoughtCard(
                           label: 'Daily Thought',
                           quote: '"The only way out is through."',
@@ -880,9 +946,12 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      body: _buildContent(context),
+    return RememberAppPage(
+      pageId: AppPageId.patientDashboard,
+      child: Scaffold(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        body: _buildContent(context),
+      ),
     );
   }
 }
@@ -909,7 +978,9 @@ class _PatientTopBar extends StatelessWidget {
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            color: isDark ? colorScheme.outline.withValues(alpha: 0.25) : const Color(0xFFF3F4F6),
+            color: isDark
+                ? colorScheme.outline.withValues(alpha: 0.25)
+                : const Color(0xFFF3F4F6),
           ),
         ),
       ),
@@ -927,16 +998,22 @@ class _PatientTopBar extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: isDark ? colorScheme.primary.withValues(alpha: 0.15) : const Color(0xFFDCEBFF),
+                    color: isDark
+                        ? colorScheme.primary.withValues(alpha: 0.15)
+                        : const Color(0xFFDCEBFF),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: isDark ? colorScheme.primary.withValues(alpha: 0.2) : const Color(0xFFEFF6FF),
+                      color: isDark
+                          ? colorScheme.primary.withValues(alpha: 0.2)
+                          : const Color(0xFFEFF6FF),
                       width: 4,
                     ),
                   ),
                   child: Center(
                     child: Text(
-                      displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
+                      displayName.isNotEmpty
+                          ? displayName[0].toUpperCase()
+                          : '?',
                       style: theme.textTheme.labelLarge?.copyWith(
                         color: colorScheme.primary,
                         fontWeight: FontWeight.w700,
@@ -950,7 +1027,9 @@ class _PatientTopBar extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: isDark ? colorScheme.primary.withValues(alpha: 0.12) : const Color(0xFFEFF6FF),
+                  color: isDark
+                      ? colorScheme.primary.withValues(alpha: 0.12)
+                      : const Color(0xFFEFF6FF),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(Icons.spa_rounded, color: colorScheme.primary),
@@ -976,7 +1055,8 @@ class _PatientTopBar extends StatelessWidget {
             children: [
               IconButton(
                 onPressed: onSettings,
-                icon: Icon(Icons.settings_outlined, color: colorScheme.onSurface.withValues(alpha: 0.6)),
+                icon: Icon(Icons.settings_outlined,
+                    color: colorScheme.onSurface.withValues(alpha: 0.6)),
               ),
               avatar,
             ],
@@ -1079,8 +1159,11 @@ class _PatientSecondaryCardState extends State<_PatientSecondaryCard> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
-    final borderColor = isDark ? const Color(0xFF1F2937) : const Color(0xFFF3F4F6);
-    final accentBg = isDark ? colorScheme.primary.withValues(alpha: 0.14) : const Color(0xFFEBF2FF);
+    final borderColor =
+        isDark ? const Color(0xFF1F2937) : const Color(0xFFF3F4F6);
+    final accentBg = isDark
+        ? colorScheme.primary.withValues(alpha: 0.14)
+        : const Color(0xFFEBF2FF);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
@@ -1117,7 +1200,8 @@ class _PatientSecondaryCardState extends State<_PatientSecondaryCard> {
                       color: accentBg,
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child: Icon(widget.icon, color: colorScheme.primary, size: 24),
+                    child:
+                        Icon(widget.icon, color: colorScheme.primary, size: 24),
                   ),
                   Icon(
                     Icons.arrow_forward_rounded,
@@ -1147,9 +1231,11 @@ class _PatientSecondaryCardState extends State<_PatientSecondaryCard> {
               if (widget.isDisabled && widget.actionLabel != null) ...[
                 const SizedBox(height: 12),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+                    color: colorScheme.surfaceContainerHighest
+                        .withValues(alpha: 0.6),
                     borderRadius: BorderRadius.circular(100),
                   ),
                   child: Text(
@@ -1196,8 +1282,11 @@ class _PatientVoiceCardState extends State<_PatientVoiceCard> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
-    final borderColor = isDark ? const Color(0xFF1F2937) : const Color(0xFFF3F4F6);
-    final iconBg = isDark ? colorScheme.primary.withValues(alpha: 0.18) : const Color(0xFFEFF6FF);
+    final borderColor =
+        isDark ? const Color(0xFF1F2937) : const Color(0xFFF3F4F6);
+    final iconBg = isDark
+        ? colorScheme.primary.withValues(alpha: 0.18)
+        : const Color(0xFFEFF6FF);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
@@ -1229,7 +1318,8 @@ class _PatientVoiceCardState extends State<_PatientVoiceCard> {
                   color: iconBg,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.mic_rounded, color: colorScheme.primary, size: 34),
+                child: Icon(Icons.mic_rounded,
+                    color: colorScheme.primary, size: 34),
               ),
               const SizedBox(width: 20),
               Expanded(
@@ -1254,12 +1344,16 @@ class _PatientVoiceCardState extends State<_PatientVoiceCard> {
                 ),
               ),
               if (!widget.isDisabled)
-                Icon(Icons.play_circle_outline_rounded, color: colorScheme.primary.withValues(alpha: 0.5), size: 32),
+                Icon(Icons.play_circle_outline_rounded,
+                    color: colorScheme.primary.withValues(alpha: 0.5),
+                    size: 32),
               if (widget.isDisabled && widget.actionLabel != null)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+                    color: colorScheme.surfaceContainerHighest
+                        .withValues(alpha: 0.6),
                     borderRadius: BorderRadius.circular(100),
                   ),
                   child: Text(
@@ -1303,8 +1397,11 @@ class _PatientMiniCardState extends State<_PatientMiniCard> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
-    final borderColor = isDark ? const Color(0xFF1F2937) : const Color(0xFFF3F4F6);
-    final accentBg = isDark ? colorScheme.primary.withValues(alpha: 0.14) : const Color(0xFFEBF2FF);
+    final borderColor =
+        isDark ? const Color(0xFF1F2937) : const Color(0xFFF3F4F6);
+    final accentBg = isDark
+        ? colorScheme.primary.withValues(alpha: 0.14)
+        : const Color(0xFFEBF2FF);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
@@ -1388,7 +1485,8 @@ class _PatientThoughtCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF111827) : const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: isDark ? const Color(0xFF1F2937) : const Color(0xFFF1F5F9)),
+        border: Border.all(
+            color: isDark ? const Color(0xFF1F2937) : const Color(0xFFF1F5F9)),
       ),
       child: Row(
         children: [
@@ -1478,7 +1576,8 @@ class _ChatWithAiCard extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
               child: Text(
                 'Switch AI companion',
-                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                style: theme.textTheme.titleLarge
+                    ?.copyWith(fontWeight: FontWeight.bold),
               ),
             ),
             Padding(
@@ -1496,7 +1595,8 @@ class _ChatWithAiCard extends StatelessWidget {
               final isSelected = i == selectedIndex;
               final displayAiName = profile.aiName ?? 'KAI';
               return ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
                 leading: Container(
                   width: 48,
                   height: 48,
@@ -1508,7 +1608,9 @@ class _ChatWithAiCard extends StatelessWidget {
                   ),
                   child: Center(
                     child: Text(
-                      displayAiName.isNotEmpty ? displayAiName[0].toUpperCase() : '?',
+                      displayAiName.isNotEmpty
+                          ? displayAiName[0].toUpperCase()
+                          : '?',
                       style: theme.textTheme.titleMedium?.copyWith(
                         color: isSelected
                             ? theme.colorScheme.onPrimary
@@ -1526,13 +1628,15 @@ class _ChatWithAiCard extends StatelessWidget {
                   ),
                 ),
                 subtitle: Text(
-                  'Created by ${profile.user.firstName} ${profile.user.lastName}'.trim(),
+                  'Created by ${profile.user.firstName} ${profile.user.lastName}'
+                      .trim(),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
                 trailing: isSelected
-                    ? Icon(Icons.check_circle_rounded, color: theme.colorScheme.primary)
+                    ? Icon(Icons.check_circle_rounded,
+                        color: theme.colorScheme.primary)
                     : null,
                 onTap: () {
                   onTherapistChanged(i);
@@ -1562,7 +1666,9 @@ class _ChatWithAiCard extends StatelessWidget {
       curve: Curves.easeOut,
       constraints: const BoxConstraints(minHeight: 220),
       decoration: BoxDecoration(
-        color: isDisabled ? colorScheme.surfaceContainerHighest : colorScheme.primary,
+        color: isDisabled
+            ? colorScheme.surfaceContainerHighest
+            : colorScheme.primary,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           if (!isDisabled)
@@ -1580,7 +1686,8 @@ class _ChatWithAiCard extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           splashColor: isDisabled ? null : Colors.white.withValues(alpha: 0.12),
-          highlightColor: isDisabled ? null : Colors.white.withValues(alpha: 0.06),
+          highlightColor:
+              isDisabled ? null : Colors.white.withValues(alpha: 0.06),
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
@@ -1614,7 +1721,8 @@ class _ChatWithAiCard extends StatelessWidget {
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
                               color: isDisabled
-                                  ? colorScheme.onSurface.withValues(alpha: 0.08)
+                                  ? colorScheme.onSurface
+                                      .withValues(alpha: 0.08)
                                   : Colors.white.withValues(alpha: 0.18),
                               borderRadius: BorderRadius.circular(14),
                               border: Border.all(
@@ -1627,7 +1735,8 @@ class _ChatWithAiCard extends StatelessWidget {
                               Icons.edit_note_rounded,
                               size: 20,
                               color: isDisabled
-                                  ? colorScheme.onSurface.withValues(alpha: 0.35)
+                                  ? colorScheme.onSurface
+                                      .withValues(alpha: 0.35)
                                   : colorScheme.onPrimary,
                             ),
                           ),
@@ -1668,7 +1777,8 @@ class _ChatWithAiCard extends StatelessWidget {
                 if (isDisabled) ...[
                   const SizedBox(height: 12),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: colorScheme.onSurface.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(100),
@@ -1690,7 +1800,8 @@ class _ChatWithAiCard extends StatelessWidget {
                       GestureDetector(
                         onTap: onNotesTap,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.22),
                             borderRadius: BorderRadius.circular(100),
@@ -1698,7 +1809,8 @@ class _ChatWithAiCard extends StatelessWidget {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.edit_note_rounded, color: Colors.white, size: 16),
+                              Icon(Icons.edit_note_rounded,
+                                  color: Colors.white, size: 16),
                               const SizedBox(width: 6),
                               Text(
                                 'Add training notes',
@@ -1715,7 +1827,8 @@ class _ChatWithAiCard extends StatelessWidget {
                         GestureDetector(
                           onTap: () => _showTherapistSwitcher(context),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(100),
@@ -1723,7 +1836,8 @@ class _ChatWithAiCard extends StatelessWidget {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.swap_horiz_rounded, color: Colors.white, size: 16),
+                                Icon(Icons.swap_horiz_rounded,
+                                    color: Colors.white, size: 16),
                                 const SizedBox(width: 6),
                                 Text(
                                   'Switch therapist',

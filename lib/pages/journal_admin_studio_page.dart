@@ -8,6 +8,7 @@ import 'package:therapii/pages/journal_admin_dashboard_page.dart';
 import 'package:therapii/pages/journal_admin_patients_hub_page.dart';
 import 'package:therapii/pages/journal_admin_settings_page.dart';
 import 'package:therapii/pages/journal_admin_team_hub_page.dart';
+import 'package:therapii/services/app_page_state_service.dart';
 import 'package:therapii/utils/admin_access.dart';
 import 'package:therapii/widgets/journal_admin_sidebar.dart';
 
@@ -38,11 +39,12 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _timeController = TextEditingController();
 
-  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _articlesSubscription;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
+      _articlesSubscription;
   bool _publishImmediately = false;
   bool _isPublic = true;
   bool _hasUnsavedChanges = false;
-  bool _isContentLibraryCollapsed = false;
+  bool _isContentLibraryCollapsed = true;
   bool _isLoadingArticles = true;
   bool _isSaving = false;
   bool _isApplyingArticle = false;
@@ -87,10 +89,11 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
     setState(() => _hasUnsavedChanges = true);
   }
 
-  CollectionReference<Map<String, dynamic>> get _articlesCollection => _firestore
-      .collection('admin_settings')
-      .doc(_journalContentDoc)
-      .collection('articles');
+  CollectionReference<Map<String, dynamic>> get _articlesCollection =>
+      _firestore
+          .collection('admin_settings')
+          .doc(_journalContentDoc)
+          .collection('articles');
 
   Future<void> _subscribeToArticles() async {
     await _articlesSubscription?.cancel();
@@ -104,7 +107,8 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
         return;
       }
 
-      final articles = snapshot.docs.map(_StudioArticle.fromDoc).toList(growable: false);
+      final articles =
+          snapshot.docs.map(_StudioArticle.fromDoc).toList(growable: false);
       final selectedId = _resolveSelectedArticleId(articles);
 
       if (!mounted) return;
@@ -117,6 +121,8 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
       final selectedArticle = _selectedArticle;
       if (selectedArticle != null) {
         _applyArticleToEditor(selectedArticle);
+      } else if (_selectedArticleId == null) {
+        _clearEditor();
       }
     }, onError: (error) {
       if (!mounted) return;
@@ -129,7 +135,8 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
 
   String? _resolveSelectedArticleId(List<_StudioArticle> articles) {
     if (articles.isEmpty) return null;
-    if (_selectedArticleId != null && articles.any((article) => article.id == _selectedArticleId)) {
+    if (_selectedArticleId != null &&
+        articles.any((article) => article.id == _selectedArticleId)) {
       return _selectedArticleId;
     }
     return articles.first.id;
@@ -144,41 +151,63 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
     final docs = [
       _seedArticlePayload(
         title: 'Building Resilience in Daily Life',
-        quote: 'Resilience is not just about bouncing back; it is about growing through what you go through.',
+        quote:
+            'Resilience is not just about bouncing back; it is about growing through what you go through.',
         intro:
             'In our fast-paced world, the ability to adapt to difficult situations is more crucial than ever. When we talk about resilience in a therapeutic context, we are not suggesting that you ignore your feelings.',
         sectionTitle: 'The Psychology of Bouncing Back',
         sectionBody:
             'Research indicates that resilience is not a fixed trait. It is a set of behaviors, thoughts, and actions that can be learned and developed by anyone.',
-        bullets: const ['Emotional Awareness', 'Realistic Optimism', 'Social Support'],
+        bullets: const [
+          'Emotional Awareness',
+          'Realistic Optimism',
+          'Social Support'
+        ],
         tags: const ['Resilience', 'Anxiety'],
-        summary: 'A practical primer on resilience and the behaviors that strengthen it.',
+        summary:
+            'A practical primer on resilience and the behaviors that strengthen it.',
         status: 'draft',
         authorName: author,
         updatedAt: now,
       ),
       _seedArticlePayload(
         title: '5 Steps to Better Sleep Hygiene',
-        quote: 'Rest is not a reward. It is a biological foundation for emotional steadiness.',
-        intro: 'Addressing insomnia through behavioral design, environmental cues, and consistent nighttime routines.',
+        quote:
+            'Rest is not a reward. It is a biological foundation for emotional steadiness.',
+        intro:
+            'Addressing insomnia through behavioral design, environmental cues, and consistent nighttime routines.',
         sectionTitle: 'How Sleep Rebuilds the Nervous System',
-        sectionBody: 'Small habit changes can improve restorative sleep and reduce next-day stress reactivity.',
-        bullets: const ['Light Management', 'Consistent Schedule', 'Caffeine Boundaries'],
+        sectionBody:
+            'Small habit changes can improve restorative sleep and reduce next-day stress reactivity.',
+        bullets: const [
+          'Light Management',
+          'Consistent Schedule',
+          'Caffeine Boundaries'
+        ],
         tags: const ['Sleep'],
-        summary: 'A behavioral guide to improving sleep hygiene and reducing insomnia patterns.',
+        summary:
+            'A behavioral guide to improving sleep hygiene and reducing insomnia patterns.',
         status: 'published',
         authorName: 'Dr. Mark Chen',
         updatedAt: now.subtract(const Duration(days: 2)),
       ),
       _seedArticlePayload(
         title: 'Understanding CBT Core Principles',
-        quote: 'Thoughts, feelings, and behaviors are connected. Shift one, and the system responds.',
-        intro: 'A guide for new therapy patients exploring cognitive behavioral therapy for the first time.',
+        quote:
+            'Thoughts, feelings, and behaviors are connected. Shift one, and the system responds.',
+        intro:
+            'A guide for new therapy patients exploring cognitive behavioral therapy for the first time.',
         sectionTitle: 'What CBT Actually Trains',
-        sectionBody: 'CBT helps patients notice patterns, challenge distortions, and test more adaptive responses.',
-        bullets: const ['Pattern Tracking', 'Cognitive Reframing', 'Behavioral Experiments'],
+        sectionBody:
+            'CBT helps patients notice patterns, challenge distortions, and test more adaptive responses.',
+        bullets: const [
+          'Pattern Tracking',
+          'Cognitive Reframing',
+          'Behavioral Experiments'
+        ],
         tags: const ['CBT', 'Growth'],
-        summary: 'An introduction to the core principles behind cognitive behavioral therapy.',
+        summary:
+            'An introduction to the core principles behind cognitive behavioral therapy.',
         status: 'published',
         authorName: 'Dr. Admin Portal',
         updatedAt: now.subtract(const Duration(days: 5)),
@@ -186,12 +215,19 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
       _seedArticlePayload(
         title: 'Managing Workplace Anxiety',
         quote: 'Pressure narrows the mind. Structure helps it widen again.',
-        intro: 'Strategies for high-stress environments and the emotional load of modern performance culture.',
+        intro:
+            'Strategies for high-stress environments and the emotional load of modern performance culture.',
         sectionTitle: 'Naming Stress Before It Escalates',
-        sectionBody: 'Workplace anxiety becomes more manageable when patterns are named early and regulated consistently.',
-        bullets: const ['Boundary Planning', 'Somatic Resets', 'Expectation Audits'],
+        sectionBody:
+            'Workplace anxiety becomes more manageable when patterns are named early and regulated consistently.',
+        bullets: const [
+          'Boundary Planning',
+          'Somatic Resets',
+          'Expectation Audits'
+        ],
         tags: const ['Anxiety', 'Work Harmony'],
-        summary: 'A scheduled article on recognizing and regulating workplace anxiety.',
+        summary:
+            'A scheduled article on recognizing and regulating workplace anxiety.',
         status: 'scheduled',
         authorName: 'Dr. Emily Stone',
         publishImmediately: false,
@@ -277,6 +313,27 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
     if (mounted) setState(() {});
   }
 
+  void _clearEditor() {
+    _isApplyingArticle = true;
+    _titleController.text = 'Untitled article';
+    _quoteController.clear();
+    _introController.clear();
+    _sectionTitleController.clear();
+    _sectionBodyController.clear();
+    _bulletsController.clear();
+    _continueController.clear();
+    _summaryController.clear();
+    _dateController.clear();
+    _timeController.clear();
+    _publishImmediately = false;
+    _isPublic = true;
+    _tags = const [];
+    _lastSavedAt = null;
+    _hasUnsavedChanges = false;
+    _isApplyingArticle = false;
+    if (mounted) setState(() {});
+  }
+
   Future<void> _saveDraft({bool publish = false}) async {
     final articleId = _selectedArticleId;
     if (articleId == null) return;
@@ -285,7 +342,9 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
     final user = FirebaseAuthManager().currentUser;
     final now = DateTime.now();
     final status = publish
-        ? (_publishImmediately || (_dateController.text.trim().isEmpty && _timeController.text.trim().isEmpty)
+        ? (_publishImmediately ||
+                (_dateController.text.trim().isEmpty &&
+                    _timeController.text.trim().isEmpty)
             ? 'published'
             : 'scheduled')
         : 'draft';
@@ -312,11 +371,15 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
       'authorName': _authorNameFromUser(user),
       'authorId': user?.uid,
       'updatedAt': FieldValue.serverTimestamp(),
-      'createdAt': _selectedArticle?.createdAt != null ? Timestamp.fromDate(_selectedArticle!.createdAt!) : FieldValue.serverTimestamp(),
+      'createdAt': _selectedArticle?.createdAt != null
+          ? Timestamp.fromDate(_selectedArticle!.createdAt!)
+          : FieldValue.serverTimestamp(),
     };
 
     try {
-      await _articlesCollection.doc(articleId).set(payload, SetOptions(merge: true));
+      await _articlesCollection
+          .doc(articleId)
+          .set(payload, SetOptions(merge: true));
       if (!mounted) return;
       setState(() {
         _lastSavedAt = now;
@@ -324,7 +387,10 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
         _isSaving = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(publish ? 'Article saved and queued for publishing.' : 'Draft saved.')),
+        SnackBar(
+            content: Text(publish
+                ? 'Article saved and queued for publishing.'
+                : 'Draft saved.')),
       );
     } catch (error) {
       if (!mounted) return;
@@ -423,6 +489,63 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
     _applyArticleToEditor(article);
   }
 
+  Future<void> _deleteArticle(String articleId) async {
+    _StudioArticle? article;
+    for (final candidate in _articles) {
+      if (candidate.id == articleId) {
+        article = candidate;
+        break;
+      }
+    }
+    if (article == null) return;
+    final targetArticle = article;
+
+    final shouldDelete = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('Delete article?'),
+            content: Text(
+              'Delete "${targetArticle.title}" from the content library? This cannot be undone.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFFDC2626),
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Delete'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+
+    if (!shouldDelete) return;
+
+    try {
+      await _articlesCollection.doc(articleId).delete();
+      if (!mounted) return;
+      if (_selectedArticleId == articleId) {
+        setState(() {
+          _selectedArticleId = null;
+        });
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Deleted "${targetArticle.title}".')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to delete article: $error')),
+      );
+    }
+  }
+
   String _authorNameFromUser(dynamic user) {
     final displayName = user?.displayName?.trim();
     if (displayName is String && displayName.isNotEmpty) return displayName;
@@ -471,7 +594,8 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
         break;
       case JournalAdminSidebarItem.patients:
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const JournalAdminPatientsHubPage()),
+          MaterialPageRoute(
+              builder: (_) => const JournalAdminPatientsHubPage()),
         );
         break;
       case JournalAdminSidebarItem.analytics:
@@ -521,60 +645,64 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
     final showRightRail = width >= 1380;
     final selectedArticle = _selectedArticle;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF6F7F8),
-      body: SafeArea(
-        child: Row(
-          children: [
-            JournalAdminSidebar(
-              activeItem: JournalAdminSidebarItem.articles,
-              onNavigate: _onSidebarNavigate,
-            ),
-            if (canShowLibrary)
-              _ContentLibrary(
-                isCollapsed: _isContentLibraryCollapsed,
-                onToggleCollapse: _toggleContentLibrary,
-                searchController: _searchController,
-                activeFilter: _activeFilter,
-                onFilterChanged: (filter) {
-                  setState(() => _activeFilter = filter);
-                },
-                onCreateArticle: _createArticle,
-                articles: _visibleArticles,
-                selectedArticleId: _selectedArticleId,
-                onSelectArticle: _selectArticle,
-                isLoading: _isLoadingArticles,
+    return RememberAppPage(
+      pageId: AppPageId.journalAdminStudio,
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF6F7F8),
+        body: SafeArea(
+          child: Row(
+            children: [
+              JournalAdminSidebar(
+                activeItem: JournalAdminSidebarItem.articles,
+                onNavigate: _onSidebarNavigate,
               ),
-            Expanded(
-              child: _EditorPanel(
-                saveStatusText: _saveStatusText,
-                articleTitle: selectedArticle?.title ?? 'Untitled article',
-                titleController: _titleController,
-                quoteController: _quoteController,
-                introController: _introController,
-                sectionTitleController: _sectionTitleController,
-                sectionBodyController: _sectionBodyController,
-                bulletsController: _bulletsController,
-                continueController: _continueController,
-                isLoading: _isLoadingArticles,
+              if (canShowLibrary)
+                _ContentLibrary(
+                  isCollapsed: _isContentLibraryCollapsed,
+                  onToggleCollapse: _toggleContentLibrary,
+                  searchController: _searchController,
+                  activeFilter: _activeFilter,
+                  onFilterChanged: (filter) {
+                    setState(() => _activeFilter = filter);
+                  },
+                  onCreateArticle: _createArticle,
+                  articles: _visibleArticles,
+                  selectedArticleId: _selectedArticleId,
+                  onSelectArticle: _selectArticle,
+                  onDeleteArticle: _deleteArticle,
+                  isLoading: _isLoadingArticles,
+                ),
+              Expanded(
+                child: _EditorPanel(
+                  saveStatusText: _saveStatusText,
+                  articleTitle: selectedArticle?.title ?? 'Untitled article',
+                  titleController: _titleController,
+                  quoteController: _quoteController,
+                  introController: _introController,
+                  sectionTitleController: _sectionTitleController,
+                  sectionBodyController: _sectionBodyController,
+                  bulletsController: _bulletsController,
+                  continueController: _continueController,
+                  isLoading: _isLoadingArticles,
+                ),
               ),
-            ),
-            if (showRightRail)
-              _PublishingRail(
-                tags: _tags,
-                summaryController: _summaryController,
-                publishImmediately: _publishImmediately,
-                onPublishImmediatelyChanged: _togglePublishImmediately,
-                dateController: _dateController,
-                timeController: _timeController,
-                isPublic: _isPublic,
-                onVisibilityChanged: _toggleVisibility,
-                onDeleteTag: _removeTag,
-                onAddTag: _addTag,
-                onPublish: () => _saveDraft(publish: true),
-                onSaveDraft: () => _saveDraft(),
-              ),
-          ],
+              if (showRightRail)
+                _PublishingRail(
+                  tags: _tags,
+                  summaryController: _summaryController,
+                  publishImmediately: _publishImmediately,
+                  onPublishImmediatelyChanged: _togglePublishImmediately,
+                  dateController: _dateController,
+                  timeController: _timeController,
+                  isPublic: _isPublic,
+                  onVisibilityChanged: _toggleVisibility,
+                  onDeleteTag: _removeTag,
+                  onAddTag: _addTag,
+                  onPublish: () => _saveDraft(publish: true),
+                  onSaveDraft: () => _saveDraft(),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -606,7 +734,8 @@ class _LeftSidebar extends StatelessWidget {
     if (parts.length == 1) {
       return parts.first.characters.first.toUpperCase();
     }
-    return (parts.first.characters.first + parts.last.characters.first).toUpperCase();
+    return (parts.first.characters.first + parts.last.characters.first)
+        .toUpperCase();
   }
 
   String? _safePhotoUrl() {
@@ -641,7 +770,8 @@ class _LeftSidebar extends StatelessWidget {
       child: Column(
         children: [
           Padding(
-            padding: EdgeInsets.fromLTRB(isCollapsed ? 12 : 24, 24, isCollapsed ? 12 : 16, 8),
+            padding: EdgeInsets.fromLTRB(
+                isCollapsed ? 12 : 24, 24, isCollapsed ? 12 : 16, 8),
             child: Row(
               children: [
                 const _LogoGlyph(),
@@ -650,7 +780,8 @@ class _LeftSidebar extends StatelessWidget {
                   const Flexible(
                     child: Text(
                       'Therapii',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -660,9 +791,12 @@ class _LeftSidebar extends StatelessWidget {
                   tooltip: isCollapsed ? 'Expand sidebar' : 'Collapse sidebar',
                   onPressed: onToggleCollapse,
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
+                  constraints:
+                      const BoxConstraints(minWidth: 30, minHeight: 30),
                   icon: Icon(
-                    isCollapsed ? Icons.chevron_right_rounded : Icons.chevron_left_rounded,
+                    isCollapsed
+                        ? Icons.chevron_right_rounded
+                        : Icons.chevron_left_rounded,
                     size: 20,
                     color: const Color(0xFF64748B),
                   ),
@@ -685,11 +819,16 @@ class _LeftSidebar extends StatelessWidget {
                         label: 'Dashboard',
                         onTap: () {
                           Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => const JournalAdminDashboardPage()),
+                            MaterialPageRoute(
+                                builder: (_) =>
+                                    const JournalAdminDashboardPage()),
                           );
                         },
                       ),
-                      const _NavItemData(icon: Icons.article_outlined, label: 'Articles', active: true),
+                      const _NavItemData(
+                          icon: Icons.article_outlined,
+                          label: 'Articles',
+                          active: true),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -702,7 +841,9 @@ class _LeftSidebar extends StatelessWidget {
                         label: 'Team',
                         onTap: () {
                           Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => const JournalAdminTeamHubPage()),
+                            MaterialPageRoute(
+                                builder: (_) =>
+                                    const JournalAdminTeamHubPage()),
                           );
                         },
                       ),
@@ -711,7 +852,9 @@ class _LeftSidebar extends StatelessWidget {
                         label: 'Patients',
                         onTap: () {
                           Navigator.of(context).pushReplacement(
-                            MaterialPageRoute(builder: (_) => const JournalAdminPatientsHubPage()),
+                            MaterialPageRoute(
+                                builder: (_) =>
+                                    const JournalAdminPatientsHubPage()),
                           );
                         },
                       ),
@@ -727,7 +870,9 @@ class _LeftSidebar extends StatelessWidget {
                         label: 'Analytics',
                         onTap: () {
                           Navigator.of(context).pushReplacement(
-                            MaterialPageRoute(builder: (_) => const JournalAdminAnalyticsPage()),
+                            MaterialPageRoute(
+                                builder: (_) =>
+                                    const JournalAdminAnalyticsPage()),
                           );
                         },
                       ),
@@ -736,7 +881,9 @@ class _LeftSidebar extends StatelessWidget {
                         label: 'Settings',
                         onTap: () {
                           Navigator.of(context).pushReplacement(
-                            MaterialPageRoute(builder: (_) => const JournalAdminSettingsPage()),
+                            MaterialPageRoute(
+                                builder: (_) =>
+                                    const JournalAdminSettingsPage()),
                           );
                         },
                       ),
@@ -758,13 +905,16 @@ class _LeftSidebar extends StatelessWidget {
                       CircleAvatar(
                         radius: 20,
                         backgroundColor: const Color(0xFFE2E8F0),
-                        backgroundImage: hasPhoto ? NetworkImage(photoUrl) : null,
+                        backgroundImage:
+                            hasPhoto ? NetworkImage(photoUrl) : null,
                         onBackgroundImageError: hasPhoto ? (_, __) {} : null,
                         child: hasPhoto
                             ? null
                             : Text(
                                 _initials(name),
-                                style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF475569)),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF475569)),
                               ),
                       ),
                       const SizedBox(height: 8),
@@ -772,9 +922,11 @@ class _LeftSidebar extends StatelessWidget {
                         tooltip: 'Logout',
                         onPressed: () => Navigator.of(context).pop(),
                         padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                        constraints:
+                            const BoxConstraints(minWidth: 32, minHeight: 32),
                         visualDensity: VisualDensity.compact,
-                        icon: const Icon(Icons.logout, color: Color(0xFF64748B), size: 20),
+                        icon: const Icon(Icons.logout,
+                            color: Color(0xFF64748B), size: 20),
                       ),
                     ],
                   )
@@ -783,13 +935,16 @@ class _LeftSidebar extends StatelessWidget {
                       CircleAvatar(
                         radius: 20,
                         backgroundColor: const Color(0xFFE2E8F0),
-                        backgroundImage: hasPhoto ? NetworkImage(photoUrl) : null,
+                        backgroundImage:
+                            hasPhoto ? NetworkImage(photoUrl) : null,
                         onBackgroundImageError: hasPhoto ? (_, __) {} : null,
                         child: hasPhoto
                             ? null
                             : Text(
                                 _initials(name),
-                                style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF475569)),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF475569)),
                               ),
                       ),
                       const SizedBox(width: 10),
@@ -799,7 +954,8 @@ class _LeftSidebar extends StatelessWidget {
                           children: [
                             Text(
                               name,
-                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                              style: TextStyle(
+                                  fontSize: 14, fontWeight: FontWeight.w700),
                               overflow: TextOverflow.ellipsis,
                             ),
                             const SizedBox(height: 2),
@@ -807,17 +963,22 @@ class _LeftSidebar extends StatelessWidget {
                               children: [
                                 const Text(
                                   'View Profile',
-                                  style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                  style: TextStyle(
+                                      fontSize: 11, color: Color(0xFF64748B)),
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 if (isAdmin) ...[
                                   const SizedBox(width: 6),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6, vertical: 2),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF2B8CEE).withValues(alpha: 0.12),
+                                      color: const Color(0xFF2B8CEE)
+                                          .withValues(alpha: 0.12),
                                       borderRadius: BorderRadius.circular(999),
-                                      border: Border.all(color: const Color(0xFF2B8CEE).withValues(alpha: 0.3)),
+                                      border: Border.all(
+                                          color: const Color(0xFF2B8CEE)
+                                              .withValues(alpha: 0.3)),
                                     ),
                                     child: const Text(
                                       'ADMIN',
@@ -839,9 +1000,11 @@ class _LeftSidebar extends StatelessWidget {
                         tooltip: 'Logout',
                         onPressed: () => Navigator.of(context).pop(),
                         padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                        constraints:
+                            const BoxConstraints(minWidth: 32, minHeight: 32),
                         visualDensity: VisualDensity.compact,
-                        icon: const Icon(Icons.logout, color: Color(0xFF64748B), size: 20),
+                        icon: const Icon(Icons.logout,
+                            color: Color(0xFF64748B), size: 20),
                       ),
                     ],
                   ),
@@ -886,7 +1049,8 @@ class _SidebarGroup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: collapsed ? CrossAxisAlignment.center : CrossAxisAlignment.start,
+      crossAxisAlignment:
+          collapsed ? CrossAxisAlignment.center : CrossAxisAlignment.start,
       children: [
         if (!collapsed)
           Padding(
@@ -946,7 +1110,8 @@ class _SidebarItem extends StatelessWidget {
               child: Icon(
                 item.icon,
                 size: 20,
-                color: active ? const Color(0xFF2B8CEE) : const Color(0xFF64748B),
+                color:
+                    active ? const Color(0xFF2B8CEE) : const Color(0xFF64748B),
               ),
             ),
           ),
@@ -993,6 +1158,7 @@ class _ContentLibrary extends StatelessWidget {
   final List<_StudioArticle> articles;
   final String? selectedArticleId;
   final ValueChanged<String> onSelectArticle;
+  final ValueChanged<String> onDeleteArticle;
   final bool isLoading;
   const _ContentLibrary({
     required this.isCollapsed,
@@ -1004,6 +1170,7 @@ class _ContentLibrary extends StatelessWidget {
     required this.articles,
     required this.selectedArticleId,
     required this.onSelectArticle,
+    required this.onDeleteArticle,
     required this.isLoading,
   });
 
@@ -1024,10 +1191,12 @@ class _ContentLibrary extends StatelessWidget {
                 IconButton(
                   tooltip: 'Expand content library',
                   onPressed: onToggleCollapse,
-                  icon: const Icon(Icons.chevron_right_rounded, color: Color(0xFF64748B)),
+                  icon: const Icon(Icons.chevron_right_rounded,
+                      color: Color(0xFF64748B)),
                 ),
                 const SizedBox(height: 8),
-                const Icon(Icons.menu_book_rounded, color: Color(0xFF2B8CEE), size: 22),
+                const Icon(Icons.menu_book_rounded,
+                    color: Color(0xFF2B8CEE), size: 22),
                 const SizedBox(height: 10),
                 const RotatedBox(
                   quarterTurns: 3,
@@ -1054,17 +1223,20 @@ class _ContentLibrary extends StatelessWidget {
                           const Expanded(
                             child: Text(
                               'Content Library',
-                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+                              style: TextStyle(
+                                  fontSize: 20, fontWeight: FontWeight.w800),
                             ),
                           ),
                           IconButton(
                             tooltip: 'Collapse content library',
                             onPressed: onToggleCollapse,
-                            icon: const Icon(Icons.chevron_left_rounded, color: Color(0xFF64748B)),
+                            icon: const Icon(Icons.chevron_left_rounded,
+                                color: Color(0xFF64748B)),
                           ),
                           IconButton(
                             onPressed: onCreateArticle,
-                            icon: const Icon(Icons.add, color: Color(0xFF2B8CEE)),
+                            icon:
+                                const Icon(Icons.add, color: Color(0xFF2B8CEE)),
                           ),
                         ],
                       ),
@@ -1099,7 +1271,8 @@ class _ContentLibrary extends StatelessWidget {
                           _LibraryTab(
                             label: 'Published',
                             active: activeFilter == _LibraryFilter.published,
-                            onTap: () => onFilterChanged(_LibraryFilter.published),
+                            onTap: () =>
+                                onFilterChanged(_LibraryFilter.published),
                           ),
                         ],
                       ),
@@ -1134,6 +1307,7 @@ class _ContentLibrary extends StatelessWidget {
                                   age: article.relativeAgeLabel,
                                   highlighted: article.id == selectedArticleId,
                                   onTap: () => onSelectArticle(article.id),
+                                  onDelete: () => onDeleteArticle(article.id),
                                 );
                               },
                             ),
@@ -1148,7 +1322,8 @@ class _LibraryTab extends StatelessWidget {
   final String label;
   final bool active;
   final VoidCallback onTap;
-  const _LibraryTab({required this.label, required this.onTap, this.active = false});
+  const _LibraryTab(
+      {required this.label, required this.onTap, this.active = false});
 
   @override
   Widget build(BuildContext context) {
@@ -1189,6 +1364,7 @@ class _ArticleListItem extends StatelessWidget {
   final String age;
   final bool highlighted;
   final VoidCallback onTap;
+  final VoidCallback onDelete;
 
   const _ArticleListItem({
     required this.status,
@@ -1198,6 +1374,7 @@ class _ArticleListItem extends StatelessWidget {
     required this.author,
     required this.age,
     required this.onTap,
+    required this.onDelete,
     this.highlighted = false,
   });
 
@@ -1212,7 +1389,10 @@ class _ArticleListItem extends StatelessWidget {
         decoration: BoxDecoration(
           color: highlighted ? const Color(0xFFEEF6FF) : Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: highlighted ? const Color(0xFFBFDBFE) : const Color(0xFFE2E8F0)),
+          border: Border.all(
+              color: highlighted
+                  ? const Color(0xFFBFDBFE)
+                  : const Color(0xFFE2E8F0)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1220,22 +1400,56 @@ class _ArticleListItem extends StatelessWidget {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
                     color: statusColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
                     status.toUpperCase(),
-                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: statusColor),
+                    style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        color: statusColor),
                   ),
                 ),
                 const Spacer(),
-                Text(age, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                Text(age,
+                    style: const TextStyle(
+                        fontSize: 11, color: Color(0xFF64748B))),
+                PopupMenuButton<String>(
+                  tooltip: 'Article actions',
+                  onSelected: (value) {
+                    if (value == 'delete') {
+                      onDelete();
+                    }
+                  },
+                  itemBuilder: (context) => const [
+                    PopupMenuItem<String>(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete_outline_rounded,
+                              size: 18, color: Color(0xFFDC2626)),
+                          SizedBox(width: 8),
+                          Text('Delete'),
+                        ],
+                      ),
+                    ),
+                  ],
+                  icon: const Icon(
+                    Icons.more_horiz_rounded,
+                    size: 18,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 8),
-            Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+            Text(title,
+                style:
+                    const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
             const SizedBox(height: 4),
             Text(
               subtitle,
@@ -1246,9 +1460,12 @@ class _ArticleListItem extends StatelessWidget {
             const SizedBox(height: 8),
             Row(
               children: [
-                const CircleAvatar(radius: 9, backgroundColor: Color(0xFFE2E8F0)),
+                const CircleAvatar(
+                    radius: 9, backgroundColor: Color(0xFFE2E8F0)),
                 const SizedBox(width: 6),
-                Text(author, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                Text(author,
+                    style: const TextStyle(
+                        fontSize: 11, color: Color(0xFF64748B))),
               ],
             ),
           ],
@@ -1298,7 +1515,8 @@ class _EditorPanel extends StatelessWidget {
               Expanded(
                 child: Text(
                   'Dashboard > Articles > Editing: $articleTitle',
-                  style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                  style:
+                      const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -1343,7 +1561,8 @@ class _EditorPanel extends StatelessWidget {
                                 _ToolbarIcon(Icons.format_quote),
                                 _ToolbarIcon(Icons.format_list_bulleted),
                                 _ToolbarDivider(),
-                                _ToolbarIcon(Icons.add_photo_alternate_outlined),
+                                _ToolbarIcon(
+                                    Icons.add_photo_alternate_outlined),
                               ],
                             ),
                           ),
@@ -1354,7 +1573,8 @@ class _EditorPanel extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                              border:
+                                  Border.all(color: const Color(0xFFE2E8F0)),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1365,46 +1585,57 @@ class _EditorPanel extends StatelessWidget {
                                     border: InputBorder.none,
                                     hintText: 'Article Title',
                                   ),
-                                  style: const TextStyle(fontSize: 42, fontWeight: FontWeight.w800, height: 1.1),
+                                  style: const TextStyle(
+                                      fontSize: 42,
+                                      fontWeight: FontWeight.w800,
+                                      height: 1.1),
                                 ),
                                 const SizedBox(height: 8),
                                 const Divider(height: 1),
                                 const SizedBox(height: 18),
-                                TextFormField(
-                                  controller: quoteController,
-                                  minLines: 2,
-                                  maxLines: 4,
-                                  decoration: const InputDecoration(border: InputBorder.none),
-                                  style: const TextStyle(
-                                    fontSize: 20,
-                                    fontStyle: FontStyle.italic,
-                                    color: Color(0xFF64748B),
-                                    height: 1.5,
-                                  ),
+                                _PrimaryEditorField(
+                                  controller: introController,
                                 ),
                                 const SizedBox(height: 18),
-                                TextFormField(
-                                  controller: introController,
-                                  minLines: 4,
-                                  maxLines: 8,
-                                  decoration: const InputDecoration(border: InputBorder.none),
-                                  style: const TextStyle(fontSize: 18, height: 1.8),
+                                _SecondaryEditorField(
+                                  label: 'Pull Quote',
+                                  child: TextFormField(
+                                    controller: quoteController,
+                                    minLines: 2,
+                                    maxLines: 4,
+                                    decoration: const InputDecoration(
+                                      border: InputBorder.none,
+                                      hintText:
+                                          'Optional highlighted quote or excerpt',
+                                    ),
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontStyle: FontStyle.italic,
+                                      color: Color(0xFF64748B),
+                                      height: 1.5,
+                                    ),
+                                  ),
                                 ),
                                 const SizedBox(height: 18),
                                 TextFormField(
                                   controller: sectionTitleController,
                                   minLines: 1,
                                   maxLines: 3,
-                                  decoration: const InputDecoration(border: InputBorder.none),
-                                  style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w800),
+                                  decoration: const InputDecoration(
+                                      border: InputBorder.none),
+                                  style: const TextStyle(
+                                      fontSize: 30,
+                                      fontWeight: FontWeight.w800),
                                 ),
                                 const SizedBox(height: 12),
                                 TextFormField(
                                   controller: sectionBodyController,
                                   minLines: 3,
                                   maxLines: 6,
-                                  decoration: const InputDecoration(border: InputBorder.none),
-                                  style: const TextStyle(fontSize: 18, height: 1.8),
+                                  decoration: const InputDecoration(
+                                      border: InputBorder.none),
+                                  style: const TextStyle(
+                                      fontSize: 18, height: 1.8),
                                 ),
                                 const SizedBox(height: 16),
                                 TextFormField(
@@ -1415,7 +1646,8 @@ class _EditorPanel extends StatelessWidget {
                                     border: InputBorder.none,
                                     hintText: 'Enter one line per bullet point',
                                   ),
-                                  style: const TextStyle(fontSize: 17, height: 1.8),
+                                  style: const TextStyle(
+                                      fontSize: 17, height: 1.8),
                                 ),
                                 const SizedBox(height: 20),
                                 _ContinueBlock(controller: continueController),
@@ -1493,6 +1725,78 @@ class _ContinueBlock extends StatelessWidget {
   }
 }
 
+class _PrimaryEditorField extends StatelessWidget {
+  final TextEditingController controller;
+
+  const _PrimaryEditorField({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      constraints: const BoxConstraints(minHeight: 220),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: TextFormField(
+        controller: controller,
+        minLines: 8,
+        maxLines: 14,
+        decoration: const InputDecoration(
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+          hintText: 'Write the main article content here...',
+        ),
+        style: const TextStyle(
+          fontSize: 18,
+          height: 1.8,
+        ),
+      ),
+    );
+  }
+}
+
+class _SecondaryEditorField extends StatelessWidget {
+  final String label;
+  final Widget child;
+
+  const _SecondaryEditorField({
+    required this.label,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF64748B),
+              letterSpacing: 0.3,
+            ),
+          ),
+          const SizedBox(height: 8),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
 class _PublishingRail extends StatelessWidget {
   final List<String> tags;
   final TextEditingController summaryController;
@@ -1561,7 +1865,8 @@ class _PublishingRail extends StatelessWidget {
                     spacing: 8,
                     runSpacing: 8,
                     children: [
-                      ...tags.map((tag) => _TagChip(label: tag, onRemove: () => onDeleteTag(tag))),
+                      ...tags.map((tag) => _TagChip(
+                          label: tag, onRemove: () => onDeleteTag(tag))),
                       _AddChip(onTap: onAddTag),
                     ],
                   ),
@@ -1634,7 +1939,8 @@ class _PublishingRail extends StatelessWidget {
                       foregroundColor: Colors.white,
                     ),
                     icon: const Icon(Icons.send, size: 18),
-                    label: const Text('Publish Now', style: TextStyle(fontWeight: FontWeight.w700)),
+                    label: const Text('Publish Now',
+                        style: TextStyle(fontWeight: FontWeight.w700)),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -1645,7 +1951,8 @@ class _PublishingRail extends StatelessWidget {
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    child: const Text('Save as Draft', style: TextStyle(fontWeight: FontWeight.w700)),
+                    child: const Text('Save as Draft',
+                        style: TextStyle(fontWeight: FontWeight.w700)),
                   ),
                 ),
               ],
@@ -1686,7 +1993,11 @@ class _TagChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF1D4ED8))),
+          Text(label,
+              style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1D4ED8))),
           const SizedBox(width: 6),
           GestureDetector(
             onTap: onRemove,
@@ -1718,7 +2029,11 @@ class _AddChip extends StatelessWidget {
           children: [
             Icon(Icons.add, size: 14, color: Color(0xFF64748B)),
             SizedBox(width: 4),
-            Text('Add Tag', style: TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+            Text('Add Tag',
+                style: TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF64748B),
+                    fontWeight: FontWeight.w600)),
           ],
         ),
       ),
@@ -1757,7 +2072,9 @@ class _ScheduleCard extends StatelessWidget {
                   style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
                 ),
               ),
-              Switch(value: publishImmediately, onChanged: onPublishImmediatelyChanged),
+              Switch(
+                  value: publishImmediately,
+                  onChanged: onPublishImmediatelyChanged),
             ],
           ),
           const SizedBox(height: 8),
@@ -1819,7 +2136,10 @@ class _VisibilityButton extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 16, color: active ? const Color(0xFF2B8CEE) : const Color(0xFF64748B)),
+            Icon(icon,
+                size: 16,
+                color:
+                    active ? const Color(0xFF2B8CEE) : const Color(0xFF64748B)),
             const SizedBox(width: 6),
             Flexible(
               child: Text(
@@ -1827,7 +2147,9 @@ class _VisibilityButton extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: active ? FontWeight.w700 : FontWeight.w600,
-                  color: active ? const Color(0xFF2B8CEE) : const Color(0xFF64748B),
+                  color: active
+                      ? const Color(0xFF2B8CEE)
+                      : const Color(0xFF64748B),
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -1881,26 +2203,33 @@ class _StudioArticle {
     required this.createdAt,
   });
 
-  factory _StudioArticle.fromDoc(QueryDocumentSnapshot<Map<String, dynamic>> doc) {
+  factory _StudioArticle.fromDoc(
+      QueryDocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data();
     final bullets = data['bullets'];
     final tags = data['tags'];
 
     return _StudioArticle(
       id: doc.id,
-      title: (data['title'] as String?)?.trim().isNotEmpty == true ? data['title'] as String : 'Untitled article',
+      title: (data['title'] as String?)?.trim().isNotEmpty == true
+          ? data['title'] as String
+          : 'Untitled article',
       quote: (data['quote'] as String?) ?? '',
       intro: (data['intro'] as String?) ?? '',
       sectionTitle: (data['sectionTitle'] as String?) ?? '',
       sectionBody: (data['sectionBody'] as String?) ?? '',
-      bullets: bullets is List ? bullets.whereType<String>().toList(growable: false) : const [],
+      bullets: bullets is List
+          ? bullets.whereType<String>().toList(growable: false)
+          : const [],
       continueText: (data['continueText'] as String?) ?? '',
       summary: (data['summary'] as String?) ?? '',
       date: (data['date'] as String?) ?? '',
       time: (data['time'] as String?) ?? '',
       publishImmediately: data['publishImmediately'] as bool? ?? false,
       isPublic: data['isPublic'] as bool? ?? true,
-      tags: tags is List ? tags.whereType<String>().toList(growable: false) : const [],
+      tags: tags is List
+          ? tags.whereType<String>().toList(growable: false)
+          : const [],
       status: (data['status'] as String?) ?? 'draft',
       authorName: (data['authorName'] as String?)?.trim().isNotEmpty == true
           ? data['authorName'] as String

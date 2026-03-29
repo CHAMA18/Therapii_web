@@ -3,7 +3,9 @@ import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:therapii/auth/firebase_auth_manager.dart';
 import 'package:therapii/data/universities.dart';
+import 'package:therapii/pages/landing_page.dart';
 import 'package:therapii/pages/therapist_inspiration_page.dart';
 import 'package:therapii/theme.dart';
 
@@ -11,10 +13,12 @@ class TherapistPracticePersonalizationPage extends StatefulWidget {
   const TherapistPracticePersonalizationPage({super.key});
 
   @override
-  State<TherapistPracticePersonalizationPage> createState() => _TherapistPracticePersonalizationPageState();
+  State<TherapistPracticePersonalizationPage> createState() =>
+      _TherapistPracticePersonalizationPageState();
 }
 
-class _TherapistPracticePersonalizationPageState extends State<TherapistPracticePersonalizationPage> {
+class _TherapistPracticePersonalizationPageState
+    extends State<TherapistPracticePersonalizationPage> {
   final _formKey = GlobalKey<FormState>();
   final _fullNameController = TextEditingController();
   final _practiceNameController = TextEditingController();
@@ -42,14 +46,56 @@ class _TherapistPracticePersonalizationPageState extends State<TherapistPractice
   final List<EducationEntry> _educationEntries = [];
 
   final List<String> _usStates = [
-    'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut',
-    'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa',
-    'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan',
-    'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire',
-    'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio',
-    'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota',
-    'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia',
-    'Wisconsin', 'Wyoming',
+    'Alabama',
+    'Alaska',
+    'Arizona',
+    'Arkansas',
+    'California',
+    'Colorado',
+    'Connecticut',
+    'Delaware',
+    'Florida',
+    'Georgia',
+    'Hawaii',
+    'Idaho',
+    'Illinois',
+    'Indiana',
+    'Iowa',
+    'Kansas',
+    'Kentucky',
+    'Louisiana',
+    'Maine',
+    'Maryland',
+    'Massachusetts',
+    'Michigan',
+    'Minnesota',
+    'Mississippi',
+    'Missouri',
+    'Montana',
+    'Nebraska',
+    'Nevada',
+    'New Hampshire',
+    'New Jersey',
+    'New Mexico',
+    'New York',
+    'North Carolina',
+    'North Dakota',
+    'Ohio',
+    'Oklahoma',
+    'Oregon',
+    'Pennsylvania',
+    'Rhode Island',
+    'South Carolina',
+    'South Dakota',
+    'Tennessee',
+    'Texas',
+    'Utah',
+    'Vermont',
+    'Virginia',
+    'Washington',
+    'West Virginia',
+    'Wisconsin',
+    'Wyoming',
   ];
 
   @override
@@ -77,7 +123,10 @@ class _TherapistPracticePersonalizationPageState extends State<TherapistPractice
     }
 
     try {
-      final doc = await FirebaseFirestore.instance.collection('therapists').doc(user.uid).get();
+      final doc = await FirebaseFirestore.instance
+          .collection('therapists')
+          .doc(user.uid)
+          .get();
       if (doc.exists) {
         final data = doc.data() ?? {};
         _fullNameController.text = data['full_name'] ?? '';
@@ -167,7 +216,10 @@ class _TherapistPracticePersonalizationPageState extends State<TherapistPractice
     setState(() => _saving = true);
 
     try {
-      await FirebaseFirestore.instance.collection('therapists').doc(user.uid).set(
+      await FirebaseFirestore.instance
+          .collection('therapists')
+          .doc(user.uid)
+          .set(
         {
           'full_name': _fullNameController.text.trim(),
           'practice_name': _practiceNameController.text.trim(),
@@ -196,7 +248,8 @@ class _TherapistPracticePersonalizationPageState extends State<TherapistPractice
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Something went wrong. Please try again.')),
+        const SnackBar(
+            content: Text('Something went wrong. Please try again.')),
       );
     } finally {
       if (mounted) {
@@ -238,13 +291,15 @@ class _TherapistPracticePersonalizationPageState extends State<TherapistPractice
 
     if (_loading) {
       return Scaffold(
-        backgroundColor: isDark ? DarkModeColors.surface : const Color(0xFFF9FAFB),
+        backgroundColor:
+            isDark ? DarkModeColors.surface : const Color(0xFFF9FAFB),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
 
     return Scaffold(
-      backgroundColor: isDark ? DarkModeColors.surface : const Color(0xFFF9FAFB),
+      backgroundColor:
+          isDark ? DarkModeColors.surface : const Color(0xFFF9FAFB),
       body: Column(
         children: [
           // Sticky Header
@@ -252,7 +307,9 @@ class _TherapistPracticePersonalizationPageState extends State<TherapistPractice
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF0F172A) : Colors.white,
               border: Border(
-                bottom: BorderSide(color: isDark ? Colors.grey[800]! : const Color(0xFFE2E8F0)),
+                bottom: BorderSide(
+                    color:
+                        isDark ? Colors.grey[800]! : const Color(0xFFE2E8F0)),
               ),
             ),
             child: SafeArea(
@@ -264,8 +321,11 @@ class _TherapistPracticePersonalizationPageState extends State<TherapistPractice
                   child: Row(
                     children: [
                       IconButton(
-                        onPressed: _saving ? null : () => Navigator.of(context).maybePop(),
-                        icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
+                        onPressed: _saving
+                            ? null
+                            : () => Navigator.of(context).maybePop(),
+                        icon: Icon(Icons.arrow_back,
+                            color: colorScheme.onSurface),
                       ),
                       const Spacer(),
                       Text(
@@ -301,9 +361,15 @@ class _TherapistPracticePersonalizationPageState extends State<TherapistPractice
                         builder: (context, constraints) {
                           final isCompactHeader = constraints.maxWidth < 520;
                           return Flex(
-                            direction: isCompactHeader ? Axis.vertical : Axis.horizontal,
-                            mainAxisAlignment: isCompactHeader ? MainAxisAlignment.start : MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: isCompactHeader ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+                            direction: isCompactHeader
+                                ? Axis.vertical
+                                : Axis.horizontal,
+                            mainAxisAlignment: isCompactHeader
+                                ? MainAxisAlignment.start
+                                : MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: isCompactHeader
+                                ? CrossAxisAlignment.start
+                                : CrossAxisAlignment.center,
                             children: [
                               Text(
                                 'Therapii',
@@ -316,23 +382,38 @@ class _TherapistPracticePersonalizationPageState extends State<TherapistPractice
                               if (isCompactHeader) const SizedBox(height: 12),
                               OutlinedButton.icon(
                                 onPressed: () async {
-                                  await firebase_auth.FirebaseAuth.instance.signOut();
+                                  await FirebaseAuthManager().signOut();
                                   if (mounted) {
-                                    Navigator.of(context).popUntil((route) => route.isFirst);
+                                    Navigator.of(context).pushAndRemoveUntil(
+                                      MaterialPageRoute(
+                                          builder: (_) => const LandingPage()),
+                                      (route) => false,
+                                    );
                                   }
                                 },
-                                icon: Icon(Icons.logout, size: 18, color: isDark ? Colors.grey[400] : Colors.grey[600]),
+                                icon: Icon(Icons.logout,
+                                    size: 18,
+                                    color: isDark
+                                        ? Colors.grey[400]
+                                        : Colors.grey[600]),
                                 label: Text(
                                   'Logout',
                                   style: textTheme.bodyMedium?.copyWith(
-                                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                    color: isDark
+                                        ? Colors.grey[400]
+                                        : Colors.grey[600],
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
                                 style: OutlinedButton.styleFrom(
-                                  side: BorderSide(color: isDark ? Colors.grey[700]! : const Color(0xFFE2E8F0)),
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                  side: BorderSide(
+                                      color: isDark
+                                          ? Colors.grey[700]!
+                                          : const Color(0xFFE2E8F0)),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 10),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8)),
                                 ),
                               ),
                             ],
@@ -388,7 +469,10 @@ class _TherapistPracticePersonalizationPageState extends State<TherapistPractice
                         padding: const EdgeInsets.only(top: 32),
                         decoration: BoxDecoration(
                           border: Border(
-                            top: BorderSide(color: isDark ? Colors.grey[800]! : const Color(0xFFE2E8F0)),
+                            top: BorderSide(
+                                color: isDark
+                                    ? Colors.grey[800]!
+                                    : const Color(0xFFE2E8F0)),
                           ),
                         ),
                         child: Wrap(
@@ -399,15 +483,18 @@ class _TherapistPracticePersonalizationPageState extends State<TherapistPractice
                             FilledButton(
                               onPressed: _saving ? null : _saveAndContinue,
                               style: FilledButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 48, vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(100)),
                                 elevation: 4,
                               ),
                               child: _saving
                                   ? const SizedBox(
                                       width: 20,
                                       height: 20,
-                                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2, color: Colors.white),
                                     )
                                   : Text(
                                       'Continue',
@@ -418,11 +505,15 @@ class _TherapistPracticePersonalizationPageState extends State<TherapistPractice
                                     ),
                             ),
                             TextButton(
-                              onPressed: _saving ? null : () => Navigator.of(context).maybePop(),
+                              onPressed: _saving
+                                  ? null
+                                  : () => Navigator.of(context).maybePop(),
                               child: Text(
                                 'Go Back',
                                 style: textTheme.labelLarge?.copyWith(
-                                  color: isDark ? Colors.grey[400] : Colors.grey[500],
+                                  color: isDark
+                                      ? Colors.grey[400]
+                                      : Colors.grey[500],
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -494,10 +585,12 @@ class _TherapistPracticePersonalizationPageState extends State<TherapistPractice
                         value: _selectedState,
                         decoration: _inputDecoration(context, 'Select State'),
                         items: _usStates
-                            .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                            .map((s) =>
+                                DropdownMenuItem(value: s, child: Text(s)))
                             .toList(),
                         onChanged: (v) => setState(() => _selectedState = v),
-                        dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                        dropdownColor:
+                            isDark ? const Color(0xFF1E293B) : Colors.white,
                       ),
                     ),
                   ),
@@ -521,10 +614,12 @@ class _TherapistPracticePersonalizationPageState extends State<TherapistPractice
                       value: _selectedState,
                       decoration: _inputDecoration(context, 'Select State'),
                       items: _usStates
-                          .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                          .map(
+                              (s) => DropdownMenuItem(value: s, child: Text(s)))
                           .toList(),
                       onChanged: (v) => setState(() => _selectedState = v),
-                      dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                      dropdownColor:
+                          isDark ? const Color(0xFF1E293B) : Colors.white,
                     ),
                   ),
                 ],
@@ -553,7 +648,8 @@ class _TherapistPracticePersonalizationPageState extends State<TherapistPractice
                       label: 'Phone Number',
                       child: TextFormField(
                         controller: _phoneController,
-                        decoration: _inputDecoration(context, '+1 (555) 000-0000'),
+                        decoration:
+                            _inputDecoration(context, '+1 (555) 000-0000'),
                         keyboardType: TextInputType.phone,
                       ),
                     ),
@@ -577,7 +673,8 @@ class _TherapistPracticePersonalizationPageState extends State<TherapistPractice
                     label: 'Phone Number',
                     child: TextFormField(
                       controller: _phoneController,
-                      decoration: _inputDecoration(context, '+1 (555) 000-0000'),
+                      decoration:
+                          _inputDecoration(context, '+1 (555) 000-0000'),
                       keyboardType: TextInputType.phone,
                     ),
                   ),
@@ -618,27 +715,67 @@ class _TherapistPracticePersonalizationPageState extends State<TherapistPractice
         isWide
             ? Row(
                 children: [
-                  Expanded(child: _buildUploadCard(context, 'profile', Icons.person, 'Profile Photo', 'Clear headshot for your public profile', _profilePhotoName)),
+                  Expanded(
+                      child: _buildUploadCard(
+                          context,
+                          'profile',
+                          Icons.person,
+                          'Profile Photo',
+                          'Clear headshot for your public profile',
+                          _profilePhotoName)),
                   const SizedBox(width: 16),
-                  Expanded(child: _buildUploadCard(context, 'certificate', Icons.school, 'Certificates', 'Copy of your degree or certification', _certificateName)),
+                  Expanded(
+                      child: _buildUploadCard(
+                          context,
+                          'certificate',
+                          Icons.school,
+                          'Certificates',
+                          'Copy of your degree or certification',
+                          _certificateName)),
                   const SizedBox(width: 16),
-                  Expanded(child: _buildUploadCard(context, 'government_id', Icons.badge, 'Government ID', 'Passport, License, or State ID', _governmentIdName)),
+                  Expanded(
+                      child: _buildUploadCard(
+                          context,
+                          'government_id',
+                          Icons.badge,
+                          'Government ID',
+                          'Passport, License, or State ID',
+                          _governmentIdName)),
                 ],
               )
             : Column(
                 children: [
-                  _buildUploadCard(context, 'profile', Icons.person, 'Profile Photo', 'Clear headshot for your public profile', _profilePhotoName),
+                  _buildUploadCard(
+                      context,
+                      'profile',
+                      Icons.person,
+                      'Profile Photo',
+                      'Clear headshot for your public profile',
+                      _profilePhotoName),
                   const SizedBox(height: 16),
-                  _buildUploadCard(context, 'certificate', Icons.school, 'Certificates', 'Copy of your degree or certification', _certificateName),
+                  _buildUploadCard(
+                      context,
+                      'certificate',
+                      Icons.school,
+                      'Certificates',
+                      'Copy of your degree or certification',
+                      _certificateName),
                   const SizedBox(height: 16),
-                  _buildUploadCard(context, 'government_id', Icons.badge, 'Government ID', 'Passport, License, or State ID', _governmentIdName),
+                  _buildUploadCard(
+                      context,
+                      'government_id',
+                      Icons.badge,
+                      'Government ID',
+                      'Passport, License, or State ID',
+                      _governmentIdName),
                 ],
               ),
       ],
     );
   }
 
-  Widget _buildUploadCard(BuildContext context, String type, IconData icon, String title, String description, String? fileName) {
+  Widget _buildUploadCard(BuildContext context, String type, IconData icon,
+      String title, String description, String? fileName) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
@@ -743,7 +880,8 @@ class _TherapistPracticePersonalizationPageState extends State<TherapistPractice
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isDark ? Colors.grey[700]! : const Color(0xFFE2E8F0)),
+        border: Border.all(
+            color: isDark ? Colors.grey[700]! : const Color(0xFFE2E8F0)),
         boxShadow: [
           if (!isDark)
             BoxShadow(
@@ -783,13 +921,16 @@ class _TherapistPracticePersonalizationPageState extends State<TherapistPractice
                       ],
                     ),
                   ),
-                  Icon(Icons.add_circle_outline, color: isDark ? Colors.grey[400] : Colors.grey[400]),
+                  Icon(Icons.add_circle_outline,
+                      color: isDark ? Colors.grey[400] : Colors.grey[400]),
                 ],
               ),
             ),
           ),
           if (_licensureEntries.isNotEmpty) ...[
-            Divider(height: 1, color: isDark ? Colors.grey[700] : const Color(0xFFE2E8F0)),
+            Divider(
+                height: 1,
+                color: isDark ? Colors.grey[700] : const Color(0xFFE2E8F0)),
             ..._licensureEntries.asMap().entries.map((entry) {
               final idx = entry.key;
               final lic = entry.value;
@@ -798,7 +939,8 @@ class _TherapistPracticePersonalizationPageState extends State<TherapistPractice
                 subtitle: Text('Expires: ${lic.expirationDate ?? 'N/A'}'),
                 trailing: IconButton(
                   icon: const Icon(Icons.delete_outline, size: 20),
-                  onPressed: () => setState(() => _licensureEntries.removeAt(idx)),
+                  onPressed: () =>
+                      setState(() => _licensureEntries.removeAt(idx)),
                 ),
               );
             }),
@@ -837,7 +979,8 @@ class _TherapistPracticePersonalizationPageState extends State<TherapistPractice
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isDark ? Colors.grey[700]! : const Color(0xFFE2E8F0)),
+        border: Border.all(
+            color: isDark ? Colors.grey[700]! : const Color(0xFFE2E8F0)),
         boxShadow: [
           if (!isDark)
             BoxShadow(
@@ -877,13 +1020,16 @@ class _TherapistPracticePersonalizationPageState extends State<TherapistPractice
                       ],
                     ),
                   ),
-                  Icon(Icons.add_circle_outline, color: isDark ? Colors.grey[400] : Colors.grey[400]),
+                  Icon(Icons.add_circle_outline,
+                      color: isDark ? Colors.grey[400] : Colors.grey[400]),
                 ],
               ),
             ),
           ),
           if (_educationEntries.isNotEmpty) ...[
-            Divider(height: 1, color: isDark ? Colors.grey[700] : const Color(0xFFE2E8F0)),
+            Divider(
+                height: 1,
+                color: isDark ? Colors.grey[700] : const Color(0xFFE2E8F0)),
             ..._educationEntries.asMap().entries.map((entry) {
               final idx = entry.key;
               final edu = entry.value;
@@ -892,7 +1038,8 @@ class _TherapistPracticePersonalizationPageState extends State<TherapistPractice
                 subtitle: Text('Graduated: ${edu.graduationYear ?? 'N/A'}'),
                 trailing: IconButton(
                   icon: const Icon(Icons.delete_outline, size: 20),
-                  onPressed: () => setState(() => _educationEntries.removeAt(idx)),
+                  onPressed: () =>
+                      setState(() => _educationEntries.removeAt(idx)),
                 ),
               );
             }),
@@ -922,7 +1069,8 @@ class _TherapistPracticePersonalizationPageState extends State<TherapistPractice
     );
   }
 
-  Widget _buildFormField(BuildContext context, {required String label, required Widget child}) {
+  Widget _buildFormField(BuildContext context,
+      {required String label, required Widget child}) {
     final textTheme = Theme.of(context).textTheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -954,11 +1102,13 @@ class _TherapistPracticePersonalizationPageState extends State<TherapistPractice
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: isDark ? Colors.grey[700]! : const Color(0xFFE2E8F0)),
+        borderSide: BorderSide(
+            color: isDark ? Colors.grey[700]! : const Color(0xFFE2E8F0)),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: isDark ? Colors.grey[700]! : const Color(0xFFE2E8F0)),
+        borderSide: BorderSide(
+            color: isDark ? Colors.grey[700]! : const Color(0xFFE2E8F0)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
@@ -1035,7 +1185,9 @@ class _LicensureDialogState extends State<_LicensureDialog> {
             DropdownButtonFormField<String>(
               value: _state,
               decoration: const InputDecoration(labelText: 'State'),
-              items: widget.states.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+              items: widget.states
+                  .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                  .toList(),
               onChanged: (v) => setState(() => _state = v),
             ),
             const SizedBox(height: 16),
@@ -1046,13 +1198,16 @@ class _LicensureDialogState extends State<_LicensureDialog> {
             const SizedBox(height: 16),
             TextField(
               controller: _expirationController,
-              decoration: const InputDecoration(labelText: 'Expiration Date (MM/YYYY)'),
+              decoration:
+                  const InputDecoration(labelText: 'Expiration Date (MM/YYYY)'),
             ),
           ],
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel')),
         FilledButton(
           onPressed: () {
             widget.onSave(LicensureEntry(
@@ -1103,8 +1258,11 @@ class _EducationDialogState extends State<_EducationDialog> {
           children: [
             Autocomplete<String>(
               optionsBuilder: (textEditingValue) {
-                if (textEditingValue.text.isEmpty) return const Iterable<String>.empty();
-                return kUniversities.where((u) => u.toLowerCase().contains(textEditingValue.text.toLowerCase()));
+                if (textEditingValue.text.isEmpty)
+                  return const Iterable<String>.empty();
+                return kUniversities.where((u) => u
+                    .toLowerCase()
+                    .contains(textEditingValue.text.toLowerCase()));
               },
               onSelected: (selection) {
                 _selectedInstitution = selection;
@@ -1125,7 +1283,8 @@ class _EducationDialogState extends State<_EducationDialog> {
             const SizedBox(height: 16),
             TextField(
               controller: _degreeController,
-              decoration: const InputDecoration(labelText: 'Degree (e.g., Ph.D., Psy.D.)'),
+              decoration: const InputDecoration(
+                  labelText: 'Degree (e.g., Ph.D., Psy.D.)'),
             ),
             const SizedBox(height: 16),
             TextField(
@@ -1137,11 +1296,14 @@ class _EducationDialogState extends State<_EducationDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel')),
         FilledButton(
           onPressed: () {
             widget.onSave(EducationEntry(
-              institution: _selectedInstitution ?? _institutionController.text.trim(),
+              institution:
+                  _selectedInstitution ?? _institutionController.text.trim(),
               degree: _degreeController.text.trim(),
               graduationYear: _yearController.text.trim(),
             ));
@@ -1211,7 +1373,8 @@ class _DashedBorderPainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
 
     final path = Path()
-      ..addRRect(borderRadius.toRRect(Rect.fromLTWH(0, 0, size.width, size.height)));
+      ..addRRect(
+          borderRadius.toRRect(Rect.fromLTWH(0, 0, size.width, size.height)));
 
     final dashPath = _createDashedPath(path);
     canvas.drawPath(dashPath, paint);
@@ -1225,7 +1388,8 @@ class _DashedBorderPainter extends CustomPainter {
       while (distance < metric.length) {
         final length = draw ? dashWidth : dashSpace;
         if (draw) {
-          dest.addPath(metric.extractPath(distance, distance + length), Offset.zero);
+          dest.addPath(
+              metric.extractPath(distance, distance + length), Offset.zero);
         }
         distance += length;
         draw = !draw;

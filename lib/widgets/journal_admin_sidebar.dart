@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:therapii/auth/firebase_auth_manager.dart';
-import 'package:therapii/pages/auth_welcome_page.dart';
+import 'package:therapii/pages/landing_page.dart';
 import 'package:therapii/utils/admin_access.dart';
 
 enum JournalAdminSidebarItem {
@@ -52,7 +52,8 @@ class _JournalAdminSidebarState extends State<JournalAdminSidebar> {
     if (parts.length == 1) {
       return parts.first.characters.first.toUpperCase();
     }
-    return (parts.first.characters.first + parts.last.characters.first).toUpperCase();
+    return (parts.first.characters.first + parts.last.characters.first)
+        .toUpperCase();
   }
 
   String? _safePhotoUrl() {
@@ -80,10 +81,7 @@ class _JournalAdminSidebarState extends State<JournalAdminSidebar> {
       if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
-          builder: (_) => const AuthWelcomePage(
-            initialTab: AuthTab.login,
-            openJournalPortalAfterAuth: true,
-          ),
+          builder: (_) => const LandingPage(),
         ),
         (route) => false,
       );
@@ -116,7 +114,8 @@ class _JournalAdminSidebarState extends State<JournalAdminSidebar> {
       child: Column(
         children: [
           Padding(
-            padding: EdgeInsets.fromLTRB(_isCollapsed ? 12 : 24, 24, _isCollapsed ? 12 : 16, 8),
+            padding: EdgeInsets.fromLTRB(
+                _isCollapsed ? 12 : 24, 24, _isCollapsed ? 12 : 16, 8),
             child: Row(
               children: [
                 const _LogoGlyph(),
@@ -125,7 +124,8 @@ class _JournalAdminSidebarState extends State<JournalAdminSidebar> {
                   const Flexible(
                     child: Text(
                       'Therapii',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -140,9 +140,12 @@ class _JournalAdminSidebarState extends State<JournalAdminSidebar> {
                     });
                   },
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
+                  constraints:
+                      const BoxConstraints(minWidth: 30, minHeight: 30),
                   icon: Icon(
-                    _isCollapsed ? Icons.chevron_right_rounded : Icons.chevron_left_rounded,
+                    _isCollapsed
+                        ? Icons.chevron_right_rounded
+                        : Icons.chevron_left_rounded,
                     size: 20,
                     color: const Color(0xFF64748B),
                   ),
@@ -163,14 +166,18 @@ class _JournalAdminSidebarState extends State<JournalAdminSidebar> {
                       _SidebarNavItemData(
                         icon: Icons.dashboard_outlined,
                         label: 'Dashboard',
-                        active: widget.activeItem == JournalAdminSidebarItem.dashboard,
-                        onTap: () => _handleNavigate(JournalAdminSidebarItem.dashboard),
+                        active: widget.activeItem ==
+                            JournalAdminSidebarItem.dashboard,
+                        onTap: () =>
+                            _handleNavigate(JournalAdminSidebarItem.dashboard),
                       ),
                       _SidebarNavItemData(
                         icon: Icons.article_outlined,
                         label: 'Articles',
-                        active: widget.activeItem == JournalAdminSidebarItem.articles,
-                        onTap: () => _handleNavigate(JournalAdminSidebarItem.articles),
+                        active: widget.activeItem ==
+                            JournalAdminSidebarItem.articles,
+                        onTap: () =>
+                            _handleNavigate(JournalAdminSidebarItem.articles),
                       ),
                     ],
                   ),
@@ -182,14 +189,18 @@ class _JournalAdminSidebarState extends State<JournalAdminSidebar> {
                       _SidebarNavItemData(
                         icon: Icons.group_outlined,
                         label: 'Team',
-                        active: widget.activeItem == JournalAdminSidebarItem.team,
-                        onTap: () => _handleNavigate(JournalAdminSidebarItem.team),
+                        active:
+                            widget.activeItem == JournalAdminSidebarItem.team,
+                        onTap: () =>
+                            _handleNavigate(JournalAdminSidebarItem.team),
                       ),
                       _SidebarNavItemData(
                         icon: Icons.people_alt_outlined,
                         label: 'Patients',
-                        active: widget.activeItem == JournalAdminSidebarItem.patients,
-                        onTap: () => _handleNavigate(JournalAdminSidebarItem.patients),
+                        active: widget.activeItem ==
+                            JournalAdminSidebarItem.patients,
+                        onTap: () =>
+                            _handleNavigate(JournalAdminSidebarItem.patients),
                       ),
                     ],
                   ),
@@ -201,14 +212,18 @@ class _JournalAdminSidebarState extends State<JournalAdminSidebar> {
                       _SidebarNavItemData(
                         icon: Icons.analytics_outlined,
                         label: 'Analytics',
-                        active: widget.activeItem == JournalAdminSidebarItem.analytics,
-                        onTap: () => _handleNavigate(JournalAdminSidebarItem.analytics),
+                        active: widget.activeItem ==
+                            JournalAdminSidebarItem.analytics,
+                        onTap: () =>
+                            _handleNavigate(JournalAdminSidebarItem.analytics),
                       ),
                       _SidebarNavItemData(
                         icon: Icons.settings_outlined,
                         label: 'Settings',
-                        active: widget.activeItem == JournalAdminSidebarItem.settings,
-                        onTap: () => _handleNavigate(JournalAdminSidebarItem.settings),
+                        active: widget.activeItem ==
+                            JournalAdminSidebarItem.settings,
+                        onTap: () =>
+                            _handleNavigate(JournalAdminSidebarItem.settings),
                       ),
                     ],
                   ),
@@ -228,13 +243,16 @@ class _JournalAdminSidebarState extends State<JournalAdminSidebar> {
                       CircleAvatar(
                         radius: 20,
                         backgroundColor: const Color(0xFFE2E8F0),
-                        backgroundImage: hasPhoto ? NetworkImage(photoUrl) : null,
+                        backgroundImage:
+                            hasPhoto ? NetworkImage(photoUrl) : null,
                         onBackgroundImageError: hasPhoto ? (_, __) {} : null,
                         child: hasPhoto
                             ? null
                             : Text(
                                 _initials(name),
-                                style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF475569)),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF475569)),
                               ),
                       ),
                       const SizedBox(height: 8),
@@ -242,9 +260,11 @@ class _JournalAdminSidebarState extends State<JournalAdminSidebar> {
                         tooltip: 'Logout',
                         onPressed: _handleLogout,
                         padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                        constraints:
+                            const BoxConstraints(minWidth: 32, minHeight: 32),
                         visualDensity: VisualDensity.compact,
-                        icon: const Icon(Icons.logout, color: Color(0xFF64748B), size: 20),
+                        icon: const Icon(Icons.logout,
+                            color: Color(0xFF64748B), size: 20),
                       ),
                     ],
                   )
@@ -253,13 +273,16 @@ class _JournalAdminSidebarState extends State<JournalAdminSidebar> {
                       CircleAvatar(
                         radius: 20,
                         backgroundColor: const Color(0xFFE2E8F0),
-                        backgroundImage: hasPhoto ? NetworkImage(photoUrl) : null,
+                        backgroundImage:
+                            hasPhoto ? NetworkImage(photoUrl) : null,
                         onBackgroundImageError: hasPhoto ? (_, __) {} : null,
                         child: hasPhoto
                             ? null
                             : Text(
                                 _initials(name),
-                                style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF475569)),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF475569)),
                               ),
                       ),
                       const SizedBox(width: 10),
@@ -269,7 +292,8 @@ class _JournalAdminSidebarState extends State<JournalAdminSidebar> {
                           children: [
                             Text(
                               name,
-                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                              style: const TextStyle(
+                                  fontSize: 14, fontWeight: FontWeight.w700),
                               overflow: TextOverflow.ellipsis,
                             ),
                             const SizedBox(height: 2),
@@ -277,17 +301,22 @@ class _JournalAdminSidebarState extends State<JournalAdminSidebar> {
                               children: [
                                 const Text(
                                   'View Profile',
-                                  style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                  style: TextStyle(
+                                      fontSize: 11, color: Color(0xFF64748B)),
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 if (isAdmin) ...[
                                   const SizedBox(width: 6),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6, vertical: 2),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF2B8CEE).withValues(alpha: 0.12),
+                                      color: const Color(0xFF2B8CEE)
+                                          .withValues(alpha: 0.12),
                                       borderRadius: BorderRadius.circular(999),
-                                      border: Border.all(color: const Color(0xFF2B8CEE).withValues(alpha: 0.3)),
+                                      border: Border.all(
+                                          color: const Color(0xFF2B8CEE)
+                                              .withValues(alpha: 0.3)),
                                     ),
                                     child: const Text(
                                       'ADMIN',
@@ -309,9 +338,11 @@ class _JournalAdminSidebarState extends State<JournalAdminSidebar> {
                         tooltip: 'Logout',
                         onPressed: _handleLogout,
                         padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                        constraints:
+                            const BoxConstraints(minWidth: 32, minHeight: 32),
                         visualDensity: VisualDensity.compact,
-                        icon: const Icon(Icons.logout, color: Color(0xFF64748B), size: 20),
+                        icon: const Icon(Icons.logout,
+                            color: Color(0xFF64748B), size: 20),
                       ),
                     ],
                   ),
@@ -357,7 +388,8 @@ class _SidebarGroup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: collapsed ? CrossAxisAlignment.center : CrossAxisAlignment.start,
+      crossAxisAlignment:
+          collapsed ? CrossAxisAlignment.center : CrossAxisAlignment.start,
       children: [
         if (!collapsed)
           Padding(
@@ -419,7 +451,8 @@ class _SidebarNavItem extends StatelessWidget {
               child: Icon(
                 item.icon,
                 size: 20,
-                color: active ? const Color(0xFF2B8CEE) : const Color(0xFF64748B),
+                color:
+                    active ? const Color(0xFF2B8CEE) : const Color(0xFF64748B),
               ),
             ),
           ),

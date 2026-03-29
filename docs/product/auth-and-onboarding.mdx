@@ -1,0 +1,84 @@
+---
+title: Auth and Onboarding
+description: Sign-up, login, email verification, invitation linkage, and onboarding flows.
+---
+
+# Auth and Onboarding
+
+## Authentication experience
+
+The primary authentication page is `lib/pages/auth_welcome_page.dart`.
+
+It provides:
+
+- create account flow
+- login flow
+- therapist or client account selection
+- optional journal portal entry context
+- avatar upload support during account creation
+- Terms of Service and Privacy Policy acceptance checks
+
+## Client onboarding
+
+Client onboarding is split across:
+
+- `patient_invitation_signup_page.dart`
+- `patient_welcome_code_page.dart`
+- `patient_invitation_payment_page.dart`
+- `patient_invitation_onboarding_dashboard_page.dart`
+- `patient_invitation_all_set_page.dart`
+- `patient_onboarding_flow_page.dart`
+
+These flows support:
+
+- receiving invitation codes
+- linking a client to a therapist
+- collecting onboarding context
+- transitioning from setup into the main client dashboard
+
+The client profile stores onboarding state in the `users` collection through:
+
+- `patient_onboarding_data`
+- `patient_onboarding_completed`
+
+## Therapist onboarding
+
+Therapist onboarding spans several dedicated pages, including:
+
+- details
+- training
+- specialization
+- therapeutic models
+- practice setup
+- personalization
+- Psychology Today-related welcome flow
+
+These flows shape the therapist profile and AI training metadata used elsewhere in the app.
+
+## Verification flow
+
+The app requires email verification for both therapists and clients before routing them to their full workspace.
+
+Primary verification page:
+
+- `lib/pages/verify_email_page.dart`
+
+## Invitation linkage
+
+Therapist-to-client connection is established through invitation workflows backed by:
+
+- `InvitationService`
+- callable function email delivery
+- Firestore invitation code records
+
+When a valid pending invitation exists during auth completion, the app links the client to the therapist and consumes the code.
+
+## Documentation note
+
+Product language may say `Client`, but data and APIs still frequently use:
+
+- `patient`
+- `patient_id`
+- `patient_onboarding_*`
+
+This is expected in the current codebase and should be preserved unless a full migration is planned.

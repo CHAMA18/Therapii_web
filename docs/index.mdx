@@ -1,0 +1,86 @@
+---
+title: Therapii Documentation
+description: Product, architecture, backend, and operations documentation for the Therapii application.
+---
+
+# Therapii Documentation
+
+Therapii is a Flutter and Firebase application for therapist-client engagement, guided onboarding, AI-assisted communication, journal publishing, and admin operations.
+
+This documentation set is structured for three audiences:
+
+- Product and operations teams who need to understand the user journeys
+- Engineers who need to work in the Flutter, Firebase, and Cloud Functions codebase
+- Admins who manage therapist approvals, content, billing access, and platform settings
+
+## Stack at a glance
+
+- Frontend: Flutter Web with Material UI
+- Authentication: Firebase Authentication
+- Database: Cloud Firestore
+- File storage: Firebase Storage
+- Backend workflows: Firebase Cloud Functions on Node.js 20
+- Payments and billing: Stripe through callable Cloud Functions
+- Email delivery: Resend
+- AI integration: OpenAI-backed configuration through Functions and admin settings
+
+## Core application surfaces
+
+### Public and authentication
+
+- Landing page and marketing surface
+- Sign up and login for therapists and clients
+- Email verification and role-aware post-login routing
+
+### Client experience
+
+- Client dashboard
+- Therapist connection via invitation flow
+- Human chat and AI-assisted conversation surface
+- Voice conversation and support center
+- Billing and plan management
+
+### Therapist experience
+
+- My Patients workspace
+- Patient details, conversations, summaries, and voice check-ins
+- Therapist approval-aware access gating
+- Profile and practice setup flows
+
+### Journal platform
+
+- Journal portal for readers
+- Favorite article saving
+- Journal article detail view
+- Admin content studio and analytics views
+
+### Admin console
+
+- Therapist approvals
+- Usage and activity metrics
+- Landing content configuration
+- Journal administration
+- User access grants tied to Stripe-related account data
+
+## Repository map
+
+| Area | Primary location |
+| --- | --- |
+| App bootstrap and routing | `lib/main.dart` |
+| Application pages | `lib/pages/` |
+| Data and domain models | `lib/models/` |
+| Firestore and integration services | `lib/services/` |
+| Shared widgets | `lib/widgets/` |
+| Callable backend functions | `functions/index.js` |
+| Firestore authorization rules | `firestore.rules` |
+| Firebase project config | `firebase.json` |
+
+## Recommended reading order
+
+1. [Local Development](getting-started/local-development)
+2. [System Overview](architecture/system-overview)
+3. [Routing and Roles](architecture/routing-and-roles)
+4. Product area pages for the feature set you are modifying
+5. [Firebase and Functions](backend/firebase-and-functions)
+6. [Data Model and Security](backend/data-model-and-security)
+7. [Deployment](operations/deployment)
