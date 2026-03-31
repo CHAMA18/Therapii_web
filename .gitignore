@@ -4,3 +4,5 @@
 build/
 .flutter-plugins
 .flutter-plugins-dependencies
+node_modules/
+functions/lib/

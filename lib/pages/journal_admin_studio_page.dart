@@ -27,14 +27,9 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
 
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _titleController = TextEditingController();
-  final TextEditingController _quoteController = TextEditingController(
-    text: '',
-  );
-  final TextEditingController _introController = TextEditingController();
-  final TextEditingController _sectionTitleController = TextEditingController();
-  final TextEditingController _sectionBodyController = TextEditingController();
-  final TextEditingController _bulletsController = TextEditingController();
-  final TextEditingController _continueController = TextEditingController();
+  final FocusNode _titleFocusNode = FocusNode();
+  final List<TextEditingController> _blockControllers = [TextEditingController()];
+  final List<FocusNode> _blockFocusNodes = [FocusNode()];
   final TextEditingController _summaryController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _timeController = TextEditingController();
@@ -68,17 +63,13 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
   void _attachDirtyListeners() {
     final controllers = [
       _titleController,
-      _quoteController,
-      _introController,
-      _sectionTitleController,
-      _sectionBodyController,
-      _bulletsController,
-      _continueController,
+      ..._blockControllers,
       _summaryController,
       _dateController,
       _timeController,
     ];
     for (final controller in controllers) {
+      controller.removeListener(_markDirty);
       controller.addListener(_markDirty);
     }
   }
@@ -86,7 +77,9 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
   void _markDirty() {
     if (_isApplyingArticle) return;
     if (!mounted) return;
-    setState(() => _hasUnsavedChanges = true);
+    if (!_hasUnsavedChanges) {
+      setState(() => _hasUnsavedChanges = true);
+    }
   }
 
   CollectionReference<Map<String, dynamic>> get _articlesCollection =>
@@ -109,7 +102,10 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
 
       final articles =
           snapshot.docs.map(_StudioArticle.fromDoc).toList(growable: false);
+      final prevSelectedId = _selectedArticleId;
       final selectedId = _resolveSelectedArticleId(articles);
+      final idChanged = prevSelectedId != selectedId;
+      final isFirstLoad = _articles.isEmpty;
 
       if (!mounted) return;
       setState(() {
@@ -118,11 +114,13 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
         _isLoadingArticles = false;
       });
 
-      final selectedArticle = _selectedArticle;
-      if (selectedArticle != null) {
-        _applyArticleToEditor(selectedArticle);
-      } else if (_selectedArticleId == null) {
-        _clearEditor();
+      if (isFirstLoad || idChanged) {
+        final selectedArticle = _selectedArticle;
+        if (selectedArticle != null) {
+          _applyArticleToEditor(selectedArticle);
+        } else if (_selectedArticleId == null) {
+          _clearEditor();
+        }
       }
     }, onError: (error) {
       if (!mounted) return;
@@ -295,12 +293,24 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
   void _applyArticleToEditor(_StudioArticle article) {
     _isApplyingArticle = true;
     _titleController.text = article.title;
-    _quoteController.text = article.quote;
-    _introController.text = article.intro;
-    _sectionTitleController.text = article.sectionTitle;
-    _sectionBodyController.text = article.sectionBody;
-    _bulletsController.text = article.bullets.join('\n');
-    _continueController.text = article.continueText;
+    
+    for (int i = 0; i < _blockControllers.length; i++) {
+      _blockControllers[i].dispose();
+      _blockFocusNodes[i].dispose();
+    }
+    _blockControllers.clear();
+    _blockFocusNodes.clear();
+    
+    if (article.blocks.isNotEmpty) {
+      for (final blockText in article.blocks) {
+        _blockControllers.add(TextEditingController(text: blockText));
+        _blockFocusNodes.add(FocusNode());
+      }
+    } else {
+      _blockControllers.add(TextEditingController());
+      _blockFocusNodes.add(FocusNode());
+    }
+    
     _summaryController.text = article.summary;
     _dateController.text = article.date;
     _timeController.text = article.time;
@@ -310,18 +320,21 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
     _lastSavedAt = article.updatedAt;
     _hasUnsavedChanges = false;
     _isApplyingArticle = false;
+    
+    _attachDirtyListeners();
     if (mounted) setState(() {});
   }
 
   void _clearEditor() {
     _isApplyingArticle = true;
     _titleController.text = 'Untitled article';
-    _quoteController.clear();
-    _introController.clear();
-    _sectionTitleController.clear();
-    _sectionBodyController.clear();
-    _bulletsController.clear();
-    _continueController.clear();
+    for (var c in _blockControllers) { c.dispose(); }
+    for (var f in _blockFocusNodes) { f.dispose(); }
+    _blockControllers.clear();
+    _blockFocusNodes.clear();
+    _blockControllers.add(TextEditingController());
+    _blockFocusNodes.add(FocusNode());
+    _attachDirtyListeners();
     _summaryController.clear();
     _dateController.clear();
     _timeController.clear();
@@ -351,16 +364,7 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
 
     final payload = <String, dynamic>{
       'title': _titleController.text.trim(),
-      'quote': _quoteController.text.trim(),
-      'intro': _introController.text.trim(),
-      'sectionTitle': _sectionTitleController.text.trim(),
-      'sectionBody': _sectionBodyController.text.trim(),
-      'bullets': _bulletsController.text
-          .split('\n')
-          .map((line) => line.trim())
-          .where((line) => line.isNotEmpty)
-          .toList(growable: false),
-      'continueText': _continueController.text.trim(),
+      'blocks': _blockControllers.map((c) => c.text.trim()).where((t) => t.isNotEmpty).toList(growable: false),
       'summary': _summaryController.text.trim(),
       'date': _dateController.text.trim(),
       'time': _timeController.text.trim(),
@@ -448,12 +452,7 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
     final now = DateTime.now();
     await ref.set({
       'title': 'Untitled article',
-      'quote': '',
-      'intro': '',
-      'sectionTitle': '',
-      'sectionBody': '',
-      'bullets': const <String>[],
-      'continueText': '',
+      'blocks': const <String>[],
       'summary': '',
       'date': '',
       'time': '',
@@ -573,7 +572,7 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
       if (query.isEmpty) return true;
       return article.title.toLowerCase().contains(query) ||
           article.summary.toLowerCase().contains(query) ||
-          article.intro.toLowerCase().contains(query) ||
+          article.blocks.any((b) => b.toLowerCase().contains(query)) ||
           article.authorName.toLowerCase().contains(query);
     }).toList(growable: false);
   }
@@ -626,16 +625,121 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
     _articlesSubscription?.cancel();
     _searchController.dispose();
     _titleController.dispose();
-    _quoteController.dispose();
-    _introController.dispose();
-    _sectionTitleController.dispose();
-    _sectionBodyController.dispose();
-    _bulletsController.dispose();
-    _continueController.dispose();
+    _titleFocusNode.dispose();
+    for (int i = 0; i < _blockControllers.length; i++) {
+      _blockControllers[i].dispose();
+      _blockFocusNodes[i].dispose();
+    }
     _summaryController.dispose();
     _dateController.dispose();
     _timeController.dispose();
     super.dispose();
+  }
+
+  void _onToolbarAction(String action) {
+    TextEditingController? activeController;
+    if (_titleFocusNode.hasFocus) {
+      activeController = _titleController;
+    } else {
+      for (int i = 0; i < _blockFocusNodes.length; i++) {
+        if (_blockFocusNodes[i].hasFocus) {
+          activeController = _blockControllers[i];
+          break;
+        }
+      }
+    }
+    
+    if (activeController == null) {
+      if (_blockControllers.isNotEmpty) {
+        activeController = _blockControllers.last;
+      } else {
+        return;
+      }
+    }
+    
+    final selection = activeController.selection;
+    final text = activeController.text;
+    
+    String newText;
+    TextSelection newSelection;
+    
+    if (selection.isValid && selection.start >= 0 && selection.end >= 0) {
+      final selectedText = text.substring(selection.start, selection.end);
+      final before = text.substring(0, selection.start);
+      final after = text.substring(selection.end);
+      
+      switch (action) {
+        case 'bold':
+          newText = '$before**$selectedText**$after';
+          newSelection = TextSelection.collapsed(offset: selection.start + 2 + selectedText.length);
+          break;
+        case 'italic':
+          newText = '$before*$selectedText*$after';
+          newSelection = TextSelection.collapsed(offset: selection.start + 1 + selectedText.length);
+          break;
+        case 'link':
+          newText = '$before[$selectedText](url)$after';
+          newSelection = TextSelection(baseOffset: selection.start + 1 + selectedText.length + 2, extentOffset: selection.start + 1 + selectedText.length + 5);
+          break;
+        case 'title':
+          newText = '$before# $selectedText$after';
+          newSelection = TextSelection.collapsed(offset: selection.start + 2 + selectedText.length);
+          break;
+        case 'quote':
+          newText = '$before> $selectedText$after';
+          newSelection = TextSelection.collapsed(offset: selection.start + 2 + selectedText.length);
+          break;
+        case 'list':
+          newText = '$before- $selectedText$after';
+          newSelection = TextSelection.collapsed(offset: selection.start + 2 + selectedText.length);
+          break;
+        case 'image':
+          newText = '$before![alt text](image_url)$after';
+          newSelection = TextSelection(baseOffset: selection.start + 14, extentOffset: selection.start + 23);
+          break;
+        default:
+          return;
+      }
+    } else {
+      final before = text;
+      switch (action) {
+        case 'bold':
+          newText = '$before****';
+          newSelection = TextSelection.collapsed(offset: before.length + 2);
+          break;
+        case 'italic':
+          newText = '$before**';
+          newSelection = TextSelection.collapsed(offset: before.length + 1);
+          break;
+        case 'link':
+          newText = '$before[](url)';
+          newSelection = TextSelection.collapsed(offset: before.length + 1);
+          break;
+        case 'title':
+          newText = '$before\n# ';
+          newSelection = TextSelection.collapsed(offset: before.length + 3);
+          break;
+        case 'quote':
+          newText = '$before\n> ';
+          newSelection = TextSelection.collapsed(offset: before.length + 3);
+          break;
+        case 'list':
+          newText = '$before\n- ';
+          newSelection = TextSelection.collapsed(offset: before.length + 3);
+          break;
+        case 'image':
+          newText = '$before\n![alt text](image_url)';
+          newSelection = TextSelection.collapsed(offset: before.length + 14);
+          break;
+        default:
+          return;
+      }
+    }
+    
+    activeController.value = TextEditingValue(
+      text: newText,
+      selection: newSelection,
+    );
   }
 
   @override
@@ -677,12 +781,26 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
                   saveStatusText: _saveStatusText,
                   articleTitle: selectedArticle?.title ?? 'Untitled article',
                   titleController: _titleController,
-                  quoteController: _quoteController,
-                  introController: _introController,
-                  sectionTitleController: _sectionTitleController,
-                  sectionBodyController: _sectionBodyController,
-                  bulletsController: _bulletsController,
-                  continueController: _continueController,
+                  titleFocusNode: _titleFocusNode,
+                  blockControllers: _blockControllers,
+                  blockFocusNodes: _blockFocusNodes,
+                  onAddBlock: () {
+                    setState(() {
+                      _blockControllers.add(TextEditingController());
+                      _blockFocusNodes.add(FocusNode());
+                      _attachDirtyListeners();
+                    });
+                  },
+                  onRemoveBlock: (index) {
+                    setState(() {
+                      _blockControllers[index].dispose();
+                      _blockControllers.removeAt(index);
+                      _blockFocusNodes[index].dispose();
+                      _blockFocusNodes.removeAt(index);
+                      _hasUnsavedChanges = true;
+                    });
+                  },
+                  onToolbarAction: _onToolbarAction,
                   isLoading: _isLoadingArticles,
                 ),
               ),
@@ -707,6 +825,33 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
       ),
     );
   }
+}
+
+class _handleToolbarAction {
+}
+
+class _removeBlock {
+}
+
+class _addBlock {
+}
+
+class _continueController {
+}
+
+class _bulletsController {
+}
+
+class _sectionBodyController {
+}
+
+class _sectionTitleController {
+}
+
+class _introController {
+}
+
+class _quoteController {
 }
 
 class _LeftSidebar extends StatelessWidget {
@@ -1479,23 +1624,24 @@ class _EditorPanel extends StatelessWidget {
   final String saveStatusText;
   final String articleTitle;
   final TextEditingController titleController;
-  final TextEditingController quoteController;
-  final TextEditingController introController;
-  final TextEditingController sectionTitleController;
-  final TextEditingController sectionBodyController;
-  final TextEditingController bulletsController;
-  final TextEditingController continueController;
+  final FocusNode titleFocusNode;
+  final List<TextEditingController> blockControllers;
+  final List<FocusNode> blockFocusNodes;
+  final VoidCallback onAddBlock;
+  final ValueChanged<int> onRemoveBlock;
+  final ValueChanged<String> onToolbarAction;
   final bool isLoading;
+
   const _EditorPanel({
     required this.saveStatusText,
     required this.articleTitle,
     required this.titleController,
-    required this.quoteController,
-    required this.introController,
-    required this.sectionTitleController,
-    required this.sectionBodyController,
-    required this.bulletsController,
-    required this.continueController,
+    required this.titleFocusNode,
+    required this.blockControllers,
+    required this.blockFocusNodes,
+    required this.onAddBlock,
+    required this.onRemoveBlock,
+    required this.onToolbarAction,
     required this.isLoading,
   });
 
@@ -1552,24 +1698,23 @@ class _EditorPanel extends StatelessWidget {
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
-                              children: const [
-                                _ToolbarIcon(Icons.format_bold),
-                                _ToolbarIcon(Icons.format_italic),
-                                _ToolbarIcon(Icons.link),
-                                _ToolbarDivider(),
-                                _ToolbarIcon(Icons.title),
-                                _ToolbarIcon(Icons.format_quote),
-                                _ToolbarIcon(Icons.format_list_bulleted),
-                                _ToolbarDivider(),
-                                _ToolbarIcon(
-                                    Icons.add_photo_alternate_outlined),
+                              children: [
+                                _ToolbarIcon(Icons.format_bold, onPressed: () => onToolbarAction('bold')),
+                                _ToolbarIcon(Icons.format_italic, onPressed: () => onToolbarAction('italic')),
+                                _ToolbarIcon(Icons.link, onPressed: () => onToolbarAction('link')),
+                                const _ToolbarDivider(),
+                                _ToolbarIcon(Icons.title, onPressed: () => onToolbarAction('title')),
+                                _ToolbarIcon(Icons.format_quote, onPressed: () => onToolbarAction('quote')),
+                                _ToolbarIcon(Icons.format_list_bulleted, onPressed: () => onToolbarAction('list')),
+                                const _ToolbarDivider(),
+                                _ToolbarIcon(Icons.add_photo_alternate_outlined, onPressed: () => onToolbarAction('image')),
                               ],
                             ),
                           ),
                           const SizedBox(height: 16),
                           Container(
                             width: double.infinity,
-                            padding: const EdgeInsets.fromLTRB(36, 36, 36, 28),
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(16),
@@ -1579,78 +1724,56 @@ class _EditorPanel extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                TextFormField(
+                                _EditorBlock(
                                   controller: titleController,
-                                  decoration: const InputDecoration(
-                                    border: InputBorder.none,
-                                    hintText: 'Article Title',
-                                  ),
-                                  style: const TextStyle(
-                                      fontSize: 42,
-                                      fontWeight: FontWeight.w800,
-                                      height: 1.1),
-                                ),
-                                const SizedBox(height: 8),
-                                const Divider(height: 1),
-                                const SizedBox(height: 18),
-                                _PrimaryEditorField(
-                                  controller: introController,
-                                ),
-                                const SizedBox(height: 18),
-                                _SecondaryEditorField(
-                                  label: 'Pull Quote',
-                                  child: TextFormField(
-                                    controller: quoteController,
-                                    minLines: 2,
-                                    maxLines: 4,
-                                    decoration: const InputDecoration(
-                                      border: InputBorder.none,
-                                      hintText:
-                                          'Optional highlighted quote or excerpt',
-                                    ),
-                                    style: const TextStyle(
-                                      fontSize: 20,
-                                      fontStyle: FontStyle.italic,
-                                      color: Color(0xFF64748B),
-                                      height: 1.5,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 18),
-                                TextFormField(
-                                  controller: sectionTitleController,
+                                  focusNode: titleFocusNode,
                                   minLines: 1,
-                                  maxLines: 3,
-                                  decoration: const InputDecoration(
-                                      border: InputBorder.none),
-                                  style: const TextStyle(
-                                      fontSize: 30,
-                                      fontWeight: FontWeight.w800),
+                                  maxLines: null,
+                                  hintText: 'Article Title',
+                                  style: const TextStyle(fontSize: 42, fontWeight: FontWeight.w800, height: 1.1),
                                 ),
-                                const SizedBox(height: 12),
-                                TextFormField(
-                                  controller: sectionBodyController,
-                                  minLines: 3,
-                                  maxLines: 6,
-                                  decoration: const InputDecoration(
-                                      border: InputBorder.none),
-                                  style: const TextStyle(
-                                      fontSize: 18, height: 1.8),
-                                ),
-                                const SizedBox(height: 16),
-                                TextFormField(
-                                  controller: bulletsController,
-                                  minLines: 3,
-                                  maxLines: 8,
-                                  decoration: const InputDecoration(
-                                    border: InputBorder.none,
-                                    hintText: 'Enter one line per bullet point',
+                                const SizedBox(height: 18),
+                                ...blockControllers.asMap().entries.map((entry) {
+                                  final index = entry.key;
+                                  final controller = entry.value;
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 18),
+                                    child: Stack(
+                                      children: [
+                                        _EditorBlock(
+                                          controller: controller,
+                                          focusNode: blockFocusNodes[index],
+                                          minLines: 3,
+                                          maxLines: null,
+                                          hintText: "Continue writing or type '/' for commands",
+                                          style: const TextStyle(fontSize: 18, height: 1.8),
+                                        ),
+                                        if (blockControllers.length > 1)
+                                          Positioned(
+                                            top: 8,
+                                            right: 8,
+                                            child: IconButton(
+                                              onPressed: () => onRemoveBlock(index),
+                                              icon: const Icon(Icons.close, size: 20, color: Color(0xFF94A3B8)),
+                                              tooltip: 'Remove block',
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  );
+                                }),
+                                Align(
+                                  alignment: Alignment.center,
+                                  child: TextButton.icon(
+                                    onPressed: onAddBlock,
+                                    icon: const Icon(Icons.add, size: 20),
+                                    label: const Text('Add block', style: TextStyle(fontWeight: FontWeight.w700)),
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: const Color(0xFF64748B),
+                                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                    ),
                                   ),
-                                  style: const TextStyle(
-                                      fontSize: 17, height: 1.8),
                                 ),
-                                const SizedBox(height: 20),
-                                _ContinueBlock(controller: continueController),
                               ],
                             ),
                           ),
@@ -1667,12 +1790,13 @@ class _EditorPanel extends StatelessWidget {
 
 class _ToolbarIcon extends StatelessWidget {
   final IconData icon;
-  const _ToolbarIcon(this.icon);
+  final VoidCallback onPressed;
+  const _ToolbarIcon(this.icon, {required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      onPressed: () {},
+      onPressed: onPressed,
       icon: Icon(icon, size: 20, color: Colors.white),
       splashRadius: 18,
       visualDensity: VisualDensity.compact,
@@ -1694,108 +1818,49 @@ class _ToolbarDivider extends StatelessWidget {
   }
 }
 
-class _ContinueBlock extends StatelessWidget {
+class _EditorBlock extends StatelessWidget {
   final TextEditingController controller;
-  const _ContinueBlock({required this.controller});
+  final FocusNode focusNode;
+  final int minLines;
+  final int? maxLines;
+  final String hintText;
+  final TextStyle style;
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 120,
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: TextField(
-        controller: controller,
-        minLines: 4,
-        maxLines: 8,
-        decoration: const InputDecoration(
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          hintText: "Continue writing or type '/' for commands",
-          hintStyle: TextStyle(
-            color: Color(0xFF94A3B8),
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _PrimaryEditorField extends StatelessWidget {
-  final TextEditingController controller;
-
-  const _PrimaryEditorField({required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      constraints: const BoxConstraints(minHeight: 220),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: TextFormField(
-        controller: controller,
-        minLines: 8,
-        maxLines: 14,
-        decoration: const InputDecoration(
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-          hintText: 'Write the main article content here...',
-        ),
-        style: const TextStyle(
-          fontSize: 18,
-          height: 1.8,
-        ),
-      ),
-    );
-  }
-}
-
-class _SecondaryEditorField extends StatelessWidget {
-  final String label;
-  final Widget child;
-
-  const _SecondaryEditorField({
-    required this.label,
-    required this.child,
+  const _EditorBlock({
+    required this.controller,
+    required this.focusNode,
+    required this.minLines,
+    this.maxLines,
+    required this.hintText,
+    required this.style,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
       decoration: BoxDecoration(
         color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF64748B),
-              letterSpacing: 0.3,
-            ),
-          ),
-          const SizedBox(height: 8),
-          child,
-        ],
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: TextFormField(
+        controller: controller,
+        focusNode: focusNode,
+        minLines: minLines,
+        maxLines: maxLines,
+        decoration: InputDecoration(
+          border: InputBorder.none,
+          hintText: hintText,
+          hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
+        ),
+        style: style,
       ),
     );
   }
 }
+
+
 
 class _PublishingRail extends StatelessWidget {
   final List<String> tags;
@@ -2165,12 +2230,7 @@ class _VisibilityButton extends StatelessWidget {
 class _StudioArticle {
   final String id;
   final String title;
-  final String quote;
-  final String intro;
-  final String sectionTitle;
-  final String sectionBody;
-  final List<String> bullets;
-  final String continueText;
+  final List<String> blocks;
   final String summary;
   final String date;
   final String time;
@@ -2185,12 +2245,7 @@ class _StudioArticle {
   const _StudioArticle({
     required this.id,
     required this.title,
-    required this.quote,
-    required this.intro,
-    required this.sectionTitle,
-    required this.sectionBody,
-    required this.bullets,
-    required this.continueText,
+    required this.blocks,
     required this.summary,
     required this.date,
     required this.time,
@@ -2206,22 +2261,29 @@ class _StudioArticle {
   factory _StudioArticle.fromDoc(
       QueryDocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data();
-    final bullets = data['bullets'];
     final tags = data['tags'];
+    
+    List<String> blocks = [];
+    if (data['blocks'] != null) {
+      blocks = (data['blocks'] as List).whereType<String>().toList(growable: false);
+    } else {
+      // Legacy data support
+      if ((data['quote'] as String?)?.isNotEmpty == true) blocks.add(data['quote'] as String);
+      if ((data['intro'] as String?)?.isNotEmpty == true) blocks.add(data['intro'] as String);
+      if ((data['sectionTitle'] as String?)?.isNotEmpty == true) blocks.add(data['sectionTitle'] as String);
+      if ((data['sectionBody'] as String?)?.isNotEmpty == true) blocks.add(data['sectionBody'] as String);
+      final bullets = data['bullets'];
+      if (bullets is List) {
+        final bulletsStr = bullets.whereType<String>().join('\n');
+        if (bulletsStr.isNotEmpty) blocks.add(bulletsStr);
+      }
+      if ((data['continueText'] as String?)?.isNotEmpty == true) blocks.add(data['continueText'] as String);
+    }
 
     return _StudioArticle(
       id: doc.id,
-      title: (data['title'] as String?)?.trim().isNotEmpty == true
-          ? data['title'] as String
-          : 'Untitled article',
-      quote: (data['quote'] as String?) ?? '',
-      intro: (data['intro'] as String?) ?? '',
-      sectionTitle: (data['sectionTitle'] as String?) ?? '',
-      sectionBody: (data['sectionBody'] as String?) ?? '',
-      bullets: bullets is List
-          ? bullets.whereType<String>().toList(growable: false)
-          : const [],
-      continueText: (data['continueText'] as String?) ?? '',
+      title: (data['title'] as String?)?.trim().isNotEmpty == true ? data['title'] as String : 'Untitled article',
+      blocks: blocks,
       summary: (data['summary'] as String?) ?? '',
       date: (data['date'] as String?) ?? '',
       time: (data['time'] as String?) ?? '',
@@ -2262,7 +2324,7 @@ class _StudioArticle {
   }
 
   String get librarySubtitle {
-    final source = summary.trim().isNotEmpty ? summary.trim() : intro.trim();
+    final source = summary.trim().isNotEmpty ? summary.trim() : (blocks.isNotEmpty ? blocks.first.trim() : '');
     if (source.isEmpty) return 'Start writing to see a live preview here...';
     return source;
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart' as FirebaseAuth;
 import 'package:therapii/auth/firebase_auth_manager.dart';
+import 'package:therapii/pages/landing_page.dart';
 import 'package:therapii/pages/journal_portal_page.dart';
 import 'package:therapii/pages/admin_dashboard_page.dart';
 import 'package:therapii/pages/journal_admin_studio_page.dart';
@@ -318,4 +319,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
       ),
     );
   }
+}
+
+class Updated {
 }

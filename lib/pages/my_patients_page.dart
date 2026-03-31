@@ -585,7 +585,7 @@ class _MyPatientsPageState extends State<MyPatientsPage> {
             onPressed: () => Navigator.of(context).pop(),
           ),
           title: Text(
-            'My Patients',
+            'My Clients',
             style: theme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.w700,
               color: onSurface,
@@ -871,7 +871,7 @@ class _TopNav extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _HeaderTab(
-                  label: 'My Patients',
+                  label: 'My Clients',
                   selected: selected == TopNavSection.patients,
                   color: primary,
                   onTap: onPatientsTap),

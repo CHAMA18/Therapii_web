@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:therapii/auth/firebase_auth_manager.dart';
+import 'package:therapii/pages/billing_page.dart' as therapii_billing;
 import 'package:therapii/pages/journal_admin_analytics_page.dart';
 import 'package:therapii/pages/journal_admin_dashboard_page.dart';
 import 'package:therapii/pages/journal_admin_patients_hub_page.dart';
@@ -164,20 +165,28 @@ class _JournalAdminSettingsPageState extends State<JournalAdminSettingsPage> {
 
   Widget _buildTabs() {
     return Container(
-      padding: const EdgeInsets.only(bottom: 8),
+      width: double.infinity,
       decoration: const BoxDecoration(
         border: Border(
           bottom: BorderSide(color: Color(0xFFE2E8F0)),
         ),
       ),
       child: Wrap(
-        spacing: 18,
-        runSpacing: 10,
+        spacing: 24,
+        runSpacing: 0,
         children: _tabs
             .map((tab) => _SettingsTab(
                   label: tab,
                   active: _selectedTab == tab,
-                  onTap: () => setState(() => _selectedTab = tab),
+                  onTap: () {
+                    if (tab == 'Billing') {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const therapii_billing.BillingPage()),
+                      );
+                    } else {
+                      setState(() => _selectedTab = tab);
+                    }
+                  },
                 ))
             .toList(growable: false),
       ),
@@ -293,7 +302,7 @@ class _JournalAdminSettingsPageState extends State<JournalAdminSettingsPage> {
         const _SettingsFieldLabel('DEFAULT TIMEZONE'),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
-          initialValue: _selectedTimezone,
+          value: _selectedTimezone,
           decoration: _fieldDecoration(),
           items: _timezones
               .map(

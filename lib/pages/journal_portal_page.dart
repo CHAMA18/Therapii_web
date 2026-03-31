@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:therapii/auth/firebase_auth_manager.dart';
 import 'package:therapii/models/ai_conversation_summary.dart';
 import 'package:therapii/pages/admin_dashboard_page.dart';
+import 'package:therapii/pages/landing_page.dart';
 import 'package:therapii/pages/journal_article_page.dart';
 import 'package:therapii/pages/landing_page.dart';
 import 'package:therapii/pages/my_patients_page.dart';

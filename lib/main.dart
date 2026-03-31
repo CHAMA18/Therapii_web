@@ -198,10 +198,9 @@ class _RootRouter extends StatelessWidget {
               );
             }
 
-            // If we couldn't load the Firestore profile, bounce to auth so the
-            // user can re-auth or create their profile cleanly.
+            // If we couldn't load the Firestore profile, fall back to the landing page.
             if (profileSnap.hasError || profileSnap.data?.user == null) {
-              return const AuthWelcomePage(initialTab: AuthTab.login);
+              return const LandingPage();
             }
 
             final profileCtx = profileSnap.data!;

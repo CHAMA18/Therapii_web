@@ -29,9 +29,10 @@ class _HomePageState extends State<HomePage> {
         });
 
         if (user == null) {
-          // User signed out, navigate back to landing.
-          Navigator.of(context).pushReplacement(
+          // User signed out, navigate back to landing
+          Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (context) => const LandingPage()),
+            (route) => false,
           );
         }
       }
