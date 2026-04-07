@@ -1074,45 +1074,49 @@ class _NavBar extends StatelessWidget {
               ),
             ),
             if (signInLabel.trim().isNotEmpty)
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ElevatedButton(
-                    onPressed: onJournalSignIn,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white.withOpacity(0.08),
-                      foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(
-                          horizontal: isWide ? 30 : 18, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                        side: const BorderSide(color: Colors.white24),
+              Expanded(
+                child: Wrap(
+                  alignment: WrapAlignment.end,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    ElevatedButton(
+                      onPressed: onJournalSignIn,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white.withValues(alpha: 0.08),
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(
+                            horizontal: isWide ? 30 : 12, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                          side: const BorderSide(color: Colors.white24),
+                        ),
+                      ),
+                      child: Text(
+                        'Sign In - Journal Portal',
+                        style: GoogleFonts.dmSans(
+                            fontSize: isWide ? 14 : 12, fontWeight: FontWeight.w600),
                       ),
                     ),
-                    child: Text(
-                      'Sign In - Journal Portal',
-                      style: GoogleFonts.dmSans(
-                          fontSize: 14, fontWeight: FontWeight.w600),
+                    ElevatedButton(
+                      onPressed: onSignIn,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.black,
+                        padding: EdgeInsets.symmetric(
+                            horizontal: isWide ? 32 : 16, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30)),
+                      ),
+                      child: Text(
+                        signInLabel,
+                        style: GoogleFonts.dmSans(
+                            fontSize: isWide ? 14 : 12, fontWeight: FontWeight.w500),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  ElevatedButton(
-                    onPressed: onSignIn,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.black,
-                      padding: EdgeInsets.symmetric(
-                          horizontal: isWide ? 32 : 20, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30)),
-                    ),
-                    child: Text(
-                      signInLabel,
-                      style: GoogleFonts.dmSans(
-                          fontSize: 14, fontWeight: FontWeight.w500),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
           ],
         ),

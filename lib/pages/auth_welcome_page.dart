@@ -66,32 +66,32 @@ class _AuthWelcomePageState extends State<AuthWelcomePage> {
       pageId: AppPageId.authWelcome,
       child: Scaffold(
         backgroundColor: bgColor,
-        body: Stack(
-          children: [
-            SafeArea(
-              child: Center(
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: compact ? 12 : 24,
-                  ),
-                  child: _AuthCard(
+        body: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.symmetric(
+                horizontal: MediaQuery.of(context).size.width < 600 ? 16 : 24,
+                vertical: compact ? 12 : 24,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _AuthCard(
                     tab: _tab,
                     compact: compact,
                     openJournalPortalAfterAuth:
                         widget.openJournalPortalAfterAuth,
                     onTabChanged: (t) => setState(() => _tab = t),
                   ),
-                ),
+                  const SizedBox(height: 24),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: _ThemeToggleButton(),
+                  ),
+                ],
               ),
             ),
-            // Theme toggle button
-            Positioned(
-              bottom: 32,
-              right: 32,
-              child: _ThemeToggleButton(),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -189,7 +189,7 @@ class _AuthCard extends StatelessWidget {
       ),
       child: Padding(
         padding: EdgeInsets.symmetric(
-          horizontal: compact ? 28 : 40,
+          horizontal: compact ? 20 : 40,
           vertical: compact ? 26 : 48,
         ),
         child: Column(
@@ -342,6 +342,8 @@ class _TabBar extends StatelessWidget {
                 padding: EdgeInsets.only(bottom: compact ? 14 : 20),
                 child: Text(
                   label,
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: compact ? 16 : 18,
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
@@ -407,7 +409,7 @@ class _RoleSelector extends StatelessWidget {
             duration: const Duration(milliseconds: 150),
             padding: EdgeInsets.symmetric(
               vertical: compact ? 12 : 16,
-              horizontal: compact ? 20 : 24,
+              horizontal: compact ? 8 : 16,
             ),
             decoration: BoxDecoration(
               color: isSelected ? selectedBg : Colors.transparent,
@@ -430,6 +432,8 @@ class _RoleSelector extends StatelessWidget {
             child: Center(
               child: Text(
                 label,
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: compact ? 15 : 16,
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
@@ -1180,39 +1184,47 @@ class _LoginFormState extends State<_LoginForm> {
           compact: widget.compact,
         ),
         SizedBox(height: widget.compact ? 12 : 16),
-        Row(
+        Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 8,
+          runSpacing: 12,
           children: [
-            SizedBox(
-              width: 20,
-              height: 20,
-              child: Checkbox(
-                value: _rememberMe,
-                onChanged: _isLoading
-                    ? null
-                    : (v) => setState(() => _rememberMe = v ?? false),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(4)),
-                side: BorderSide(
-                    color: isDark
-                        ? const Color(0xFF475569)
-                        : const Color(0xFFCBD5E1)),
-              ),
-            ),
-            const SizedBox(width: 12),
-            GestureDetector(
-              onTap: _isLoading
-                  ? null
-                  : () => setState(() => _rememberMe = !_rememberMe),
-              child: Text(
-                'Remember Me',
-                style: TextStyle(
-                  fontSize: widget.compact ? 15 : 16,
-                  fontWeight: FontWeight.w500,
-                  color: textColor,
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: Checkbox(
+                    value: _rememberMe,
+                    onChanged: _isLoading
+                        ? null
+                        : (v) => setState(() => _rememberMe = v ?? false),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(4)),
+                    side: BorderSide(
+                        color: isDark
+                            ? const Color(0xFF475569)
+                            : const Color(0xFFCBD5E1)),
+                  ),
                 ),
-              ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: _isLoading
+                      ? null
+                      : () => setState(() => _rememberMe = !_rememberMe),
+                  child: Text(
+                    'Remember Me',
+                    style: TextStyle(
+                      fontSize: widget.compact ? 15 : 16,
+                      fontWeight: FontWeight.w500,
+                      color: textColor,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const Spacer(),
             GestureDetector(
               onTap: _isLoading ? null : _forgotPassword,
               child: Text(

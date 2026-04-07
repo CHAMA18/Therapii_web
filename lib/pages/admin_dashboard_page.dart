@@ -8,6 +8,7 @@ import 'package:therapii/pages/admin_settings_page.dart';
 import 'package:therapii/pages/landing_page.dart';
 import 'package:therapii/pages/therapist_approvals_page.dart';
 import 'package:therapii/services/app_page_state_service.dart';
+import 'package:therapii/widgets/shimmer_widgets.dart';
 import 'package:therapii/theme_mode_controller.dart';
 import 'package:therapii/utils/admin_access.dart';
 
@@ -1216,9 +1217,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       ),
       _ActionCard(
         title: 'Sessions',
-        subtitle: _loadingCounts
-            ? 'Loading...'
-            : '$_humanConversationCount active sessions today',
+        subtitle: '$_humanConversationCount active sessions today',
+        isLoading: _loadingCounts,
         icon: Icons.forum_outlined,
         isPrimary: false,
         primaryColor: primaryColor,
@@ -1227,9 +1227,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       ),
       _ActionCard(
         title: 'AI Chats',
-        subtitle: _loadingCounts
-            ? 'Loading...'
-            : '$_aiConversationCount assistant interactions',
+        subtitle: '$_aiConversationCount assistant interactions',
+        isLoading: _loadingCounts,
         icon: Icons.smart_toy_outlined,
         isPrimary: false,
         primaryColor: primaryColor,
@@ -1581,9 +1580,47 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 .snapshots(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 40),
-                  child: Center(child: CircularProgressIndicator()),
+                return Column(
+                  children: List.generate(
+                    4,
+                    (index) => Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF0F172A) : Colors.white,
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: isDark
+                              ? const Color(0xFF334155)
+                              : const Color(0xFFE2E8F0),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: AppShimmers.box(
+                                    context: context, height: 16, width: 140),
+                              ),
+                              AppShimmers.box(
+                                  context: context,
+                                  height: 20,
+                                  width: 60,
+                                  radius: BorderRadius.circular(10)),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          AppShimmers.box(
+                              context: context, height: 12, width: 100),
+                          const SizedBox(height: 8),
+                          AppShimmers.box(
+                              context: context, height: 12, width: 180),
+                        ],
+                      ),
+                    ),
+                  ),
                 );
               }
 
@@ -1598,12 +1635,51 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
               final docs = snapshot.data?.docs ?? const [];
               if (docs.isEmpty) {
-                return Text(
-                  'No timed access grants yet.',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: isDark
-                        ? const Color(0xFF94A3B8)
-                        : const Color(0xFF64748B),
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 40),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? const Color(0xFF334155).withValues(alpha: 0.3)
+                                : const Color(0xFFe2e8f0).withValues(alpha: 0.5),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.history_toggle_off,
+                            size: 28,
+                            color: isDark
+                                ? const Color(0xFF64748b)
+                                : const Color(0xFF94a3b8),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No recent grants',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF0f172a),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'You haven\'t granted access yet.',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: isDark
+                                ? const Color(0xFF64748b)
+                                : const Color(0xFF94a3b8),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 );
               }
@@ -1729,6 +1805,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Header
           Padding(
@@ -1770,162 +1847,174 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               ],
             ),
           ),
-          // Table Content
-          StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-            stream: _firestore.collection('therapists').snapshots(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Padding(
-                  padding: EdgeInsets.all(64),
-                  child: Center(child: CircularProgressIndicator()),
-                );
-              }
-              if (snapshot.hasError) {
-                return Padding(
-                  padding: const EdgeInsets.all(32),
-                  child: _errorState(theme,
-                      'Unable to load therapist submissions. ${snapshot.error}'),
-                );
-              }
-              final docs = snapshot.data?.docs ?? [];
-              final pending = docs.where((doc) {
-                final status =
-                    (doc.data()['approval_status'] as String?)?.toLowerCase();
-                return status == null ||
-                    status == 'pending' ||
-                    status == 'resubmitted' ||
-                    status == 'needs_review';
-              }).toList()
-                ..sort((a, b) {
-                  final aTs = a.data()['approval_requested_at'] as Timestamp? ??
-                      a.data()['created_at'] as Timestamp?;
-                  final bTs = b.data()['approval_requested_at'] as Timestamp? ??
-                      b.data()['created_at'] as Timestamp?;
-                  final aDate =
-                      aTs?.toDate() ?? DateTime.fromMillisecondsSinceEpoch(0);
-                  final bDate =
-                      bTs?.toDate() ?? DateTime.fromMillisecondsSinceEpoch(0);
-                  return bDate.compareTo(aDate);
-                });
+          // Table Layout
+          LayoutBuilder(
+            builder: (context, constraints) {
+              const tableMinWidth = 980.0;
+              final tableWidth = constraints.maxWidth.isFinite
+                  ? (constraints.maxWidth > tableMinWidth
+                      ? constraints.maxWidth
+                      : tableMinWidth)
+                  : tableMinWidth;
 
-              // Update pending count
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (mounted && _pendingCount != pending.length) {
-                  setState(() {
-                    _pendingCount = pending.length;
-                  });
-                }
-              });
-
-              if (pending.isEmpty) {
-                return Padding(
-                  padding: const EdgeInsets.all(64),
+              return SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                physics: const AlwaysScrollableScrollPhysics(
+                    parent: BouncingScrollPhysics()),
+                child: SizedBox(
+                  width: tableWidth,
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Icon(
-                        Icons.check_circle_outline,
-                        size: 48,
-                        color: isDark
-                            ? const Color(0xFF64748b)
-                            : const Color(0xFF94a3b8),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'No pending approvals',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color:
-                              isDark ? Colors.white : const Color(0xFF0f172a),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Great job! You\'re all caught up.',
-                        style: TextStyle(
-                          fontSize: 14,
+                      // Table Header
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 32, vertical: 20),
+                        decoration: BoxDecoration(
                           color: isDark
-                              ? const Color(0xFF64748b)
-                              : const Color(0xFF94a3b8),
+                              ? const Color(0xFF1e293b).withValues(alpha: 0.5)
+                              : const Color(0xFFF8FAFC),
                         ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              flex: _approvalsApplicantFlex,
+                              child: _TableHeader('Applicant', isDark),
+                            ),
+                            const SizedBox(width: _approvalsColumnGap),
+                            Expanded(
+                              flex: _approvalsMetaFlex,
+                              child: _TableHeader('Identity / ID', isDark),
+                            ),
+                            const SizedBox(width: _approvalsColumnGap),
+                            Expanded(
+                              flex: _approvalsMetaFlex,
+                              child: _TableHeader('Location', isDark),
+                            ),
+                            const SizedBox(width: _approvalsColumnGap),
+                            Expanded(
+                              flex: _approvalsMetaFlex,
+                              child: _TableHeader('Applied Date', isDark),
+                            ),
+                            const SizedBox(width: _approvalsColumnGap),
+                            SizedBox(
+                              width: _approvalsActionsWidth,
+                              child: Align(
+                                alignment: Alignment.centerRight,
+                                child: _TableHeader('Actions', isDark),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Table Content
+                      StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                        stream: _firestore.collection('therapists').snapshots(),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return _buildApprovalsShimmer(isDark, primaryColor);
+                          }
+                          if (snapshot.hasError) {
+                            return Padding(
+                              padding: const EdgeInsets.all(32),
+                              child: _errorState(theme,
+                                  'Unable to load therapist submissions. ${snapshot.error}'),
+                            );
+                          }
+                          final docs = snapshot.data?.docs ?? [];
+                          final pending = docs.where((doc) {
+                            final status = (doc.data()['approval_status']
+                                    as String?)
+                                ?.toLowerCase();
+                            return status == null ||
+                                status == 'pending' ||
+                                status == 'resubmitted' ||
+                                status == 'needs_review';
+                          }).toList()
+                            ..sort((a, b) {
+                              final aTs = a.data()['approval_requested_at']
+                                      as Timestamp? ??
+                                  a.data()['created_at'] as Timestamp?;
+                              final bTs = b.data()['approval_requested_at']
+                                      as Timestamp? ??
+                                  b.data()['created_at'] as Timestamp?;
+                              final aDate = aTs?.toDate() ??
+                                  DateTime.fromMillisecondsSinceEpoch(0);
+                              final bDate = bTs?.toDate() ??
+                                  DateTime.fromMillisecondsSinceEpoch(0);
+                              return bDate.compareTo(aDate);
+                            });
+
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (mounted && _pendingCount != pending.length) {
+                              setState(() {
+                                _pendingCount = pending.length;
+                              });
+                            }
+                          });
+
+                          if (pending.isEmpty) {
+                            return Padding(
+                              padding: const EdgeInsets.all(64),
+                              child: Column(
+                                children: [
+                                  Container(
+                                    width: 80,
+                                    height: 80,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF10B981)
+                                          .withValues(alpha: 0.1),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Center(
+                                      child: Icon(
+                                        Icons.task_alt_rounded,
+                                        size: 40,
+                                        color: Color(0xFF10B981),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  Text(
+                                    'All Caught Up!',
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: isDark
+                                          ? Colors.white
+                                          : const Color(0xFF0F172A),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'There are no pending therapist approvals at this time.',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      color: isDark
+                                          ? const Color(0xFF94A3B8)
+                                          : const Color(0xFF64748B),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+
+                          final displayList = pending.take(5).toList();
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: displayList.map((doc) {
+                              final data = doc.data();
+                              return _buildTableRow(
+                                  doc.id, data, isDark, primaryColor);
+                            }).toList(),
+                          );
+                        },
                       ),
                     ],
                   ),
-                );
-              }
-
-              final displayList = pending.take(5).toList();
-
-              return LayoutBuilder(
-                builder: (context, constraints) {
-                  const tableMinWidth = 980.0;
-                  final tableWidth = constraints.maxWidth.isFinite
-                      ? (constraints.maxWidth > tableMinWidth
-                          ? constraints.maxWidth
-                          : tableMinWidth)
-                      : tableMinWidth;
-
-                  return SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: SizedBox(
-                      width: tableWidth,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // Table Header
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 32, vertical: 20),
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? const Color(0xFF1e293b)
-                                      .withValues(alpha: 0.5)
-                                  : const Color(0xFFF8FAFC),
-                            ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  flex: _approvalsApplicantFlex,
-                                  child: _TableHeader('Applicant', isDark),
-                                ),
-                                const SizedBox(width: _approvalsColumnGap),
-                                Expanded(
-                                  flex: _approvalsMetaFlex,
-                                  child: _TableHeader('Identity / ID', isDark),
-                                ),
-                                const SizedBox(width: _approvalsColumnGap),
-                                Expanded(
-                                  flex: _approvalsMetaFlex,
-                                  child: _TableHeader('Location', isDark),
-                                ),
-                                const SizedBox(width: _approvalsColumnGap),
-                                Expanded(
-                                  flex: _approvalsMetaFlex,
-                                  child: _TableHeader('Applied Date', isDark),
-                                ),
-                                const SizedBox(width: _approvalsColumnGap),
-                                SizedBox(
-                                  width: _approvalsActionsWidth,
-                                  child: Align(
-                                    alignment: Alignment.centerRight,
-                                    child: _TableHeader('Actions', isDark),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          // Table Rows
-                          ...displayList.map((doc) {
-                            final data = doc.data();
-                            return _buildTableRow(
-                                doc.id, data, isDark, primaryColor);
-                          }),
-                        ],
-                      ),
-                    ),
-                  );
-                },
+                ),
               );
             },
           ),
@@ -1964,6 +2053,91 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildApprovalsShimmer(bool isDark, Color primaryColor) {
+    return Column(
+      children: List.generate(
+        3,
+        (index) => Container(
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color:
+                    isDark ? const Color(0xFF1e293b) : const Color(0xFFe2e8f0),
+              ),
+            ),
+          ),
+          child: Row(
+            children: [
+              // Applicant
+              Expanded(
+                flex: _approvalsApplicantFlex,
+                child: Row(
+                  children: [
+                    AppShimmers.circle(context: context, size: 44),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          AppShimmers.box(
+                              context: context, height: 16, width: 120),
+                          const SizedBox(height: 6),
+                          AppShimmers.box(
+                              context: context, height: 12, width: 80),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: _approvalsColumnGap),
+              // ID
+              Expanded(
+                flex: _approvalsMetaFlex,
+                child: AppShimmers.box(context: context, height: 14, width: 80),
+              ),
+              const SizedBox(width: _approvalsColumnGap),
+              // Location
+              Expanded(
+                flex: _approvalsMetaFlex,
+                child:
+                    AppShimmers.box(context: context, height: 14, width: 100),
+              ),
+              const SizedBox(width: _approvalsColumnGap),
+              // Date
+              Expanded(
+                flex: _approvalsMetaFlex,
+                child: AppShimmers.box(context: context, height: 14, width: 80),
+              ),
+              const SizedBox(width: _approvalsColumnGap),
+              // Actions
+              SizedBox(
+                width: _approvalsActionsWidth,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    AppShimmers.box(
+                        context: context,
+                        height: 36,
+                        width: 36,
+                        radius: BorderRadius.circular(10)),
+                    const SizedBox(width: 8),
+                    AppShimmers.box(
+                        context: context,
+                        height: 36,
+                        width: 90,
+                        radius: BorderRadius.circular(10)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -2266,7 +2440,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                   children: [
                     _AnalyticCard(
                       title: 'Total Therapists',
-                      value: _loadingCounts ? '...' : '$_totalTherapists',
+                      value: '$_totalTherapists',
+                      isLoading: _loadingCounts,
                       change: '+12%',
                       isPositive: true,
                       icon: Icons.psychology_outlined,
@@ -2276,7 +2451,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                     ),
                     _AnalyticCard(
                       title: 'Approved',
-                      value: _loadingCounts ? '...' : '$_approvedTherapists',
+                      value: '$_approvedTherapists',
+                      isLoading: _loadingCounts,
                       change: '+8%',
                       isPositive: true,
                       icon: Icons.verified_outlined,
@@ -2286,7 +2462,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                     ),
                     _AnalyticCard(
                       title: 'Total Patients',
-                      value: _loadingCounts ? '...' : '$_totalPatients',
+                      value: '$_totalPatients',
+                      isLoading: _loadingCounts,
                       change: '+24%',
                       isPositive: true,
                       icon: Icons.people_outline,
@@ -2318,43 +2495,54 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                             : const Color(0xFF64748b),
                       ),
                     ),
-                    Text(
-                      _totalTherapists > 0
-                          ? '${((_approvedTherapists / _totalTherapists) * 100).toStringAsFixed(0)}%'
-                          : '0%',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : const Color(0xFF0f172a),
-                      ),
-                    ),
+                    _loadingCounts
+                        ? AppShimmers.box(
+                            context: context, height: 16, width: 40)
+                        : Text(
+                            _totalTherapists > 0
+                                ? '${((_approvedTherapists / _totalTherapists) * 100).toStringAsFixed(0)}%'
+                                : '0%',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF0f172a),
+                            ),
+                          ),
                   ],
                 ),
                 const SizedBox(height: 12),
-                Container(
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? const Color(0xFF334155)
-                        : const Color(0xFFe2e8f0),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: FractionallySizedBox(
-                    alignment: Alignment.centerLeft,
-                    widthFactor: _totalTherapists > 0
-                        ? (_approvedTherapists / _totalTherapists)
-                            .clamp(0.0, 1.0)
-                        : 0,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [primaryColor, const Color(0xFF10b981)],
+                _loadingCounts
+                    ? AppShimmers.box(
+                        context: context,
+                        height: 8,
+                        width: double.infinity,
+                        radius: BorderRadius.circular(4))
+                    : Container(
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? const Color(0xFF334155)
+                              : const Color(0xFFe2e8f0),
+                          borderRadius: BorderRadius.circular(4),
                         ),
-                        borderRadius: BorderRadius.circular(4),
+                        child: FractionallySizedBox(
+                          alignment: Alignment.centerLeft,
+                          widthFactor: _totalTherapists > 0
+                              ? (_approvedTherapists / _totalTherapists)
+                                  .clamp(0.0, 1.0)
+                              : 0,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [primaryColor, const Color(0xFF10b981)],
+                              ),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                ),
               ],
             ),
           ),
@@ -2383,7 +2571,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
             padding: const EdgeInsets.all(32),
@@ -2412,9 +2600,45 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 .snapshots(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Padding(
-                  padding: EdgeInsets.all(32),
-                  child: Center(child: CircularProgressIndicator()),
+                return Column(
+                  children: List.generate(
+                    4,
+                    (index) => Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 32, vertical: 16),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          top: BorderSide(
+                            color: isDark
+                                ? const Color(0xFF1e293b)
+                                : const Color(0xFFe2e8f0),
+                          ),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          AppShimmers.box(
+                              context: context,
+                              height: 36,
+                              width: 36,
+                              radius: BorderRadius.circular(10)),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                AppShimmers.box(
+                                    context: context, height: 14, width: 200),
+                                const SizedBox(height: 6),
+                                AppShimmers.box(
+                                    context: context, height: 12, width: 80),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 );
               }
 
@@ -2422,21 +2646,43 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
               if (docs.isEmpty) {
                 return Padding(
-                  padding: const EdgeInsets.all(32),
+                  padding: const EdgeInsets.all(48),
                   child: Center(
                     child: Column(
                       children: [
-                        Icon(
-                          Icons.inbox_outlined,
-                          size: 40,
-                          color: isDark
-                              ? const Color(0xFF64748b)
-                              : const Color(0xFF94a3b8),
+                        Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? const Color(0xFF334155).withValues(alpha: 0.3)
+                                : const Color(0xFFe2e8f0).withValues(alpha: 0.5),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.inbox_outlined,
+                            size: 28,
+                            color: isDark
+                                ? const Color(0xFF64748b)
+                                : const Color(0xFF94a3b8),
+                          ),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 16),
                         Text(
                           'No recent activity',
                           style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF0f172a),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Things are quiet right now.',
+                          style: TextStyle(
+                            fontSize: 14,
                             color: isDark
                                 ? const Color(0xFF64748b)
                                 : const Color(0xFF94a3b8),
@@ -2718,6 +2964,7 @@ class _ActionCard extends StatefulWidget {
   final bool isPrimary;
   final Color primaryColor;
   final bool isDark;
+  final bool isLoading;
   final VoidCallback? onTap;
 
   const _ActionCard({
@@ -2727,6 +2974,7 @@ class _ActionCard extends StatefulWidget {
     required this.isPrimary,
     required this.primaryColor,
     required this.isDark,
+    this.isLoading = false,
     this.onTap,
   });
 
@@ -2832,19 +3080,26 @@ class _ActionCardState extends State<_ActionCard> {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        widget.subtitle,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: widget.isPrimary
-                              ? Colors.white.withValues(alpha: 0.8)
-                              : (widget.isDark
-                                  ? const Color(0xFF64748b)
-                                  : const Color(0xFF94a3b8)),
+                      if (widget.isLoading)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 2),
+                          child: AppShimmers.box(
+                              context: context, height: 12, width: 100),
+                        )
+                      else
+                        Text(
+                          widget.subtitle,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: widget.isPrimary
+                                ? Colors.white.withValues(alpha: 0.8)
+                                : (widget.isDark
+                                    ? const Color(0xFF64748b)
+                                    : const Color(0xFF94a3b8)),
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 ],
@@ -2957,6 +3212,7 @@ class _AnalyticCard extends StatelessWidget {
   final Color color;
   final bool isDark;
   final double width;
+  final bool isLoading;
 
   const _AnalyticCard({
     required this.title,
@@ -2967,6 +3223,7 @@ class _AnalyticCard extends StatelessWidget {
     required this.color,
     required this.isDark,
     required this.width,
+    this.isLoading = false,
   });
 
   @override
@@ -3035,14 +3292,20 @@ class _AnalyticCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : const Color(0xFF0f172a),
+            if (isLoading)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: AppShimmers.box(context: context, height: 28, width: 60),
+              )
+            else
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : const Color(0xFF0f172a),
+                ),
               ),
-            ),
             const SizedBox(height: 4),
             Text(
               title,
