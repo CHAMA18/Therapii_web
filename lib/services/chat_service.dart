@@ -1,7 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:therapii/models/chat_conversation.dart';
 import 'package:therapii/models/chat_message.dart';
+import 'package:therapii/services/voice_bytes_loader.dart';
+import 'dart:math';
+import 'dart:typed_data';
 
 class ChatService {
   ChatService();
@@ -28,6 +32,22 @@ class ChatService {
   }) {
     return _conversationRef(therapistId: therapistId, patientId: patientId)
         .collection(_messagesSubcollection);
+  }
+
+  Future<String> uploadAudio({
+    required String localPath,
+    required String patientId,
+    required String therapistId,
+  }) async {
+    final Uint8List bytes = await loadRecordedFileBytes(localPath);
+    final ts = DateTime.now().millisecondsSinceEpoch;
+    final rand = Random().nextInt(1 << 32);
+    final fileName = 'chat_audio_${ts}_$rand.m4a';
+    final storagePath = 'chat_audio/$patientId/$therapistId/$fileName';
+
+    final ref = FirebaseStorage.instance.ref().child(storagePath);
+    await ref.putData(bytes, SettableMetadata(contentType: 'audio/m4a'));
+    return await ref.getDownloadURL();
   }
 
   Future<void> ensureConversation({
@@ -97,9 +117,11 @@ class ChatService {
     required String senderId,
     required String text,
     required bool senderIsTherapist,
+    String? audioUrl,
+    int? durationSeconds,
   }) async {
     final trimmed = text.trim();
-    if (trimmed.isEmpty) return;
+    if (trimmed.isEmpty && audioUrl == null) return;
 
     final conversationRef = _conversationRef(therapistId: therapistId, patientId: patientId);
     final messagesRef = _messagesRef(therapistId: therapistId, patientId: patientId);
@@ -120,20 +142,23 @@ class ChatService {
       }
 
       final messageRef = messagesRef.doc();
-      transaction.set(messageRef, {
+      final messageData = <String, dynamic>{
         'sender_id': senderId,
         'receiver_id': senderIsTherapist ? patientId : therapistId,
         'sender_role': senderIsTherapist ? 'therapist' : 'patient',
         'text': trimmed,
         'sent_at': timestamp,
-      });
+      };
+      if (audioUrl != null) messageData['audio_url'] = audioUrl;
+      if (durationSeconds != null) messageData['duration_seconds'] = durationSeconds;
+
+      transaction.set(messageRef, messageData);
 
       final unreadUpdates = <String, dynamic>{
-        'last_message_text': trimmed,
+        'last_message_text': audioUrl != null ? '🎤 Voice message' : trimmed,
         'last_message_sender_id': senderId,
         'last_message_sender_role': senderIsTherapist ? 'therapist' : 'patient',
         'last_message_at': timestamp,
-        'updated_at': timestamp,
       };
 
       if (senderIsTherapist) {

@@ -374,7 +374,7 @@ class _MyPatientsPageState extends State<MyPatientsPage> {
   }
 
   String _patientDisplayName(AppUser.User? user) {
-    if (user == null) return 'Unknown patient';
+    if (user == null) return 'Unknown client';
     if (user.fullName.isNotEmpty) {
       return user.fullName;
     }
@@ -559,7 +559,7 @@ class _MyPatientsPageState extends State<MyPatientsPage> {
         : screenWidth >= 900
             ? 28.0
             : 16.0;
-    final contentMaxWidth = screenWidth >= 1400 ? 980.0 : 900.0;
+    final contentMaxWidth = screenWidth >= 1400 ? 1280.0 : 1120.0;
     final appBarDivider = theme.colorScheme.outline.withValues(alpha: 0.12);
     final onSurface = theme.colorScheme.onSurface;
     final scaffoldColor = theme.scaffoldBackgroundColor;
@@ -605,7 +605,7 @@ class _MyPatientsPageState extends State<MyPatientsPage> {
             IconButton(
               icon: const Icon(Icons.settings_rounded),
               tooltip: 'Settings',
-              onPressed: () => showSettingsPopup(context),
+              onPressed: () => showSettingsPopup(context, hideBilling: true),
             ),
           ],
           bottom: PreferredSize(
@@ -647,7 +647,7 @@ class _MyPatientsPageState extends State<MyPatientsPage> {
                         final actionGap = useStackedActions ? 12.0 : 16.0;
                         final inviteTile = _HeroTile(
                           gradient: true,
-                          title: 'Invite New Patient',
+                          title: 'Invite New Client',
                           subtitle: 'Share a code to securely connect.',
                           icon: Icons.person_add_alt_1_rounded,
                           onTap: () => Navigator.of(context).push(
@@ -795,7 +795,7 @@ class _HeaderTextBlock extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'Manage your patients, invites and conversations in one place.',
+          'Manage your clients, invites and conversations in one place.',
           style: theme.textTheme.bodyLarge?.copyWith(
             color: onSurface.withValues(alpha: 0.5),
             height: 1.35,
@@ -1614,7 +1614,7 @@ class _ActivePatientsCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Active patients',
+                    'Active clients',
                     style: theme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.w800,
                       height: 1.1,
@@ -1623,8 +1623,8 @@ class _ActivePatientsCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     patients.isEmpty
-                        ? 'No active patients yet. Share an invitation code to begin collaborating.'
-                        : '${patients.length} patient${patients.length == 1 ? '' : 's'} connected',
+                        ? 'No active clients yet. Share an invitation code to begin collaborating.'
+                        : '${patients.length} client${patients.length == 1 ? '' : 's'} connected',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: scheme.onSurface.withValues(alpha: 0.48),
                     ),
@@ -1677,7 +1677,7 @@ class _ActivePatientsCard extends StatelessWidget {
                 child: TextButton.icon(
                   onPressed: onShowAll,
                   icon: const Icon(Icons.expand_more_rounded),
-                  label: const Text('Show all patients'),
+                  label: const Text('Show all clients'),
                 ),
               ),
             ),
@@ -1700,7 +1700,7 @@ class _ActivePatientsCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'No patients connected yet.',
+                            'No clients connected yet.',
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: scheme.onSurface.withValues(alpha: 0.65),
                             ),
@@ -1708,14 +1708,14 @@ class _ActivePatientsCard extends StatelessWidget {
                           const SizedBox(height: 8),
                           TextButton(
                               onPressed: onManage,
-                              child: const Text('Invite patient')),
+                              child: const Text('Invite client')),
                         ],
                       )
                     : Row(
                         children: [
                           Expanded(
                             child: Text(
-                              'No patients connected yet.',
+                              'No clients connected yet.',
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 color: scheme.onSurface.withValues(alpha: 0.65),
                               ),
@@ -1723,7 +1723,7 @@ class _ActivePatientsCard extends StatelessWidget {
                           ),
                           TextButton(
                               onPressed: onManage,
-                              child: const Text('Invite patient')),
+                              child: const Text('Invite client')),
                         ],
                       ),
               );

@@ -308,7 +308,7 @@ class _ListenPageState extends State<ListenPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Active patients',
+                      'Active clients',
                       style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w700,
                         fontSize: 20,
@@ -368,7 +368,7 @@ class _ListenPageState extends State<ListenPage> {
       ),
       child: Center(
         child: Text(
-          'Add more patients to see them here',
+          'Add more clients to see them here',
           style: theme.textTheme.bodyMedium?.copyWith(
             color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
             fontWeight: FontWeight.w500,
@@ -628,7 +628,7 @@ class _ListenPageState extends State<ListenPage> {
                         child: Align(
                           alignment: Alignment.centerRight,
                           child: IconButton(
-                            onPressed: () => showSettingsPopup(context),
+                            onPressed: () => showSettingsPopup(context, hideBilling: true),
                             icon: Icon(
                               Icons.settings_outlined,
                               color: isDark
@@ -657,7 +657,7 @@ class _ListenPageState extends State<ListenPage> {
                 ),
                 child: Center(
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 1000),
+                    constraints: const BoxConstraints(maxWidth: 1280),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [

@@ -7,6 +7,8 @@ class ChatMessage {
   final String receiverId;
   final String senderRole;
   final String text;
+  final String? audioUrl;
+  final int? durationSeconds;
   final DateTime sentAt;
 
   const ChatMessage({
@@ -16,6 +18,8 @@ class ChatMessage {
     required this.receiverId,
     required this.senderRole,
     required this.text,
+    this.audioUrl,
+    this.durationSeconds,
     required this.sentAt,
   });
 
@@ -33,6 +37,8 @@ class ChatMessage {
       receiverId: data['receiver_id'] ?? '',
       senderRole: data['sender_role'] ?? '',
       text: data['text'] ?? '',
+      audioUrl: data['audio_url'],
+      durationSeconds: data['duration_seconds'],
       sentAt: _timestampToDate(data['sent_at']) ?? DateTime.fromMillisecondsSinceEpoch(0),
     );
   }
@@ -42,6 +48,8 @@ class ChatMessage {
         'receiver_id': receiverId,
         'sender_role': senderRole,
         'text': text,
+        if (audioUrl != null) 'audio_url': audioUrl,
+        if (durationSeconds != null) 'duration_seconds': durationSeconds,
         'sent_at': Timestamp.fromDate(sentAt),
       };
 

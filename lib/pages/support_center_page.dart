@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:therapii/widgets/primary_button.dart';
+import 'package:therapii/pages/support_chat_page.dart';
 
 /// A concierge-style support hub with rich visuals and direct contact actions.
 /// Web-friendly responsive design.
@@ -57,18 +58,6 @@ class SupportCenterPage extends StatelessWidget {
         title: 'Email our care team',
         description: 'Reach a licensed specialist in under 2 hours.',
         onTap: () => _launchUri(context, Uri.parse('mailto:support@trytherapii.com?subject=Therapii%20Support%20Request')),
-      ),
-      _SupportAction(
-        icon: Icons.calendar_today_rounded,
-        title: 'Schedule a support call',
-        description: 'Book a 1:1 onboarding or troubleshooting session.',
-        onTap: () => _launchUri(context, Uri.parse('https://trytherapii.com/support/call')),
-      ),
-      _SupportAction(
-        icon: Icons.bar_chart_rounded,
-        title: 'View system status',
-        description: 'Check live uptime and incident reports.',
-        onTap: () => _launchUri(context, Uri.parse('https://status.trytherapii.com')),
       ),
     ];
 
@@ -143,7 +132,12 @@ class SupportCenterPage extends StatelessWidget {
                           isDark: isDark,
                           scheme: scheme,
                           theme: theme,
-                          onRequestFollowUp: () => _launchUri(context, Uri.parse('https://trytherapii.com/support/request')),
+                          onRequestFollowUp: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const SupportChatPage()),
+                            );
+                          },
                           onShowPrivacy: () => _showDocumentSheet(context, title: 'Privacy at Therapii', body: _privacyCopy),
                           onShowTerms: () => _showDocumentSheet(context, title: 'Terms & Usage', body: _termsCopy),
                         ),
@@ -731,6 +725,7 @@ class _FaqCardState extends State<_FaqCard> with SingleTickerProviderStateMixin 
     );
   }
 }
+
 
 const String _privacyCopy =
     'Your messages, voice sessions, and AI summaries are encrypted at rest and in transit. Only you and verified members of your care team can unlock them. We regularly rotate encryption keys and maintain HIPAA-aligned audit logs. Review the full privacy policy inside the secure web portal.';

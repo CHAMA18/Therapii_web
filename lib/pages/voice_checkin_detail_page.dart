@@ -29,7 +29,7 @@ class VoiceCheckinDetailPage extends StatelessWidget {
   }
 
   String get _patientDisplayName {
-    if (patient == null) return 'Unknown Patient';
+    if (patient == null) return 'Unknown Client';
     if (patient!.fullName.isNotEmpty) return patient!.fullName;
     return patient!.email;
   }

@@ -204,7 +204,7 @@ class _NewPatientInfoPageState extends State<NewPatientInfoPage> {
           tooltip: 'Back',
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text('Invite Patient',
+        title: const Text('Invite Client',
             style: TextStyle(fontWeight: FontWeight.w600)),
         actions: [
           Padding(
@@ -289,7 +289,7 @@ class _NewPatientInfoPageState extends State<NewPatientInfoPage> {
                               TextFormField(
                                 controller: _nameController,
                                 decoration: _fieldDecoration(
-                                    "Patient's Full Name",
+                                    "Client's Full Name",
                                     prefix: const Icon(Icons.person)),
                                 validator: (v) =>
                                     (v == null || v.trim().isEmpty)
@@ -299,7 +299,7 @@ class _NewPatientInfoPageState extends State<NewPatientInfoPage> {
                               const SizedBox(height: 14),
                               TextFormField(
                                 controller: _emailController,
-                                decoration: _fieldDecoration('Patient Email',
+                                decoration: _fieldDecoration('Client Email',
                                     prefix: const Icon(Icons.email_outlined)),
                                 keyboardType: TextInputType.emailAddress,
                                 validator: (v) =>

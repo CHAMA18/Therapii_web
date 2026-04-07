@@ -304,8 +304,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
       backgroundColor: const Color(0xFFF7F8FA),
       body: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-        child: Column(
-          children: [
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: Column(
+              children: [
             _Header(
               emailMasked: emailMasked,
               displayName: _profile?.fullName,
@@ -480,6 +484,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
             ),
           ],
         ),
+            ),
+          ),
       ),
     );
   }

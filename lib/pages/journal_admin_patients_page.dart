@@ -186,7 +186,7 @@ class _PatientsSidebar extends StatelessWidget {
                   ),
                   const _SidebarItem(
                     icon: Icons.people_alt_outlined,
-                    label: 'Patients',
+                    label: 'Clients',
                     active: true,
                   ),
                   const SizedBox(height: 16),
@@ -446,7 +446,7 @@ class _PatientsMainContentState extends State<_PatientsMainContent> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'Admin Patients Management Hub',
+                      'Admin Clients Management Hub',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
@@ -501,7 +501,7 @@ class _PatientsMainContentState extends State<_PatientsMainContent> {
                   foregroundColor: Colors.white,
                   textStyle: const TextStyle(fontWeight: FontWeight.w700),
                 ),
-                label: const Text('Add New Patient'),
+                label: const Text('Add New Client'),
               ),
             ],
           ),
@@ -563,8 +563,8 @@ class _PatientsMainContentState extends State<_PatientsMainContent> {
                   final wide = constraints.maxWidth >= 980;
                   final cards = [
                     _PatientsSummaryCard(
-                      title: 'TOTAL ACTIVE PATIENTS',
-                      value: '$activeCount Patients',
+                      title: 'TOTAL ACTIVE CLIENTS',
+                      value: '$activeCount Clients',
                       icon: Icons.people_alt_rounded,
                       tone: const Color(0xFF2B8CEE),
                       bg: const Color(0x1A2B8CEE),
@@ -758,7 +758,7 @@ class _PatientsMainContentState extends State<_PatientsMainContent> {
     if (full.isNotEmpty) return full;
     final email = _toNonEmptyString(data['email']);
     if (email != null && email.contains('@')) return email.split('@').first;
-    return 'Patient ${fallbackId.substring(0, fallbackId.length < 6 ? fallbackId.length : 6).toUpperCase()}';
+    return 'Client ${fallbackId.substring(0, fallbackId.length < 6 ? fallbackId.length : 6).toUpperCase()}';
   }
 
   String _bestTherapistName(Map<String, dynamic> data, String therapistId) {
@@ -1491,7 +1491,7 @@ class _PatientsRenderError extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Patients view failed to render',
+              'Clients view failed to render',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w800,

@@ -95,7 +95,7 @@ class _TeamHubContentState extends State<_TeamHubContent> {
       statusBg: Color(0xFFEBF9F3),
       statusFg: Color(0xFF10B981),
       assignmentMain: 'Cognitive Behavioral Therapy',
-      assignmentSub: '45 Active Patients',
+      assignmentSub: '45 Active Clients',
       lastLogin: '10 mins ago',
     ),
     _TeamRowData(
@@ -109,7 +109,7 @@ class _TeamHubContentState extends State<_TeamHubContent> {
       statusBg: Color(0xFFFEF3C7),
       statusFg: Color(0xFFD97706),
       assignmentMain: 'Family Counseling',
-      assignmentSub: '28 Active Patients',
+      assignmentSub: '28 Active Clients',
       lastLogin: '2 hours ago',
     ),
     _TeamRowData(
@@ -123,7 +123,7 @@ class _TeamHubContentState extends State<_TeamHubContent> {
       statusBg: Color(0xFFF1F5F9),
       statusFg: Color(0xFF64748B),
       assignmentMain: 'Medication Management',
-      assignmentSub: '112 Active Patients',
+      assignmentSub: '112 Active Clients',
       lastLogin: 'Yesterday, 4:30 PM',
     ),
   ];

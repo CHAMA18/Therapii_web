@@ -7,6 +7,8 @@ version: 1.0.20+20
 environment:
   sdk: ^3.6.0
 dependencies:
+  provider: ^6.0.0
+  intl: 0.20.2
   url_launcher: any
   http: any
   font_awesome_flutter: any

@@ -60,7 +60,7 @@ class _AiTherapistChatPageState extends State<AiTherapistChatPage> {
   String _buildSystemPrompt() {
     final buffer = StringBuffer();
     buffer.write('You are $_aiName, Therapii\'s AI companion. Respond with warmth, empathy, and actionable guidance. '
-        'Keep replies under 6 sentences, reinforce healthy coping techniques, and align with the patient\'s therapist-led goals.');
+        'Keep replies under 6 sentences, reinforce healthy coping techniques, and align with the client\'s therapist-led goals.');
 
     final profile = _patientProfile;
     final context = _patientContext;
@@ -72,14 +72,14 @@ class _AiTherapistChatPageState extends State<AiTherapistChatPage> {
           .trim();
       buffer
         ..writeln()
-        ..writeln('Patient profile:')
+        ..writeln('Client profile:')
         ..writeln('- Name: ${displayName.isEmpty ? profile.email : displayName}')
         ..writeln('- Email: ${profile.email}');
     }
 
     if (context != null && context.isNotEmpty) {
       buffer.writeln();
-      buffer.writeln('Patient configuration and preferences:');
+      buffer.writeln('Client configuration and preferences:');
 
       final goals = _stringValue(context['therapy_goals']);
       if (goals.isNotEmpty) {
@@ -104,7 +104,7 @@ class _AiTherapistChatPageState extends State<AiTherapistChatPage> {
       final sendReminders = context['send_reminders'];
       if (sendReminders is bool) {
         buffer.writeln(sendReminders
-            ? '- Offer gentle reminder check-ins if the patient goes quiet.'
+            ? '- Offer gentle reminder check-ins if the client goes quiet.'
             : '- Do not proactively send reminders unless asked.');
       }
 
@@ -112,12 +112,12 @@ class _AiTherapistChatPageState extends State<AiTherapistChatPage> {
       if (shareSummaries is bool) {
         buffer.writeln(shareSummaries
             ? '- Summaries may be shared with the human therapist to stay aligned.'
-            : '- Keep conversation summaries private unless the patient explicitly requests sharing.');
+            : '- Keep conversation summaries private unless the client explicitly requests sharing.');
       }
 
       final anythingElse = _stringValue(context['anything_else']);
       if (anythingElse.isNotEmpty) {
-        buffer.writeln('- Additional notes from the patient: $anythingElse');
+        buffer.writeln('- Additional notes from the client: $anythingElse');
       }
     } else {
       buffer
@@ -740,7 +740,7 @@ extension _SummaryActions on _AiTherapistChatPageState {
     setState(() => _ending = true);
 
     final transcript = _conversation
-        .map((m) => '${m.role == 'user' ? 'Patient' : m.role == 'assistant' ? 'AI' : m.role}: ${m.content}')
+        .map((m) => '${m.role == 'user' ? 'Client' : m.role == 'assistant' ? 'AI' : m.role}: ${m.content}')
         .join('\n');
 
     const system =
@@ -757,7 +757,7 @@ extension _SummaryActions on _AiTherapistChatPageState {
       debugPrint('[AI-SUMMARY] onEndConversation begin user=${firebaseUser.uid} therapist=$therapistId messages=${_conversation.length}');
       final messages = <AiChatMessage>[
         const AiChatMessage(role: 'system', content: system),
-        AiChatMessage(role: 'user', content: 'Transcript of the patient-AI conversation:\n$transcript'),
+        AiChatMessage(role: 'user', content: 'Transcript of the client-AI conversation:\n$transcript'),
       ];
       // Prefer Chat Completions for summarization to avoid Responses-proxy schema mismatches
       final summary = await _client.sendChat(messages: messages, maxOutputTokens: 2000, preferChatCompletions: true);

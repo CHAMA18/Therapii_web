@@ -257,7 +257,7 @@ class _AiSummaryDetailPageState extends State<AiSummaryDetailPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final s = _summary;
-    final title = _patient?.fullName.isNotEmpty == true ? _patient!.fullName : 'Patient summary';
+    final title = _patient?.fullName.isNotEmpty == true ? _patient!.fullName : 'Client summary';
 
     return Scaffold(
       appBar: AppBar(
@@ -338,7 +338,7 @@ class _AiSummaryDetailPageState extends State<AiSummaryDetailPage> {
   String _label(String role) {
     switch (role) {
       case 'user':
-        return 'Patient';
+        return 'Client';
       case 'assistant':
         return 'AI';
       default:

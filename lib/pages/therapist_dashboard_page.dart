@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 
 import 'package:therapii/models/user.dart' as app_user;
+import 'package:therapii/pages/support_chat_page.dart';
 import 'package:therapii/services/user_service.dart';
 import 'package:therapii/widgets/common_settings_drawer.dart';
 import 'package:therapii/pages/my_patients_page.dart';
@@ -108,15 +109,12 @@ class _TherapistDashboardPageState extends State<TherapistDashboardPage> {
 
       body = SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 960),
-            child: Column(
+        child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _DashboardTopBar(
                   initial: name.isNotEmpty ? name[0].toUpperCase() : 'T',
-                  onSettings: () => showSettingsPopup(context),
+                  onSettings: () => showSettingsPopup(context, hideBilling: true),
                 ),
                 const SizedBox(height: 24),
                 _DashboardGreeting(
@@ -154,14 +152,6 @@ class _TherapistDashboardPageState extends State<TherapistDashboardPage> {
                               ),
                             ),
                           ],
-                        ),
-                        const SizedBox(height: 16),
-                        _DashboardVoiceCard(
-                          title: 'Voice Session',
-                          subtitle: 'Record and share your thoughts in a safe space',
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => const ListenPage()),
-                          ),
                         ),
                         const SizedBox(height: 16),
                         GridView.count(
@@ -202,14 +192,21 @@ class _TherapistDashboardPageState extends State<TherapistDashboardPage> {
                 const SizedBox(height: 32),
               ],
             ),
-          ),
-        ),
       );
     }
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
       body: body,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const SupportChatPage()),
+        ),
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
+        elevation: 4,
+        child: const Icon(Icons.support_agent_rounded),
+      ),
     );
   }
 }

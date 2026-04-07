@@ -191,7 +191,7 @@ class _AnalyticsSidebar extends StatelessWidget {
                   ),
                   _SidebarItem(
                     icon: Icons.people_alt_outlined,
-                    label: 'Patients',
+                    label: 'Clients',
                     onTap: () {
                       Navigator.of(context).pushReplacement(
                         MaterialPageRoute(
@@ -534,7 +534,7 @@ class _SentimentTrendsCard extends StatelessWidget {
                     ),
                     SizedBox(height: 2),
                     Text(
-                      'Aggregate patient mood trajectories over time',
+                      'Aggregate client mood trajectories over time',
                       style: TextStyle(
                         fontSize: 12,
                         color: Color(0xFF64748B),

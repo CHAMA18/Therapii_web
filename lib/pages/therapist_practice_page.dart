@@ -336,10 +336,7 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
           _buildHeader(context, scheme, isDark),
           Expanded(
             child: SingleChildScrollView(
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 960),
-                  child: Padding(
+              child: Padding(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 24, vertical: 40),
                     child: Form(
@@ -372,8 +369,6 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
                         ],
                       ),
                     ),
-                  ),
-                ),
               ),
             ),
           ),
@@ -395,10 +390,7 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
           ),
         ),
       ),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 960),
-          child: Padding(
+      child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -446,8 +438,6 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
                 ),
               ],
             ),
-          ),
-        ),
       ),
     );
   }

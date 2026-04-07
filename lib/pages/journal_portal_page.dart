@@ -1,6 +1,10 @@
+import 'dart:typed_data';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:therapii/auth/firebase_auth_manager.dart';
 import 'package:therapii/models/ai_conversation_summary.dart';
 import 'package:therapii/pages/admin_dashboard_page.dart';
@@ -1126,6 +1130,7 @@ class _JournalReflectionPageState extends State<_JournalReflectionPage> {
   final AiConversationService _aiService = AiConversationService();
   bool _isArchiving = false;
   double _leftRailWidth = _defaultPortalSidebarWidth;
+  final List<Uint8List> _attachedImages = [];
 
   @override
   void initState() {
@@ -1197,8 +1202,14 @@ class _JournalReflectionPageState extends State<_JournalReflectionPage> {
   }
 
   Future<void> _archiveReflection() async {
-    final reflection = _reflectionController.text.trim();
-    if (reflection.isEmpty || _isArchiving) return;
+    String reflection = _reflectionController.text.trim();
+    if ((reflection.isEmpty && _attachedImages.isEmpty) || _isArchiving) return;
+
+    if (reflection.isEmpty && _attachedImages.isNotEmpty) {
+      reflection = '[Attached ${_attachedImages.length} image${_attachedImages.length > 1 ? 's' : ''}]';
+    } else if (_attachedImages.isNotEmpty) {
+      reflection += '\n\n[Attached ${_attachedImages.length} image${_attachedImages.length > 1 ? 's' : ''}]';
+    }
 
     final currentUser = FirebaseAuthManager().currentUser;
     final patientId = currentUser?.uid;
@@ -1220,6 +1231,7 @@ class _JournalReflectionPageState extends State<_JournalReflectionPage> {
       );
       if (!mounted) return;
       _reflectionController.clear();
+      _attachedImages.clear();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Reflection archived to your wisdom feed.'),
@@ -1277,6 +1289,13 @@ class _JournalReflectionPageState extends State<_JournalReflectionPage> {
                 greeting: '${_greeting()}, ${_firstName()}.',
                 controller: _reflectionController,
                 isArchiving: _isArchiving,
+                attachedImages: _attachedImages,
+                onUpdateImages: (images) {
+                  setState(() {
+                    _attachedImages.clear();
+                    _attachedImages.addAll(images);
+                  });
+                },
                 onArchive: () {
                   _archiveReflection();
                 },
@@ -1411,8 +1430,7 @@ class _FavoritesPane extends StatelessWidget {
     return FirebaseFirestore.instance
         .collection('users')
         .doc(userId)
-        .collection('favorite_journal_articles')
-        .orderBy('saved_at', descending: true);
+        .collection('favorite_journal_articles');
   }
 
   @override
@@ -1471,8 +1489,14 @@ class _FavoritesPane extends StatelessWidget {
                           final items = snapshot.hasData
                               ? snapshot.data!.docs
                                   .map(_FavoriteArticleData.fromDoc)
-                                  .toList(growable: false)
-                              : const <_FavoriteArticleData>[];
+                                  .toList()
+                              : <_FavoriteArticleData>[];
+                          
+                          items.sort((a, b) {
+                            final aDate = a.savedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+                            final bDate = b.savedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+                            return bDate.compareTo(aDate);
+                          });
 
                           if (snapshot.connectionState ==
                                   ConnectionState.waiting &&
@@ -1774,6 +1798,8 @@ class _JournalReflectionPane extends StatefulWidget {
   final TextEditingController controller;
   final bool isArchiving;
   final VoidCallback onArchive;
+  final List<Uint8List> attachedImages;
+  final ValueChanged<List<Uint8List>> onUpdateImages;
 
   const _JournalReflectionPane({
     required this.showCompactHeader,
@@ -1781,6 +1807,8 @@ class _JournalReflectionPane extends StatefulWidget {
     required this.controller,
     required this.isArchiving,
     required this.onArchive,
+    required this.attachedImages,
+    required this.onUpdateImages,
   });
 
   @override
@@ -1788,12 +1816,104 @@ class _JournalReflectionPane extends StatefulWidget {
 }
 
 class _JournalReflectionPaneState extends State<_JournalReflectionPane> {
-  bool get _hasText => widget.controller.text.trim().isNotEmpty;
+  bool get _hasText => widget.controller.text.trim().isNotEmpty || widget.attachedImages.isNotEmpty;
+
+  final stt.SpeechToText _speechToText = stt.SpeechToText();
+  bool _isListening = false;
+  bool _speechAvailable = false;
 
   @override
   void initState() {
     super.initState();
     widget.controller.addListener(_handleTextChanged);
+    _initSpeech();
+  }
+
+  Future<void> _initSpeech() async {
+    try {
+      final available = await _speechToText.initialize(
+        onError: (error) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Speech recognition error: ${error.errorMsg}')),
+            );
+          }
+        },
+        onStatus: (status) {
+          if (mounted && status == 'done') {
+            setState(() => _isListening = false);
+          }
+        },
+      );
+      if (mounted) {
+        setState(() => _speechAvailable = available);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _speechAvailable = false);
+    }
+  }
+
+  Future<void> _toggleListening() async {
+    if (_isListening) {
+      await _speechToText.stop();
+      setState(() => _isListening = false);
+    } else {
+      final available = await _speechToText.initialize();
+      if (!available) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Speech recognition not available on this device.')),
+          );
+        }
+        return;
+      }
+
+      setState(() => _isListening = true);
+      
+      final currentText = widget.controller.text;
+      final prefix = currentText.isNotEmpty && !currentText.endsWith(' ') ? '$currentText ' : currentText;
+
+      await _speechToText.listen(
+        onResult: (result) {
+          if (mounted) {
+            setState(() {
+              widget.controller.text = prefix + result.recognizedWords;
+            });
+          }
+        },
+        listenFor: const Duration(minutes: 5),
+        pauseFor: const Duration(seconds: 5),
+        partialResults: true,
+        cancelOnError: true,
+      );
+    }
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: true,
+        withData: true,
+      );
+      if (result == null || result.files.isEmpty) return;
+
+      if (mounted) {
+        final newImages = List<Uint8List>.from(widget.attachedImages);
+        for (final file in result.files) {
+          if (file.bytes != null) {
+            newImages.add(file.bytes!);
+          }
+        }
+        widget.onUpdateImages(newImages);
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not attach image.')),
+        );
+      }
+    }
   }
 
   @override
@@ -1827,6 +1947,7 @@ class _JournalReflectionPaneState extends State<_JournalReflectionPane> {
 
           if (showSplitLayout) {
             return Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Expanded(
                   child: Padding(
@@ -1850,10 +1971,25 @@ class _JournalReflectionPaneState extends State<_JournalReflectionPane> {
                               _ReflectionEditor(controller: widget.controller),
                         ),
                         const SizedBox(height: 24),
+                        _ImageAttachments(
+                          images: widget.attachedImages,
+                          onRemove: (i) {
+                            final newImages = List<Uint8List>.from(widget.attachedImages);
+                            newImages.removeAt(i);
+                            widget.onUpdateImages(newImages);
+                          },
+                        ),
                         _ReflectionActions(
                           enabled: _hasText,
                           isArchiving: widget.isArchiving,
                           onArchive: widget.onArchive,
+                          onMicTap: _speechAvailable ? _toggleListening : () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Speech recognition not available on this device.')),
+                            );
+                          },
+                          onImageTap: _pickImage,
+                          isListening: _isListening,
                         ),
                       ],
                     ),
@@ -1899,10 +2035,25 @@ class _JournalReflectionPaneState extends State<_JournalReflectionPane> {
                   child: _ReflectionEditor(controller: widget.controller),
                 ),
                 const SizedBox(height: 22),
+                _ImageAttachments(
+                  images: widget.attachedImages,
+                  onRemove: (i) {
+                    final newImages = List<Uint8List>.from(widget.attachedImages);
+                    newImages.removeAt(i);
+                    widget.onUpdateImages(newImages);
+                  },
+                ),
                 _ReflectionActions(
                   enabled: _hasText,
                   isArchiving: widget.isArchiving,
                   onArchive: widget.onArchive,
+                  onMicTap: _speechAvailable ? _toggleListening : () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Speech recognition not available on this device.')),
+                    );
+                  },
+                  onImageTap: _pickImage,
+                  isListening: _isListening,
                 ),
                 const SizedBox(height: 30),
                 const _WisdomFeedColumn(),
@@ -2029,15 +2180,74 @@ class _ReflectionEditor extends StatelessWidget {
   }
 }
 
+class _ImageAttachments extends StatelessWidget {
+  final List<Uint8List> images;
+  final ValueChanged<int> onRemove;
+
+  const _ImageAttachments({required this.images, required this.onRemove});
+
+  @override
+  Widget build(BuildContext context) {
+    if (images.isEmpty) return const SizedBox.shrink();
+    
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Wrap(
+        spacing: 12,
+        runSpacing: 12,
+        children: List.generate(images.length, (index) {
+          return Stack(
+            clipBehavior: Clip.none,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.memory(
+                  images[index],
+                  width: 80,
+                  height: 80,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              Positioned(
+                top: -8,
+                right: -8,
+                child: Material(
+                  color: Colors.red,
+                  shape: const CircleBorder(),
+                  elevation: 2,
+                  child: InkWell(
+                    onTap: () => onRemove(index),
+                    customBorder: const CircleBorder(),
+                    child: const Padding(
+                      padding: EdgeInsets.all(4),
+                      child: Icon(Icons.close_rounded, size: 14, color: Colors.white),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        }),
+      ),
+    );
+  }
+}
+
 class _ReflectionActions extends StatelessWidget {
   final bool enabled;
   final bool isArchiving;
   final VoidCallback onArchive;
+  final VoidCallback onMicTap;
+  final VoidCallback onImageTap;
+  final bool isListening;
 
   const _ReflectionActions({
     required this.enabled,
     required this.isArchiving,
     required this.onArchive,
+    required this.onMicTap,
+    required this.onImageTap,
+    required this.isListening,
   });
 
   @override
@@ -2047,10 +2257,18 @@ class _ReflectionActions extends StatelessWidget {
 
     final actionButtons = Row(
       mainAxisSize: MainAxisSize.min,
-      children: const [
-        _ActionCircleButton(icon: Icons.mic_none_rounded),
-        SizedBox(width: 16),
-        _ActionCircleButton(icon: Icons.image_outlined),
+      children: [
+        _ActionCircleButton(
+          icon: Icons.mic_none_rounded,
+          onTap: onMicTap,
+          isActive: isListening,
+        ),
+        const SizedBox(width: 16),
+        _ActionCircleButton(
+          icon: Icons.image_outlined,
+          onTap: onImageTap,
+          isActive: false,
+        ),
       ],
     );
 
@@ -2108,28 +2326,46 @@ class _ReflectionActions extends StatelessWidget {
 
 class _ActionCircleButton extends StatelessWidget {
   final IconData icon;
-  const _ActionCircleButton({required this.icon});
+  final VoidCallback onTap;
+  final bool isActive;
+  
+  const _ActionCircleButton({
+    required this.icon,
+    required this.onTap,
+    this.isActive = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     final palette = _PortalPalette.of(context);
 
-    return Container(
-      width: 64,
-      height: 64,
-      decoration: BoxDecoration(
-        color: palette.controlBackground,
-        shape: BoxShape.circle,
-        border: Border.all(color: palette.border),
-        boxShadow: [
-          BoxShadow(
-            color: palette.shadow,
-            blurRadius: 14,
-            offset: Offset(0, 8),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        child: Container(
+          width: 64,
+          height: 64,
+          decoration: BoxDecoration(
+            color: isActive ? (palette.isDark ? const Color(0xFF1E3A6B) : const Color(0xFFDCE8FF)) : palette.controlBackground,
+            shape: BoxShape.circle,
+            border: Border.all(color: isActive ? const Color(0xFF1754CF) : palette.border),
+            boxShadow: [
+              BoxShadow(
+                color: palette.shadow,
+                blurRadius: 14,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
-        ],
+          child: Icon(
+            icon, 
+            color: isActive ? const Color(0xFF1754CF) : palette.textMuted, 
+            size: 28,
+          ),
+        ),
       ),
-      child: Icon(icon, color: palette.textMuted, size: 28),
     );
   }
 }
@@ -3493,9 +3729,7 @@ class _RightRail extends StatelessWidget {
     return FirebaseFirestore.instance
         .collection('users')
         .doc(userId)
-        .collection('favorite_journal_articles')
-        .orderBy('saved_at', descending: true)
-        .limit(3);
+        .collection('favorite_journal_articles');
   }
 
   @override
@@ -3556,11 +3790,20 @@ class _RightRail extends StatelessWidget {
               StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                 stream: query.snapshots(),
                 builder: (context, snapshot) {
-                  final items = snapshot.hasData
+                  var items = snapshot.hasData
                       ? snapshot.data!.docs
                           .map(_FavoriteArticleData.fromDoc)
-                          .toList(growable: false)
-                      : const <_FavoriteArticleData>[];
+                          .toList()
+                      : <_FavoriteArticleData>[];
+                  
+                  items.sort((a, b) {
+                    final aDate = a.savedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+                    final bDate = b.savedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+                    return bDate.compareTo(aDate);
+                  });
+                  if (items.length > 3) {
+                    items = items.sublist(0, 3);
+                  }
 
                   if (snapshot.connectionState == ConnectionState.waiting &&
                       items.isEmpty) {

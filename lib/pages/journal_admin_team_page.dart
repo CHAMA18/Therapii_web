@@ -179,7 +179,7 @@ class _TeamSidebar extends StatelessWidget {
                   ),
                   _SidebarItem(
                     icon: Icons.people_alt_outlined,
-                    label: 'Patients',
+                    label: 'Clients',
                     onTap: () {
                       Navigator.of(context).pushReplacement(
                         MaterialPageRoute(builder: (_) => const JournalAdminPatientsHubPage()),
@@ -658,7 +658,7 @@ class _TeamMainContentState extends State<_TeamMainContent> {
           status: statusInfo.label,
           statusTone: statusInfo.tone,
           patientCount: patientCount,
-          assignmentsPrimary: '$patientCount Patient${patientCount == 1 ? '' : 's'}',
+          assignmentsPrimary: '$patientCount Client${patientCount == 1 ? '' : 's'}',
           assignmentsSecondary: _secondaryAssignments(therapistData),
           lastLogin: statusInfo.lastSeenText,
           avatarUrl: _pickAvatarUrl(therapistData, userData),

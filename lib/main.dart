@@ -1,7 +1,9 @@
-import 'package:flutter/foundation.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+// ignore: depend_on_referenced_packages
+import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import 'package:therapii/firebase_options.dart';
 import 'package:therapii/theme.dart';
@@ -90,10 +92,6 @@ Future<void> _bootstrapFirebase() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    if (kIsWeb) {
-      await firebase_auth.FirebaseAuth.instance
-          .setPersistence(firebase_auth.Persistence.LOCAL);
-    }
   } catch (e, st) {
     _firebaseInitError = e;
     // ignore: avoid_print

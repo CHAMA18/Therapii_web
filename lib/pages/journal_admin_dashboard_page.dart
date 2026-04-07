@@ -189,7 +189,7 @@ class _DashboardSidebar extends StatelessWidget {
                   ),
                   _SidebarItem(
                     icon: Icons.people_alt_outlined,
-                    label: 'Patients',
+                    label: 'Clients',
                     onTap: () {
                       Navigator.of(context).pushReplacement(
                         MaterialPageRoute(
@@ -530,7 +530,7 @@ class _DashboardContentState extends State<_DashboardContent> {
                       ),
                       SizedBox(height: 2),
                       Text(
-                        'Monitoring health & patient engagement in real-time',
+                        'Monitoring health & client engagement in real-time',
                         style: TextStyle(
                           fontSize: 12,
                           color: Color(0xFF617589),
@@ -782,7 +782,7 @@ class _DashboardContentState extends State<_DashboardContent> {
 
     final metricCards = <_MetricData>[
       _MetricData(
-        title: 'Total Active Patients',
+        title: 'Total Active Clients',
         value: _formatInt(totalActivePatients),
         trend: _trendLabel(
             activePatients30d.toDouble(), activePatientsPrev30d.toDouble()),
@@ -838,7 +838,7 @@ class _DashboardContentState extends State<_DashboardContent> {
         _AlertData(
           title: 'Unread Message Backlog',
           message:
-              '$highUnreadBacklog conversation(s) have 5+ unread patient messages.',
+              '$highUnreadBacklog conversation(s) have 5+ unread client messages.',
           time: 'Live',
           tone: const Color(0xFFF59E0B),
           action: 'CHECK CONVERSATIONS',
@@ -900,7 +900,7 @@ class _DashboardContentState extends State<_DashboardContent> {
       return _RecentSummaryData(
         title: _truncate(summaryText, max: 52),
         subtitle:
-            'Patient ${_shortId(patientId)} • ${createdAt == null ? 'Unknown time' : _formatRelative(createdAt)}',
+            'Client ${_shortId(patientId)} • ${createdAt == null ? 'Unknown time' : _formatRelative(createdAt)}',
         metric:
             transcriptLength > 0 ? '$transcriptLength msgs' : 'No transcript',
         completion: hasFeedback ? 'Feedback reviewed' : 'Awaiting feedback',
@@ -1399,7 +1399,7 @@ class _EngagementCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Patient Engagement over Time',
+            'Client Engagement over Time',
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w800,

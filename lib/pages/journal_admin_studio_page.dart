@@ -393,8 +393,8 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
       'title': _titleController.text.trim(),
       'blocks': _blockControllers.map((c) => c.text.trim()).where((t) => t.isNotEmpty).toList(growable: false),
       'summary': _summaryController.text.trim(),
-      'date': _dateController.text.trim(),
-      'time': _timeController.text.trim(),
+      'date': _publishImmediately ? '' : _dateController.text.trim(),
+      'time': _publishImmediately ? '' : _timeController.text.trim(),
       'publishImmediately': _publishImmediately,
       'isPublic': _isPublic,
       'tags': _tags,
@@ -420,7 +420,9 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content: Text(publish
-                ? 'Article saved and queued for publishing.'
+                ? (status == 'published'
+                    ? 'Article published to the feed.'
+                    : 'Article saved and scheduled for publishing.')
                 : 'Draft saved.')),
       );
     } catch (error) {
@@ -1037,7 +1039,7 @@ class _LeftSidebar extends StatelessWidget {
                       ),
                       _NavItemData(
                         icon: Icons.people_alt_outlined,
-                        label: 'Patients',
+                        label: 'Clients',
                         onTap: () {
                           Navigator.of(context).pushReplacement(
                             MaterialPageRoute(

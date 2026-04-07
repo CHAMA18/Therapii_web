@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:therapii/auth/firebase_auth_manager.dart';
 import 'package:therapii/pages/admin_settings_page.dart';
+import 'package:therapii/pages/admin_support_hub_page.dart';
 import 'package:therapii/pages/landing_page.dart';
 import 'package:therapii/pages/therapist_approvals_page.dart';
 import 'package:therapii/services/app_page_state_service.dart';
@@ -1236,6 +1237,17 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         onTap: _loadCounts,
       ),
       _ActionCard(
+        title: 'Support Hub',
+        subtitle: 'User support conversations',
+        icon: Icons.support_agent_outlined,
+        isPrimary: false,
+        primaryColor: primaryColor,
+        isDark: isDark,
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const AdminSupportHubPage()),
+        ),
+      ),
+      _ActionCard(
         title: 'User Access',
         subtitle: 'Grant Stripe-linked timed access',
         icon: Icons.workspace_premium_outlined,
@@ -2461,7 +2473,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                       width: cardWidth,
                     ),
                     _AnalyticCard(
-                      title: 'Total Patients',
+                      title: 'Total Clients',
                       value: '$_totalPatients',
                       isLoading: _loadingCounts,
                       change: '+24%',

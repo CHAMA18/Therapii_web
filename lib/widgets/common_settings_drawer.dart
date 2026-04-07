@@ -15,7 +15,7 @@ import 'package:therapii/utils/admin_access.dart';
 
 /// Shows an elegant settings popup modal.
 /// Call this function instead of using Scaffold.endDrawer
-Future<void> showSettingsPopup(BuildContext context) async {
+Future<void> showSettingsPopup(BuildContext context, {bool hideBilling = false}) async {
   await showGeneralDialog(
     context: context,
     barrierDismissible: true,
@@ -23,7 +23,7 @@ Future<void> showSettingsPopup(BuildContext context) async {
     barrierColor: Colors.black54,
     transitionDuration: const Duration(milliseconds: 320),
     pageBuilder: (ctx, animation, secondaryAnimation) =>
-        const _SettingsPopupContent(),
+        _SettingsPopupContent(hideBilling: hideBilling),
     transitionBuilder: (ctx, animation, secondaryAnimation, child) {
       final curved =
           CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
@@ -65,7 +65,9 @@ Route<void> _buildWorkspaceSwitchRoute(Widget page) {
 }
 
 class _SettingsPopupContent extends StatefulWidget {
-  const _SettingsPopupContent();
+  final bool hideBilling;
+
+  const _SettingsPopupContent({this.hideBilling = false});
 
   @override
   State<_SettingsPopupContent> createState() => _SettingsPopupContentState();
@@ -80,7 +82,9 @@ class _SettingsPopupContentState extends State<_SettingsPopupContent> {
   @override
   void initState() {
     super.initState();
-    _fetchSubscriptionStatus();
+    if (!widget.hideBilling) {
+      _fetchSubscriptionStatus();
+    }
   }
 
   Future<void> _fetchSubscriptionStatus() async {
@@ -197,32 +201,34 @@ class _SettingsPopupContentState extends State<_SettingsPopupContent> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  _SettingsCard(
-                                    icon: _isPaidUser
-                                        ? Icons.workspace_premium_rounded
-                                        : Icons.star_border_rounded,
-                                    iconColor: _isPaidUser
-                                        ? scheme.primary
-                                        : const Color(0xFF38BDF8),
-                                    title: _isLoadingSubscription
-                                        ? 'Loading...'
-                                        : _planName,
-                                    subtitle: _isLoadingSubscription
-                                        ? 'Checking subscription'
-                                        : (_isPaidUser
-                                            ? 'Premium member'
-                                            : 'Tap to upgrade'),
-                                    isLoading: _isLoadingSubscription,
-                                    onTap: () {
-                                      Navigator.pop(context);
-                                      Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                            builder: (_) =>
-                                                const BillingPage()),
-                                      );
-                                    },
-                                  ),
-                                  const SizedBox(height: 12),
+                                  if (!widget.hideBilling) ...[
+                                    _SettingsCard(
+                                      icon: _isPaidUser
+                                          ? Icons.workspace_premium_rounded
+                                          : Icons.star_border_rounded,
+                                      iconColor: _isPaidUser
+                                          ? scheme.primary
+                                          : const Color(0xFF38BDF8),
+                                      title: _isLoadingSubscription
+                                          ? 'Loading...'
+                                          : _planName,
+                                      subtitle: _isLoadingSubscription
+                                          ? 'Checking subscription'
+                                          : (_isPaidUser
+                                              ? 'Premium member'
+                                              : 'Tap to upgrade'),
+                                      isLoading: _isLoadingSubscription,
+                                      onTap: () {
+                                        Navigator.pop(context);
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                              builder: (_) =>
+                                                  const BillingPage()),
+                                        );
+                                      },
+                                    ),
+                                    const SizedBox(height: 12),
+                                  ],
                                   if (isAdmin) ...[
                                     _SettingsCard(
                                       icon: Icons.space_dashboard_outlined,
@@ -1011,11 +1017,11 @@ const List<String> _privacyPolicyParagraphs = <String>[
   'Therapii Privacy Policy',
   'Therapii ("Company" or "We") provides our therapists and patients ("User" or "You") with access to AI tools or services via websites or applications ("Products"). This Privacy Policy explains the types of information we may collect from our users, how we use and disclose such information and our purposes for doing so. It also describes how we protect Personal Information and your choices with regard to your Personal Information. To the extent you use the Company Products or services, this Privacy Policy will apply to you, so please review it carefully. If you do not agree to any term of this Privacy Policy, please do not access or use the Company Products.',
   '1. Information We Collect',
-  'As described in further detail below, we may collect both Personal Information (i.e., information that identifies you or other individuals) and Non-Personal Information (i.e., information that does not identify you or any other individual, directly or indirectly). This information may be collected from Users using the Products as a therapist ("Therapist") and Users using the Products as a patient of a Therapist ("Patient").',
+  'As described in further detail below, we may collect both Personal Information (i.e., information that identifies you or other individuals) and Non-Personal Information (i.e., information that does not identify you or any other individual, directly or indirectly). This information may be collected from Users using the Products as a therapist ("Therapist") and Users using the Products as a client of a Therapist ("Client").',
   'We may collect the following types of Personal Information:',
   '''• Names. We may collect full names of Users when they provide it to us in the course of using the Platform. For example, we may collect a User’s full name when that User establishes an account with any of our Products or when the User provides it to us in connection with sending us an inquiry or other communication.''',
   '''• Contact Information. We may collect Users’ contact information, including without limitation, email addresses, postal addresses and phone numbers, when they establish an account with any of our Products or when they provide such information to us in connection with sending us an inquiry or other communication.''',
-  '''• Internet Media. We may collect information about Therapists from websites or social media accounts that help to inform our Products about the Therapists skills, specialties, and approach toward providing therapeutic services to their Patients.''',
+  '''• Internet Media. We may collect information about Therapists from websites or social media accounts that help to inform our Products about the Therapists skills, specialties, and approach toward providing therapeutic services to their Clients.''',
   '''• Online Identifiers. We may collect Users’ online identifiers, such as their Internet Protocol (IP) addresses, automatically as they use any of our Products.''',
   '''• Conversation Data. We may collect information included within a conversation in which the User engages using our online tools or services (“Conversation Data”). We may collect such Conversation Data (including all Personal Information contained therein) pursuant to the User’s consent. Conversation Data may be collected as text, image, or audio files.''',
   'We may collect the following types of Non-Personal Information:',

@@ -1,4 +1,9 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:just_audio/just_audio.dart';
+import 'package:record/record.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:therapii/auth/firebase_auth_manager.dart';
 import 'package:therapii/models/chat_message.dart';
 import 'package:therapii/models/user.dart' as app_user;
@@ -96,7 +101,7 @@ class _PatientChatPageState extends State<PatientChatPage> {
     return user.email;
   }
 
-  Future<void> _handleSend() async {
+  Future<void> _handleSendText() async {
     final viewer = _viewer;
     final therapistId = _therapistId;
     final patientId = _patientId;
@@ -125,9 +130,45 @@ class _PatientChatPageState extends State<PatientChatPage> {
         SnackBar(content: Text('Failed to send message: $e')),
       );
     } finally {
-      if (mounted) {
-        setState(() => _sending = false);
-      }
+      if (mounted) setState(() => _sending = false);
+    }
+  }
+
+  Future<void> _handleSendAudio(String localPath, int durationSeconds) async {
+    final viewer = _viewer;
+    final therapistId = _therapistId;
+    final patientId = _patientId;
+
+    if (viewer == null || therapistId == null || patientId == null) return;
+
+    setState(() => _sending = true);
+    try {
+      final audioUrl = await _chatService.uploadAudio(
+        localPath: localPath,
+        patientId: patientId,
+        therapistId: therapistId,
+      );
+
+      await _chatService.sendMessage(
+        therapistId: therapistId,
+        patientId: patientId,
+        senderId: viewer.id,
+        text: '',
+        senderIsTherapist: viewer.isTherapist,
+        audioUrl: audioUrl,
+        durationSeconds: durationSeconds,
+      );
+
+      if (!mounted) return;
+      await _markConversationRead();
+      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to send voice message: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _sending = false);
     }
   }
 
@@ -280,7 +321,7 @@ class _PatientChatPageState extends State<PatientChatPage> {
                                         return Padding(
                                           padding: EdgeInsets.only(bottom: index == messages.length - 1 ? 0 : 14),
                                           child: _ChatBubble(
-                                            text: message.text,
+                                            message: message,
                                             isMe: isMe,
                                             color: bubbleColor,
                                             showAvatar: showAvatar,
@@ -296,7 +337,8 @@ class _PatientChatPageState extends State<PatientChatPage> {
                               ),
                               _ChatComposer(
                                 controller: _messageController,
-                                onSend: _handleSend,
+                                onSendText: _handleSendText,
+                                onSendAudio: _handleSendAudio,
                                 sending: _sending,
                               ),
                             ],
@@ -308,24 +350,88 @@ class _PatientChatPageState extends State<PatientChatPage> {
   }
 }
 
-class _ChatBubble extends StatelessWidget {
-  final String text;
+class _ChatBubble extends StatefulWidget {
+  final ChatMessage message;
   final bool isMe;
   final Color color;
   final bool showAvatar;
   final String avatarInitial;
   const _ChatBubble({
-    required this.text,
+    required this.message,
     required this.isMe,
     required this.color,
     this.showAvatar = false,
     this.avatarInitial = '?',
   });
 
+  @override
+  State<_ChatBubble> createState() => _ChatBubbleState();
+}
+
+class _ChatBubbleState extends State<_ChatBubble> {
+  final AudioPlayer _player = AudioPlayer();
+  bool _isPlaying = false;
+  bool _isPlayerInitialized = false;
+  Duration _playbackPosition = Duration.zero;
+  Duration _playbackDuration = Duration.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.message.audioUrl != null) {
+      _initPlayer();
+    }
+  }
+
+  Future<void> _initPlayer() async {
+    try {
+      await _player.setUrl(widget.message.audioUrl!);
+      _player.positionStream.listen((pos) {
+        if (mounted) setState(() => _playbackPosition = pos);
+      });
+      _player.durationStream.listen((dur) {
+        if (mounted && dur != null) setState(() => _playbackDuration = dur);
+      });
+      _player.playerStateStream.listen((state) {
+        if (mounted) {
+          setState(() => _isPlaying = state.playing);
+          if (state.processingState == ProcessingState.completed) {
+            _player.seek(Duration.zero);
+            _player.pause();
+          }
+        }
+      });
+      _isPlayerInitialized = true;
+    } catch (e) {
+      debugPrint('Error loading audio: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    _player.dispose();
+    super.dispose();
+  }
+
+  String _formatDuration(Duration d) {
+    final mm = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final ss = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return '$mm:$ss';
+  }
+
+  void _togglePlay() {
+    if (!_isPlayerInitialized) return;
+    if (_isPlaying) {
+      _player.pause();
+    } else {
+      _player.play();
+    }
+  }
+
   BorderRadius _bubbleRadius() {
     const radius = Radius.circular(18);
     const flat = Radius.circular(8);
-    if (isMe) {
+    if (widget.isMe) {
       return const BorderRadius.only(
         topLeft: radius,
         topRight: flat,
@@ -341,10 +447,56 @@ class _ChatBubble extends StatelessWidget {
     );
   }
 
+  Widget _buildContent(Color textColor, Color barColor, Color progressColor) {
+    if (widget.message.audioUrl != null) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: Icon(_isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled, color: textColor, size: 36),
+            onPressed: _togglePlay,
+          ),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 100,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: barColor,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Container(
+                    width: _playbackDuration.inMilliseconds > 0
+                        ? 100 * (_playbackPosition.inMilliseconds / _playbackDuration.inMilliseconds)
+                        : 0,
+                    decoration: BoxDecoration(
+                      color: progressColor,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _formatDuration(_playbackPosition.inMilliseconds > 0 ? _playbackPosition : Duration(seconds: widget.message.durationSeconds ?? 0)),
+                style: TextStyle(color: textColor, fontSize: 12),
+              ),
+            ],
+          ),
+        ],
+      );
+    } else {
+      return Text(widget.message.text, style: TextStyle(color: textColor, fontSize: 15, height: 1.4));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final textStyle = const TextStyle(color: Colors.white, fontSize: 15, height: 1.4);
-    if (isMe) {
+    if (widget.isMe) {
       return Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
@@ -352,47 +504,36 @@ class _ChatBubble extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: color,
+                color: widget.color,
                 borderRadius: _bubbleRadius(),
               ),
-              child: Text(text, style: textStyle),
+              child: _buildContent(Colors.white, Colors.white.withValues(alpha: 0.3), Colors.white),
             ),
           ),
         ],
       );
     }
     return Row(
+      mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        if (showAvatar) ...[
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: const Color(0xFFEEF2FC),
-              border: Border.all(color: color.withValues(alpha: 0.08)),
-            ),
-            child: Center(
-              child: Text(
-                avatarInitial,
-                style: TextStyle(
-                  color: color,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-        ],
+        if (widget.showAvatar)
+          CircleAvatar(
+            radius: 16,
+            backgroundColor: widget.color,
+            child: Text(widget.avatarInitial, style: const TextStyle(color: Colors.white, fontSize: 14)),
+          )
+        else
+          const SizedBox(width: 32),
+        const SizedBox(width: 8),
         Flexible(
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: color,
+              color: const Color(0xFFE8ECEF),
               borderRadius: _bubbleRadius(),
             ),
-            child: Text(text, style: textStyle),
+            child: _buildContent(Colors.black87, Colors.black12, Colors.black87),
           ),
         ),
       ],
@@ -402,11 +543,13 @@ class _ChatBubble extends StatelessWidget {
 
 class _ChatComposer extends StatefulWidget {
   final TextEditingController controller;
-  final VoidCallback? onSend;
+  final VoidCallback? onSendText;
+  final Future<void> Function(String path, int durationSeconds)? onSendAudio;
   final bool sending;
   const _ChatComposer({
     required this.controller,
-    required this.onSend,
+    required this.onSendText,
+    required this.onSendAudio,
     required this.sending,
   });
 
@@ -416,6 +559,10 @@ class _ChatComposer extends StatefulWidget {
 
 class _ChatComposerState extends State<_ChatComposer> {
   bool _hasText = false;
+  final AudioRecorder _recorder = AudioRecorder();
+  bool _isRecording = false;
+  Timer? _recordTimer;
+  Duration _recordDuration = Duration.zero;
 
   @override
   void initState() {
@@ -427,6 +574,11 @@ class _ChatComposerState extends State<_ChatComposer> {
   @override
   void dispose() {
     widget.controller.removeListener(_onTextChanged);
+    _recordTimer?.cancel();
+    if (_isRecording) {
+      unawaited(_recorder.stop());
+    }
+    unawaited(_recorder.dispose());
     super.dispose();
   }
 
@@ -435,6 +587,59 @@ class _ChatComposerState extends State<_ChatComposer> {
     if (hasText != _hasText) {
       setState(() => _hasText = hasText);
     }
+  }
+
+  Future<String> _recordPath() async {
+    final fileName = 'voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
+    if (kIsWeb) return fileName;
+    try {
+      final dir = await getTemporaryDirectory();
+      return '${dir.path}/$fileName';
+    } catch (_) {
+      return fileName;
+    }
+  }
+
+  Future<void> _toggleRecording() async {
+    if (_isRecording) {
+      final path = await _recorder.stop();
+      _recordTimer?.cancel();
+      final duration = _recordDuration.inSeconds;
+      setState(() {
+        _isRecording = false;
+        _recordDuration = Duration.zero;
+      });
+      if (path != null && widget.onSendAudio != null && duration > 0) {
+        await widget.onSendAudio!(path, duration);
+      }
+    } else {
+      final ok = await _recorder.hasPermission();
+      if (!ok) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Microphone permission required.')),
+        );
+        return;
+      }
+      final path = await _recordPath();
+      await _recorder.start(
+        const RecordConfig(encoder: AudioEncoder.aacLc, bitRate: 128000),
+        path: path,
+      );
+      setState(() {
+        _isRecording = true;
+        _recordDuration = Duration.zero;
+      });
+      _recordTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        setState(() => _recordDuration += const Duration(seconds: 1));
+      });
+    }
+  }
+
+  String _format(Duration d) {
+    final mm = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final ss = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return '$mm:$ss';
   }
 
   @override
@@ -450,48 +655,70 @@ class _ChatComposerState extends State<_ChatComposer> {
         ),
         child: Row(
           children: [
-            Expanded(
-              child: TextField(
-                controller: widget.controller,
-                minLines: 1,
-                maxLines: 4,
-                textInputAction: TextInputAction.send,
-                onSubmitted: (_) {
-                  if (widget.onSend != null) widget.onSend!();
-                },
-                decoration: InputDecoration(
-                  hintText: 'Type your response',
-                  border: InputBorder.none,
-                  isDense: true,
-                  hintStyle: TextStyle(color: scheme.onSurface.withValues(alpha: 0.45)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            if (_isRecording) ...[
+              const SizedBox(width: 8),
+              Container(
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
                 ),
               ),
-            ),
+              const SizedBox(width: 8),
+              Text(_format(_recordDuration), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+              const Spacer(),
+            ] else ...[
+              Expanded(
+                child: TextField(
+                  controller: widget.controller,
+                  minLines: 1,
+                  maxLines: 4,
+                  textInputAction: TextInputAction.send,
+                  onSubmitted: (_) {
+                    if (widget.onSendText != null && _hasText) widget.onSendText!();
+                  },
+                  decoration: InputDecoration(
+                    hintText: 'Type your response',
+                    border: InputBorder.none,
+                    isDense: true,
+                    hintStyle: TextStyle(color: scheme.onSurface.withValues(alpha: 0.45)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(width: 8),
-            SizedBox(
-              height: 44,
-              child: ElevatedButton(
-                onPressed: widget.sending || !_hasText ? null : widget.onSend,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: scheme.primary,
-                  foregroundColor: scheme.onPrimary,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-                  padding: const EdgeInsets.symmetric(horizontal: 18),
-                  elevation: 0,
+            if (!_hasText)
+              IconButton(
+                onPressed: widget.sending ? null : _toggleRecording,
+                icon: Icon(_isRecording ? Icons.stop_circle : Icons.mic, color: _isRecording ? Colors.red : scheme.primary),
+                tooltip: _isRecording ? 'Stop and Send' : 'Record Voice',
+              )
+            else
+              SizedBox(
+                height: 44,
+                child: ElevatedButton(
+                  onPressed: widget.sending || !_hasText ? null : widget.onSendText,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: scheme.primary,
+                    foregroundColor: scheme.onPrimary,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                    elevation: 0,
+                  ),
+                  child: widget.sending
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+                        )
+                      : const Text(
+                          'Send',
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
                 ),
-                child: widget.sending
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
-                      )
-                    : const Text(
-                        'Send',
-                        style: TextStyle(fontWeight: FontWeight.w700),
-                      ),
               ),
-            ),
           ],
         ),
       ),

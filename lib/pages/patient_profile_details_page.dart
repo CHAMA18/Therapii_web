@@ -228,7 +228,7 @@ class _PatientProfileDetailsPageState extends State<PatientProfileDetailsPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Patient Overview'),
+        title: const Text('Client Overview'),
         centerTitle: true,
       ),
       body: ListView(
@@ -265,7 +265,7 @@ class _PatientProfileDetailsPageState extends State<PatientProfileDetailsPage> {
                   children: messages.reversed.take(10).map((m) {
                     final selected = _contextMessages.contains(m.id);
                     final prefix =
-                        m.senderId == widget.therapistId ? 'You' : 'Patient';
+                        m.senderId == widget.therapistId ? 'You' : 'Client';
                     final ts =
                         '${m.sentAt.month}/${m.sentAt.day} ${m.sentAt.hour.toString().padLeft(2, '0')}:${m.sentAt.minute.toString().padLeft(2, '0')}';
                     return _ContextTile(

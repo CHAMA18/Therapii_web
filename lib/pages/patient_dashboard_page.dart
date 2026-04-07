@@ -11,6 +11,7 @@ import 'package:therapii/pages/ai_therapist_chat_page.dart';
 import 'package:therapii/pages/billing_page.dart';
 import 'package:therapii/pages/patient_chat_page.dart';
 import 'package:therapii/pages/patient_voice_conversation_page.dart';
+import 'package:therapii/pages/support_chat_page.dart';
 import 'package:therapii/pages/support_center_page.dart';
 import 'package:therapii/services/app_page_state_service.dart';
 import 'package:therapii/services/chat_service.dart';
@@ -664,27 +665,6 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
     );
   }
 
-  Future<void> _handleMessageTap(app_user.User therapist) async {
-    final patient = _patient;
-    if (patient == null) return;
-
-    try {
-      await _chatService.ensureConversation(
-        therapistId: therapist.id,
-        patientId: patient.id,
-      );
-    } catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Unable to open therapist messages: $error')),
-      );
-      return;
-    }
-
-    if (!mounted) return;
-    _openChat(therapist);
-  }
-
   void _showTherapistRequiredSnack() {
     if (!mounted) return;
     final messenger = ScaffoldMessenger.of(context);
@@ -782,11 +762,8 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
       child: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 960),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
+        child: LayoutBuilder(
+          builder: (context, constraints) {
                 final isWide = constraints.maxWidth >= 840;
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -802,79 +779,18 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
                       displayName: displayName,
                     ),
                     const SizedBox(height: 28),
-                    // Top grid: AI chat + message therapist
-                    if (isWide)
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _ChatWithAiCard(
-                              aiHandle: aiHandle,
-                              therapistName: _therapistUser?.firstName,
-                              hasMultipleTherapists: hasMultipleTherapists,
-                              therapistProfiles: _therapistProfiles,
-                              selectedIndex: _selectedTherapistIndex,
-                              onTherapistChanged: (index) => setState(
-                                  () => _selectedTherapistIndex = index),
-                              onTap: _openAiTherapist,
-                              onNotesTap: _showAiNotesSheet,
-                              isDisabled: _therapistUser == null,
-                            ),
-                          ),
-                          const SizedBox(width: 18),
-                          Expanded(
-                            child: _PatientSecondaryCard(
-                              title: 'Message Therapist',
-                              subtitle: _therapistUser != null
-                                  ? 'Connected with ${_therapistUser!.firstName}'
-                                  : 'Connect with your therapist',
-                              icon: Icons.chat_bubble_outline_rounded,
-                              onTap: _therapistUser == null
-                                  ? _showTherapistRequiredSnack
-                                  : () => _handleMessageTap(_therapistUser!),
-                              isDisabled: _therapistUser == null,
-                              actionLabel:
-                                  _therapistUser == null ? 'Connect' : null,
-                            ),
-                          ),
-                        ],
-                      )
-                    else ...[
-                      _ChatWithAiCard(
-                        aiHandle: aiHandle,
-                        therapistName: _therapistUser?.firstName,
-                        hasMultipleTherapists: hasMultipleTherapists,
-                        therapistProfiles: _therapistProfiles,
-                        selectedIndex: _selectedTherapistIndex,
-                        onTherapistChanged: (index) =>
-                            setState(() => _selectedTherapistIndex = index),
-                        onTap: _openAiTherapist,
-                        onNotesTap: _showAiNotesSheet,
-                        isDisabled: _therapistUser == null,
-                      ),
-                      const SizedBox(height: 16),
-                      _PatientSecondaryCard(
-                        title: 'Message Therapist',
-                        subtitle: _therapistUser != null
-                            ? 'Connected with ${_therapistUser!.firstName}'
-                            : 'Connect with your therapist',
-                        icon: Icons.chat_bubble_outline_rounded,
-                        onTap: _therapistUser == null
-                            ? _showTherapistRequiredSnack
-                            : () => _handleMessageTap(_therapistUser!),
-                        isDisabled: _therapistUser == null,
-                        actionLabel: _therapistUser == null ? 'Connect' : null,
-                      ),
-                    ],
-                    const SizedBox(height: 18),
-                    _PatientVoiceCard(
-                      title: 'Voice Session',
-                      subtitle:
-                          'Record and share your thoughts in a safe space',
-                      onTap: _therapistUser == null
-                          ? _showTherapistRequiredSnack
-                          : () => _openVoiceRecording(_therapistUser!),
+                    // Top item: AI chat
+                    _ChatWithAiCard(
+                      aiHandle: aiHandle,
+                      therapistName: _therapistUser?.firstName,
+                      hasMultipleTherapists: hasMultipleTherapists,
+                      therapistProfiles: _therapistProfiles,
+                      selectedIndex: _selectedTherapistIndex,
+                      onTherapistChanged: (index) =>
+                          setState(() => _selectedTherapistIndex = index),
+                      onTap: _openAiTherapist,
+                      onNotesTap: _showAiNotesSheet,
                       isDisabled: _therapistUser == null,
-                      actionLabel: _therapistUser == null ? 'Connect' : null,
                     ),
                     const SizedBox(height: 18),
                     if (isWide)
@@ -938,8 +854,6 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
                 );
               },
             ),
-          ),
-        ),
       ),
     );
   }
@@ -951,6 +865,15 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
       child: Scaffold(
         backgroundColor: Theme.of(context).colorScheme.surface,
         body: _buildContent(context),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const SupportChatPage()),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+          elevation: 4,
+          child: const Icon(Icons.support_agent_rounded),
+        ),
       ),
     );
   }
@@ -1022,32 +945,13 @@ class _PatientTopBar extends StatelessWidget {
                   ),
                 );
 
-          final titleRow = Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? colorScheme.primary.withValues(alpha: 0.12)
-                      : const Color(0xFFEFF6FF),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(Icons.spa_rounded, color: colorScheme.primary),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'THERAPY PLATFORM',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    letterSpacing: 2,
-                    fontWeight: FontWeight.w700,
-                    color: colorScheme.onSurface.withValues(alpha: 0.55),
-                  ),
-                ),
-              ),
-            ],
+          final titleRow = Align(
+            alignment: Alignment.centerLeft,
+            child: Image.asset(
+              'assets/images/therapii_logo_blue.png',
+              height: 32,
+              fit: BoxFit.contain,
+            ),
           );
 
           final actionsRow = Row(
@@ -1126,131 +1030,6 @@ class _PatientGreeting extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _PatientSecondaryCard extends StatefulWidget {
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final VoidCallback onTap;
-  final bool isDisabled;
-  final String? actionLabel;
-
-  const _PatientSecondaryCard({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.onTap,
-    this.isDisabled = false,
-    this.actionLabel,
-  });
-
-  @override
-  State<_PatientSecondaryCard> createState() => _PatientSecondaryCardState();
-}
-
-class _PatientSecondaryCardState extends State<_PatientSecondaryCard> {
-  bool _hovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
-    final borderColor =
-        isDark ? const Color(0xFF1F2937) : const Color(0xFFF3F4F6);
-    final accentBg = isDark
-        ? colorScheme.primary.withValues(alpha: 0.14)
-        : const Color(0xFFEBF2FF);
-
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: widget.isDisabled ? null : widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOut,
-          constraints: const BoxConstraints(minHeight: 220),
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1F2937) : Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: borderColor),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: _hovered ? 0.08 : 0.04),
-                blurRadius: 12,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: accentBg,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child:
-                        Icon(widget.icon, color: colorScheme.primary, size: 24),
-                  ),
-                  Icon(
-                    Icons.arrow_forward_rounded,
-                    color: _hovered
-                        ? colorScheme.onSurface.withValues(alpha: 0.6)
-                        : colorScheme.onSurface.withValues(alpha: 0.3),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 18),
-              Text(
-                widget.title,
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: colorScheme.onSurface,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                widget.subtitle.toUpperCase(),
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: colorScheme.onSurface.withValues(alpha: 0.45),
-                  letterSpacing: 1.2,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              if (widget.isDisabled && widget.actionLabel != null) ...[
-                const SizedBox(height: 12),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerHighest
-                        .withValues(alpha: 0.6),
-                    borderRadius: BorderRadius.circular(100),
-                  ),
-                  child: Text(
-                    widget.actionLabel!,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: colorScheme.onSurface.withValues(alpha: 0.6),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

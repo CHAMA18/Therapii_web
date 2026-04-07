@@ -1,5 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:therapii/auth/firebase_auth_manager.dart';
+import 'package:therapii/models/user.dart';
+import 'package:therapii/models/therapist.dart';
 import 'package:therapii/pages/journal_admin_analytics_page.dart';
 import 'package:therapii/pages/journal_admin_content_feed_page.dart';
 import 'package:therapii/pages/journal_admin_dashboard_page.dart';
@@ -330,7 +333,7 @@ class _PatientsHubContentState extends State<_PatientsHubContent> {
     }
   }
 
-  static const _rows = <_PatientRowData>[
+  static const _mockRows = <_PatientRowData>[
     _PatientRowData(
       name: 'Elena Richardson',
       statusLabel: 'Active',
@@ -345,60 +348,135 @@ class _PatientsHubContentState extends State<_PatientsHubContent> {
       activityMeta: 'Today, 10:24 AM',
       avatarColor: Color(0xFFE7F0FF),
     ),
-    _PatientRowData(
-      name: 'Julian Thorne',
-      statusLabel: 'At Risk',
-      statusBg: Color(0xFFFFE9EE),
-      statusFg: Color(0xFFEF476F),
-      id: 'PA-\n44910',
-      therapist: 'Dr. Michael\nChen',
-      therapistTone: Color(0xFFE8F3D8),
-      sentiment: 'Critical',
-      sentimentColor: Color(0xFFEF476F),
-      activity: 'Flagged\nContent',
-      activityMeta: '2 hours ago',
-      avatarColor: Color(0xFFF1F5F9),
-      riskAction: true,
-    ),
-    _PatientRowData(
-      name: 'Marcus J. (Test Account)',
-      statusLabel: 'Onboarding',
-      statusBg: Color(0xFFEAF2FF),
-      statusFg: Color(0xFF4F8CEB),
-      id: 'PA-\n10292',
-      therapist: 'Pending\nAssignment',
-      therapistTone: Color(0xFFF3F4F6),
-      sentiment: 'Neutral',
-      sentimentColor: Color(0xFFCBD5E1),
-      activity: 'Account\nCreated',
-      activityMeta: 'Yesterday, 4:15 PM',
-      avatarColor: Color(0xFFE5D9C5),
-    ),
   ];
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(28, 0, 28, 28),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _PatientsHeader(onAdd: _showAddClientDialog),
-          const SizedBox(height: 12),
-          const _SearchAndFiltersBar(),
-          const SizedBox(height: 12),
-          _PatientsTable(rows: _rows),
-          const SizedBox(height: 12),
-          const _PatientsSummaryRow(),
-        ],
-      ),
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .where('is_therapist', isEqualTo: false)
+          .snapshots(),
+      builder: (context, patientsSnapshot) {
+        return StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance.collection('therapists').snapshots(),
+          builder: (context, therapistsSnapshot) {
+            if (patientsSnapshot.connectionState == ConnectionState.waiting ||
+                therapistsSnapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            final patients = patientsSnapshot.data?.docs ?? [];
+            final therapistsDocs = therapistsSnapshot.data?.docs ?? [];
+            
+            final Map<String, Therapist> therapistsMap = {};
+            for (var doc in therapistsDocs) {
+              try {
+                final t = Therapist.fromJson(doc.data() as Map<String, dynamic>);
+                therapistsMap[t.id] = t;
+              } catch (_) {}
+            }
+
+            List<_PatientRowData> tableRows = [];
+            int activeCount = 0;
+            int atRiskCount = 0;
+            int newThisWeek = 0;
+
+            final now = DateTime.now();
+
+            for (var doc in patients) {
+              final user = User.fromJson(doc.data() as Map<String, dynamic>);
+              
+              String statusLabel = 'Onboarding';
+              Color statusBg = const Color(0xFFEAF2FF);
+              Color statusFg = const Color(0xFF4F8CEB);
+              bool riskAction = false;
+
+              if (user.patientOnboardingCompleted) {
+                statusLabel = 'Active';
+                statusBg = const Color(0xFFE7FAF2);
+                statusFg = const Color(0xFF16A34A);
+                activeCount++;
+              }
+
+              if (user.createdAt.isAfter(now.subtract(const Duration(days: 7)))) {
+                newThisWeek++;
+              }
+
+              String therapistName = 'Pending\nAssignment';
+              if (user.therapistId != null && therapistsMap.containsKey(user.therapistId)) {
+                final t = therapistsMap[user.therapistId]!;
+                therapistName = 'Dr. T.firstName}\nT.lastName';
+              }
+
+              String displayId = user.id.length > 5 ? user.id.substring(0, 5).toUpperCase() : user.id.toUpperCase();
+
+              String activity = 'Account\nCreated';
+              String activityMeta = _formatDate(user.createdAt);
+              if (user.updatedAt.isAfter(user.createdAt)) {
+                activity = 'Profile\nUpdated';
+                activityMeta = _formatDate(user.updatedAt);
+              }
+
+              tableRows.add(_PatientRowData(
+                name: user.fullName.trim().isEmpty ? 'Unknown Client' : user.fullName,
+                statusLabel: statusLabel,
+                statusBg: statusBg,
+                statusFg: statusFg,
+                id: 'PA-\n$displayId',
+                therapist: therapistName,
+                therapistTone: const Color(0xFFF3F4F6),
+                sentiment: 'Neutral',
+                sentimentColor: const Color(0xFFCBD5E1),
+                activity: activity,
+                activityMeta: activityMeta,
+                avatarColor: const Color(0xFFE7F0FF),
+                riskAction: riskAction,
+              ));
+            }
+
+            return SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(28, 0, 28, 28),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _PatientsHeader(onAdd: _showAddClientDialog, atRiskCount: atRiskCount),
+                  const SizedBox(height: 12),
+                  const _SearchAndFiltersBar(),
+                  const SizedBox(height: 12),
+                  _PatientsTable(rows: tableRows, totalClients: patients.length),
+                  const SizedBox(height: 12),
+                  _PatientsSummaryRow(
+                    activeClients: activeCount,
+                    atRiskAlerts: atRiskCount,
+                    newClientsWeek: newThisWeek,
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
+  }
+
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+    if (difference.inDays == 0) {
+      return 'Today, ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+    } else if (difference.inDays == 1) {
+      return 'Yesterday, ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+    } else {
+      return '${date.month}/${date.day}/${date.year}';
+    }
   }
 }
 
 class _PatientsHeader extends StatelessWidget {
   final VoidCallback onAdd;
-  const _PatientsHeader({required this.onAdd});
+  final int atRiskCount;
+  const _PatientsHeader({required this.onAdd, this.atRiskCount = 0});
 
   @override
   Widget build(BuildContext context) {
@@ -417,9 +495,9 @@ class _PatientsHeader extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(color: const Color(0xFFFFD4DC)),
               ),
-              child: const Text(
-                '4 CLIENTS AT RISK',
-                style: TextStyle(
+              child: Text(
+                '$atRiskCount CLIENTS AT RISK',
+                style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w800,
                   color: Color(0xFFEF476F),
@@ -603,8 +681,9 @@ class _SearchAndFiltersBar extends StatelessWidget {
 
 class _PatientsTable extends StatelessWidget {
   final List<_PatientRowData> rows;
+  final int totalClients;
 
-  const _PatientsTable({required this.rows});
+  const _PatientsTable({required this.rows, required this.totalClients});
 
   @override
   Widget build(BuildContext context) {
@@ -655,9 +734,9 @@ class _PatientsTable extends StatelessWidget {
                     ),
                     child: Row(
                       children: [
-                        const Text(
-                          'SHOWING 1-10 OF 142 CLIENTS',
-                          style: TextStyle(
+                        Text(
+                          'SHOWING 1-${rows.length} OF $totalClients CLIENTS',
+                          style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w800,
                             color: Color(0xFF64748B),
@@ -952,34 +1031,42 @@ class _PatientRowData {
 }
 
 class _PatientsSummaryRow extends StatelessWidget {
-  const _PatientsSummaryRow();
+  final int activeClients;
+  final int atRiskAlerts;
+  final int newClientsWeek;
+
+  const _PatientsSummaryRow({
+    this.activeClients = 0,
+    this.atRiskAlerts = 0,
+    this.newClientsWeek = 0,
+  });
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final compact = constraints.maxWidth < 820;
-        final cards = const [
+        final cards = [
           _SummaryCard(
             icon: Icons.format_list_bulleted_rounded,
             title: 'TOTAL ACTIVE CLIENTS',
-            value: '128 Clients',
-            tint: Color(0xFFEAF2FF),
-            iconColor: Color(0xFF2B8CEE),
+            value: '$activeClients Clients',
+            tint: const Color(0xFFEAF2FF),
+            iconColor: const Color(0xFF2B8CEE),
           ),
           _SummaryCard(
             icon: Icons.warning_amber_rounded,
             title: 'AT RISK ALERTS',
-            value: '4 Critical Cases',
-            tint: Color(0xFFFFEEF1),
-            iconColor: Color(0xFFEF476F),
+            value: '$atRiskAlerts Critical Cases',
+            tint: const Color(0xFFFFEEF1),
+            iconColor: const Color(0xFFEF476F),
           ),
           _SummaryCard(
             icon: Icons.person_add_alt_1_rounded,
             title: 'NEW CLIENTS THIS WEEK',
-            value: '+18 Growth',
-            tint: Color(0xFFEBF9F3),
-            iconColor: Color(0xFF22C55E),
+            value: '+$newClientsWeek Growth',
+            tint: const Color(0xFFEBF9F3),
+            iconColor: const Color(0xFF22C55E),
           ),
         ];
 

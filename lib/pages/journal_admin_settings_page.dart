@@ -840,7 +840,7 @@ class _SettingsSidebar extends StatelessWidget {
                   ),
                   _SidebarItem(
                     icon: Icons.people_alt_outlined,
-                    label: 'Patients',
+                    label: 'Clients',
                     onTap: () {
                       Navigator.of(context).pushReplacement(
                         MaterialPageRoute(

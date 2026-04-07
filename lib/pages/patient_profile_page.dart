@@ -3,6 +3,7 @@ import 'package:therapii/models/ai_conversation_summary.dart';
 import 'package:therapii/models/chat_message.dart';
 import 'package:therapii/models/user.dart' as app_user;
 import 'package:therapii/models/voice_checkin.dart';
+import 'package:therapii/pages/ai_summary_detail_page.dart';
 import 'package:therapii/pages/patient_chat_page.dart';
 import 'package:therapii/pages/patient_profile_details_page.dart';
 import 'package:therapii/services/ai_conversation_service.dart';
@@ -260,7 +261,7 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
                                 color: scheme.primary.withOpacity(0.15)),
                           ),
                           child: Text(
-                            'Patient Profile',
+                            'Client Profile',
                             style: theme.textTheme.labelLarge?.copyWith(
                               color: scheme.primary,
                               fontWeight: FontWeight.w700,
@@ -338,11 +339,6 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
                               _openDetails,
                               SectionTarget.active),
                           _quickLink(
-                              'Recent AI Summaries',
-                              Icons.summarize_rounded,
-                              _openDetails,
-                              SectionTarget.summaries),
-                          _quickLink(
                               'Conversation Context',
                               Icons.forum_outlined,
                               _openDetails,
@@ -365,6 +361,59 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
                           spacing: 10,
                           runSpacing: 10,
                           children: cards,
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 32),
+                    Text(
+                      'Recent AI Summary',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: scheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    StreamBuilder<List<AiConversationSummary>>(
+                      stream: _aiConversationService.streamPatientSummaries(
+                        patientId: patient.id,
+                        limit: 1,
+                      ),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const LoadingInfo(text: 'Loading summary…');
+                        }
+                        final summaries = snapshot.data ?? [];
+                        if (summaries.isEmpty) {
+                          return Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: scheme.surfaceContainerHighest.withOpacity(0.5),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                  color: scheme.outline.withOpacity(0.1)),
+                            ),
+                            child: Text(
+                              'No AI summaries yet.',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: scheme.onSurface.withOpacity(0.7),
+                              ),
+                            ),
+                          );
+                        }
+
+                        final latest = summaries.first;
+                        return ConversationCard(
+                          summary: latest,
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    AiSummaryDetailPage(summary: latest),
+                              ),
+                            );
+                          },
+                          onFeedback: _showFeedbackBottomSheet,
                         );
                       },
                     ),
@@ -572,7 +621,7 @@ class MessagePreview extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final isTherapist = message.senderId == therapistId;
-    final prefix = isTherapist ? 'You' : 'Patient';
+    final prefix = isTherapist ? 'You' : 'Client';
     final date = message.sentAt;
     final formatted =
         '${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
