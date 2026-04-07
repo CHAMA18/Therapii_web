@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:therapii/auth/firebase_auth_manager.dart';
 import 'package:therapii/pages/journal_admin_analytics_page.dart';
+import 'package:therapii/pages/journal_admin_content_feed_page.dart';
 import 'package:therapii/pages/journal_admin_dashboard_page.dart';
 import 'package:therapii/pages/journal_admin_settings_page.dart';
 import 'package:therapii/pages/journal_admin_studio_page.dart';
@@ -22,6 +23,12 @@ class JournalAdminPatientsHubPage extends StatelessWidget {
       case JournalAdminSidebarItem.articles:
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const JournalAdminStudioPage()),
+        );
+        break;
+      case JournalAdminSidebarItem.contentFeed:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+              builder: (_) => const JournalAdminContentFeedPage()),
         );
         break;
       case JournalAdminSidebarItem.team:
@@ -52,6 +59,7 @@ class JournalAdminPatientsHubPage extends StatelessWidget {
         backgroundColor: const Color(0xFFF6F7F8),
         body: SafeArea(
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               JournalAdminSidebar(
                 activeItem: JournalAdminSidebarItem.patients,
@@ -78,49 +86,222 @@ class _PatientsHubContentState extends State<_PatientsHubContent> {
     final emailCtl = TextEditingController();
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Add New Client'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameCtl,
-              decoration: const InputDecoration(
-                  labelText: 'Full Name', border: OutlineInputBorder()),
+      barrierColor: Colors.black.withValues(alpha: 0.4),
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        child: TweenAnimationBuilder<double>(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOutCubic,
+          tween: Tween(begin: 0.9, end: 1.0),
+          builder: (context, scale, child) {
+            return Transform.scale(
+              scale: scale,
+              child: Opacity(
+                opacity: (scale - 0.9) / 0.1,
+                child: child,
+              ),
+            );
+          },
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 420),
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 40,
+                  offset: const Offset(0, 10),
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: emailCtl,
-              decoration: const InputDecoration(
-                  labelText: 'Email', border: OutlineInputBorder()),
-              keyboardType: TextInputType.emailAddress,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2B8CEE).withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.person_add_rounded,
+                      color: Color(0xFF2B8CEE),
+                      size: 32,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Invite New Client',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: -0.5,
+                      ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Send an invitation link so they can easily set up their account.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
+                        height: 1.5,
+                      ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+                _buildModernTextField(
+                  controller: nameCtl,
+                  label: 'Full Name',
+                  hint: 'e.g. Jane Doe',
+                  icon: Icons.person_outline_rounded,
+                  context: ctx,
+                ),
+                const SizedBox(height: 20),
+                _buildModernTextField(
+                  controller: emailCtl,
+                  label: 'Email Address',
+                  hint: 'e.g. jane@example.com',
+                  icon: Icons.email_outlined,
+                  context: ctx,
+                  keyboardType: TextInputType.emailAddress,
+                ),
+                const SizedBox(height: 36),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        child: Text(
+                          'Cancel',
+                          style: TextStyle(
+                            color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.6),
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      flex: 2,
+                      child: FilledButton(
+                        onPressed: () {
+                          final name = nameCtl.text.trim();
+                          final email = emailCtl.text.trim();
+                          if (name.isEmpty || email.isEmpty) {
+                            ScaffoldMessenger.of(ctx).showSnackBar(
+                              SnackBar(
+                                content: const Text('Please enter a valid name and email.'),
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+                          Navigator.of(ctx).pop();
+                          _sendInvite(name, email);
+                        },
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFF2B8CEE),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                          'Send Invite',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () {
-              final name = nameCtl.text.trim();
-              final email = emailCtl.text.trim();
-              if (name.isEmpty || email.isEmpty) {
-                ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(
-                    content: Text('Please enter name and email.')));
-                return;
-              }
-              Navigator.of(ctx).pop();
-              _sendInvite(name, email);
-            },
-            style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2B8CEE),
-                foregroundColor: Colors.white),
-            child: const Text('Invite',
-                style: TextStyle(fontWeight: FontWeight.w700)),
           ),
-        ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildModernTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required IconData icon,
+    required BuildContext context,
+    TextInputType? keyboardType,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.8),
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: controller,
+          keyboardType: keyboardType,
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: TextStyle(
+              color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.3),
+              fontWeight: FontWeight.w400,
+            ),
+            prefixIcon: Icon(
+              icon,
+              color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.4),
+              size: 20,
+            ),
+            filled: true,
+            fillColor: isDark ? Colors.grey.shade800 : Colors.grey.shade50,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(
+                color: isDark ? Colors.grey.shade700 : Colors.black.withValues(alpha: 0.05),
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(
+                color: Color(0xFF2B8CEE),
+                width: 2,
+              ),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          ),
+        ),
+      ],
     );
   }
 
@@ -199,22 +380,17 @@ class _PatientsHubContentState extends State<_PatientsHubContent> {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(28, 0, 28, 28),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 980),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _PatientsHeader(onAdd: _showAddClientDialog),
-              const SizedBox(height: 12),
-              const _SearchAndFiltersBar(),
-              const SizedBox(height: 12),
-              _PatientsTable(rows: _rows),
-              const SizedBox(height: 12),
-              const _PatientsSummaryRow(),
-            ],
-          ),
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _PatientsHeader(onAdd: _showAddClientDialog),
+          const SizedBox(height: 12),
+          const _SearchAndFiltersBar(),
+          const SizedBox(height: 12),
+          _PatientsTable(rows: _rows),
+          const SizedBox(height: 12),
+          const _PatientsSummaryRow(),
+        ],
       ),
     );
   }

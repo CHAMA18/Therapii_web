@@ -5,6 +5,7 @@ import '../widgets/date_time_input.dart';
 import 'package:flutter/material.dart';
 import 'package:therapii/auth/firebase_auth_manager.dart';
 import 'package:therapii/pages/journal_admin_analytics_page.dart';
+import 'package:therapii/pages/journal_admin_content_feed_page.dart';
 import 'package:therapii/pages/journal_admin_dashboard_page.dart';
 import 'package:therapii/pages/journal_admin_patients_hub_page.dart';
 import 'package:therapii/pages/journal_admin_settings_page.dart';
@@ -12,6 +13,7 @@ import 'package:therapii/pages/journal_admin_team_hub_page.dart';
 import 'package:therapii/services/app_page_state_service.dart';
 import 'package:therapii/utils/admin_access.dart';
 import 'package:therapii/widgets/journal_admin_sidebar.dart';
+import 'package:therapii/widgets/markdown_text_editing_controller.dart';
 
 class JournalAdminStudioPage extends StatefulWidget {
   const JournalAdminStudioPage({super.key});
@@ -29,11 +31,13 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _titleController = TextEditingController();
   final FocusNode _titleFocusNode = FocusNode();
-  final List<TextEditingController> _blockControllers = [TextEditingController()];
-  final List<FocusNode> _blockFocusNodes = [FocusNode()];
+  final List<TextEditingController> _blockControllers = [];
+  final List<FocusNode> _blockFocusNodes = [];
   final TextEditingController _summaryController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _timeController = TextEditingController();
+  
+  TextEditingController? _lastActiveController;
 
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
       _articlesSubscription;
@@ -61,6 +65,19 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
     _subscribeToArticles();
   }
 
+  void _onFocusChange() {
+    if (_titleFocusNode.hasFocus) {
+      _lastActiveController = _titleController;
+    } else {
+      for (int i = 0; i < _blockFocusNodes.length; i++) {
+        if (_blockFocusNodes[i].hasFocus) {
+          _lastActiveController = _blockControllers[i];
+          break;
+        }
+      }
+    }
+  }
+
   void _attachDirtyListeners() {
     final controllers = [
       _titleController,
@@ -72,6 +89,13 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
     for (final controller in controllers) {
       controller.removeListener(_markDirty);
       controller.addListener(_markDirty);
+    }
+    
+    _titleFocusNode.removeListener(_onFocusChange);
+    _titleFocusNode.addListener(_onFocusChange);
+    for (final node in _blockFocusNodes) {
+      node.removeListener(_onFocusChange);
+      node.addListener(_onFocusChange);
     }
   }
 
@@ -293,6 +317,7 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
 
   void _applyArticleToEditor(_StudioArticle article) {
     _isApplyingArticle = true;
+    _lastActiveController = null;
     _titleController.text = article.title;
     
     for (int i = 0; i < _blockControllers.length; i++) {
@@ -304,11 +329,11 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
     
     if (article.blocks.isNotEmpty) {
       for (final blockText in article.blocks) {
-        _blockControllers.add(TextEditingController(text: blockText));
+        _blockControllers.add(MarkdownTextEditingController(text: blockText));
         _blockFocusNodes.add(FocusNode());
       }
     } else {
-      _blockControllers.add(TextEditingController());
+      _blockControllers.add(MarkdownTextEditingController());
       _blockFocusNodes.add(FocusNode());
     }
     
@@ -328,12 +353,13 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
 
   void _clearEditor() {
     _isApplyingArticle = true;
+    _lastActiveController = null;
     _titleController.text = 'Untitled article';
     for (var c in _blockControllers) { c.dispose(); }
     for (var f in _blockFocusNodes) { f.dispose(); }
     _blockControllers.clear();
     _blockFocusNodes.clear();
-    _blockControllers.add(TextEditingController());
+    _blockControllers.add(MarkdownTextEditingController());
     _blockFocusNodes.add(FocusNode());
     _attachDirtyListeners();
     _summaryController.clear();
@@ -587,6 +613,12 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
         break;
       case JournalAdminSidebarItem.articles:
         return;
+      case JournalAdminSidebarItem.contentFeed:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+              builder: (_) => const JournalAdminContentFeedPage()),
+        );
+        break;
       case JournalAdminSidebarItem.team:
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const JournalAdminTeamHubPage()),
@@ -638,21 +670,13 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
   }
 
   void _onToolbarAction(String action) {
-    TextEditingController? activeController;
-    if (_titleFocusNode.hasFocus) {
-      activeController = _titleController;
-    } else {
-      for (int i = 0; i < _blockFocusNodes.length; i++) {
-        if (_blockFocusNodes[i].hasFocus) {
-          activeController = _blockControllers[i];
-          break;
-        }
-      }
-    }
+    TextEditingController? activeController = _lastActiveController;
     
     if (activeController == null) {
       if (_blockControllers.isNotEmpty) {
         activeController = _blockControllers.last;
+      } else if (_titleController.text.isNotEmpty) {
+        activeController = _titleController;
       } else {
         return;
       }
@@ -665,38 +689,42 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
     TextSelection newSelection;
     
     if (selection.isValid && selection.start >= 0 && selection.end >= 0) {
-      final selectedText = text.substring(selection.start, selection.end);
-      final before = text.substring(0, selection.start);
-      final after = text.substring(selection.end);
+      final start = selection.start;
+      final end = selection.end;
+      final selectedText = text.substring(start, end);
+      final before = text.substring(0, start);
+      final after = text.substring(end);
       
       switch (action) {
         case 'bold':
           newText = '$before**$selectedText**$after';
-          newSelection = TextSelection.collapsed(offset: selection.start + 2 + selectedText.length);
+          newSelection = TextSelection(baseOffset: start + 2, extentOffset: start + 2 + selectedText.length);
+          if (selectedText.isEmpty) newSelection = TextSelection.collapsed(offset: start + 2);
           break;
         case 'italic':
           newText = '$before*$selectedText*$after';
-          newSelection = TextSelection.collapsed(offset: selection.start + 1 + selectedText.length);
+          newSelection = TextSelection(baseOffset: start + 1, extentOffset: start + 1 + selectedText.length);
+          if (selectedText.isEmpty) newSelection = TextSelection.collapsed(offset: start + 1);
           break;
         case 'link':
           newText = '$before[$selectedText](url)$after';
-          newSelection = TextSelection(baseOffset: selection.start + 1 + selectedText.length + 2, extentOffset: selection.start + 1 + selectedText.length + 5);
+          newSelection = TextSelection(baseOffset: start + 1 + selectedText.length + 2, extentOffset: start + 1 + selectedText.length + 5);
           break;
         case 'title':
           newText = '$before# $selectedText$after';
-          newSelection = TextSelection.collapsed(offset: selection.start + 2 + selectedText.length);
+          newSelection = TextSelection.collapsed(offset: start + 2 + selectedText.length);
           break;
         case 'quote':
           newText = '$before> $selectedText$after';
-          newSelection = TextSelection.collapsed(offset: selection.start + 2 + selectedText.length);
+          newSelection = TextSelection.collapsed(offset: start + 2 + selectedText.length);
           break;
         case 'list':
           newText = '$before- $selectedText$after';
-          newSelection = TextSelection.collapsed(offset: selection.start + 2 + selectedText.length);
+          newSelection = TextSelection.collapsed(offset: start + 2 + selectedText.length);
           break;
         case 'image':
           newText = '$before![alt text](image_url)$after';
-          newSelection = TextSelection(baseOffset: selection.start + 14, extentOffset: selection.start + 23);
+          newSelection = TextSelection(baseOffset: start + 14, extentOffset: start + 23);
           break;
         default:
           return;
@@ -741,6 +769,16 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
       text: newText,
       selection: newSelection,
     );
+
+    // Re-focus
+    if (activeController == _titleController) {
+      _titleFocusNode.requestFocus();
+    } else {
+      final idx = _blockControllers.indexOf(activeController);
+      if (idx != -1) {
+        _blockFocusNodes[idx].requestFocus();
+      }
+    }
   }
 
   @override
@@ -756,6 +794,7 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
         backgroundColor: const Color(0xFFF6F7F8),
         body: SafeArea(
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               JournalAdminSidebar(
                 activeItem: JournalAdminSidebarItem.articles,
@@ -787,13 +826,16 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
                   blockFocusNodes: _blockFocusNodes,
                   onAddBlock: () {
                     setState(() {
-                      _blockControllers.add(TextEditingController());
+                      _blockControllers.add(MarkdownTextEditingController());
                       _blockFocusNodes.add(FocusNode());
                       _attachDirtyListeners();
                     });
                   },
                   onRemoveBlock: (index) {
                     setState(() {
+                      if (_lastActiveController == _blockControllers[index]) {
+                        _lastActiveController = null;
+                      }
                       _blockControllers[index].dispose();
                       _blockControllers.removeAt(index);
                       _blockFocusNodes[index].dispose();
@@ -1692,23 +1734,30 @@ class _EditorPanel extends StatelessWidget {
                       child: Column(
                         children: [
                           Container(
-                            padding: const EdgeInsets.all(8),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             decoration: BoxDecoration(
                               color: const Color(0xFF1A2632),
                               borderRadius: BorderRadius.circular(999),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.1),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                _ToolbarIcon(Icons.format_bold, onPressed: () => onToolbarAction('bold')),
-                                _ToolbarIcon(Icons.format_italic, onPressed: () => onToolbarAction('italic')),
-                                _ToolbarIcon(Icons.link, onPressed: () => onToolbarAction('link')),
+                                _ToolbarIcon(Icons.format_bold, tooltip: 'Bold', onPressed: () => onToolbarAction('bold')),
+                                _ToolbarIcon(Icons.format_italic, tooltip: 'Italic', onPressed: () => onToolbarAction('italic')),
+                                _ToolbarIcon(Icons.link, tooltip: 'Link', onPressed: () => onToolbarAction('link')),
                                 const _ToolbarDivider(),
-                                _ToolbarIcon(Icons.title, onPressed: () => onToolbarAction('title')),
-                                _ToolbarIcon(Icons.format_quote, onPressed: () => onToolbarAction('quote')),
-                                _ToolbarIcon(Icons.format_list_bulleted, onPressed: () => onToolbarAction('list')),
+                                _ToolbarIcon(Icons.title, tooltip: 'Heading', onPressed: () => onToolbarAction('title')),
+                                _ToolbarIcon(Icons.format_quote, tooltip: 'Quote', onPressed: () => onToolbarAction('quote')),
+                                _ToolbarIcon(Icons.format_list_bulleted, tooltip: 'Bullet List', onPressed: () => onToolbarAction('list')),
                                 const _ToolbarDivider(),
-                                _ToolbarIcon(Icons.add_photo_alternate_outlined, onPressed: () => onToolbarAction('image')),
+                                _ToolbarIcon(Icons.add_photo_alternate_outlined, tooltip: 'Image', onPressed: () => onToolbarAction('image')),
                               ],
                             ),
                           ),
@@ -1731,38 +1780,45 @@ class _EditorPanel extends StatelessWidget {
                                   minLines: 1,
                                   maxLines: null,
                                   hintText: 'Article Title',
-                                  style: const TextStyle(fontSize: 42, fontWeight: FontWeight.w800, height: 1.1),
+                                  style: const TextStyle(fontSize: 42, fontWeight: FontWeight.w800, height: 1.1, color: Color(0xFF0F172A)),
                                 ),
-                                const SizedBox(height: 18),
+                                const SizedBox(height: 12),
                                 ...blockControllers.asMap().entries.map((entry) {
                                   final index = entry.key;
                                   final controller = entry.value;
                                   return Padding(
-                                    padding: const EdgeInsets.only(bottom: 18),
-                                    child: Stack(
+                                    padding: const EdgeInsets.only(bottom: 8),
+                                    child: Row(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        _EditorBlock(
-                                          controller: controller,
-                                          focusNode: blockFocusNodes[index],
-                                          minLines: 3,
-                                          maxLines: null,
-                                          hintText: "Continue writing or type '/' for commands",
-                                          style: const TextStyle(fontSize: 18, height: 1.8),
+                                        Expanded(
+                                          child: _EditorBlock(
+                                            controller: controller,
+                                            focusNode: blockFocusNodes[index],
+                                            minLines: 1,
+                                            maxLines: null,
+                                            hintText: "Continue writing or type '/' for commands",
+                                            style: const TextStyle(fontSize: 18, height: 1.6, color: Color(0xFF334155)),
+                                          ),
                                         ),
                                         if (blockControllers.length > 1)
-                                          Positioned(
-                                            top: 8,
-                                            right: 8,
+                                          Padding(
+                                            padding: const EdgeInsets.only(top: 8, left: 8),
                                             child: IconButton(
                                               onPressed: () => onRemoveBlock(index),
-                                              icon: const Icon(Icons.close, size: 20, color: Color(0xFF94A3B8)),
+                                              icon: const Icon(Icons.close, size: 16, color: Color(0xFFCBD5E1)),
                                               tooltip: 'Remove block',
+                                              hoverColor: const Color(0xFFF1F5F9),
+                                              splashRadius: 20,
+                                              padding: EdgeInsets.zero,
+                                              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                                             ),
                                           ),
                                       ],
                                     ),
                                   );
                                 }),
+                                const SizedBox(height: 16),
                                 Align(
                                   alignment: Alignment.center,
                                   child: TextButton.icon(
@@ -1791,15 +1847,18 @@ class _EditorPanel extends StatelessWidget {
 
 class _ToolbarIcon extends StatelessWidget {
   final IconData icon;
+  final String? tooltip;
   final VoidCallback onPressed;
-  const _ToolbarIcon(this.icon, {required this.onPressed});
+  const _ToolbarIcon(this.icon, {this.tooltip, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
     return IconButton(
+      tooltip: tooltip,
       onPressed: onPressed,
       icon: Icon(icon, size: 20, color: Colors.white),
       splashRadius: 18,
+      hoverColor: Colors.white.withValues(alpha: 0.1),
       visualDensity: VisualDensity.compact,
     );
   }
@@ -1838,25 +1897,18 @@ class _EditorBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+    return TextFormField(
+      controller: controller,
+      focusNode: focusNode,
+      minLines: minLines,
+      maxLines: maxLines,
+      decoration: InputDecoration(
+        border: InputBorder.none,
+        hintText: hintText,
+        hintStyle: const TextStyle(color: Color(0xFFCBD5E1)),
+        contentPadding: const EdgeInsets.symmetric(vertical: 8),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: TextFormField(
-        controller: controller,
-        focusNode: focusNode,
-        minLines: minLines,
-        maxLines: maxLines,
-        decoration: InputDecoration(
-          border: InputBorder.none,
-          hintText: hintText,
-          hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
-        ),
-        style: style,
-      ),
+      style: style,
     );
   }
 }
@@ -2146,20 +2198,22 @@ class _ScheduleCard extends StatelessWidget {
                   onChanged: onPublishImmediatelyChanged),
             ],
           ),
-          const SizedBox(height: 8),
-          DateTimeInput(
-            label: 'Date',
-            mode: DateTimeInputMode.date,
-            initialValue: dateController.text,
-            onChanged: (val) => dateController.text = val,
-          ),
-          const SizedBox(height: 8),
-          DateTimeInput(
-            label: 'Time',
-            mode: DateTimeInputMode.time,
-            initialValue: timeController.text,
-            onChanged: (val) => timeController.text = val,
-          ),
+          if (!publishImmediately) ...[
+            const SizedBox(height: 8),
+            DateTimeInput(
+              label: 'Date',
+              mode: DateTimeInputMode.date,
+              initialValue: dateController.text,
+              onChanged: (val) => dateController.text = val,
+            ),
+            const SizedBox(height: 8),
+            DateTimeInput(
+              label: 'Time',
+              mode: DateTimeInputMode.time,
+              initialValue: timeController.text,
+              onChanged: (val) => timeController.text = val,
+            ),
+          ],
         ],
       ),
     );

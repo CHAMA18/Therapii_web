@@ -1,7 +1,27 @@
+import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_tts/flutter_tts.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:therapii/auth/firebase_auth_manager.dart';
+import 'package:therapii/openai/openai_config.dart';
+
+class MyCustomSource extends StreamAudioSource {
+  final Uint8List bytes;
+  MyCustomSource(this.bytes);
+
+  @override
+  Future<StreamAudioResponse> request([int? start, int? end]) async {
+    start ??= 0;
+    end ??= bytes.length;
+    return StreamAudioResponse(
+      sourceLength: bytes.length,
+      contentLength: end - start,
+      offset: start,
+      stream: Stream.value(bytes.sublist(start, end)),
+      contentType: 'audio/mpeg',
+    );
+  }
+}
 
 // Palette constants shared across the page.
 const Color _ink = Color(0xFF0F172A);
@@ -37,17 +57,18 @@ class JournalArticlePage extends StatefulWidget {
 
 class _JournalArticlePageState extends State<JournalArticlePage> {
   final ScrollController _scrollController = ScrollController();
-  final FlutterTts _flutterTts = FlutterTts();
+  final AudioPlayer _audioPlayer = AudioPlayer();
   double _progress = 0;
   bool _isFavorite = false;
   bool _isSavingFavorite = false;
   bool _isSpeaking = false;
+  bool _isLoadingAudio = false;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_handleScroll);
-    _initializeTts();
+    _initializeAudioPlayer();
     _loadFavoriteState();
   }
 
@@ -55,7 +76,7 @@ class _JournalArticlePageState extends State<JournalArticlePage> {
   void dispose() {
     _scrollController.removeListener(_handleScroll);
     _scrollController.dispose();
-    _flutterTts.stop();
+    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -68,22 +89,20 @@ class _JournalArticlePageState extends State<JournalArticlePage> {
     }
   }
 
-  Future<void> _initializeTts() async {
-    await _flutterTts.setLanguage('en-US');
-    await _flutterTts.setSpeechRate(0.45);
-    await _flutterTts.setVolume(1.0);
-    await _flutterTts.setPitch(1.0);
-    _flutterTts.setStartHandler(() {
-      if (mounted) setState(() => _isSpeaking = true);
-    });
-    _flutterTts.setCompletionHandler(() {
-      if (mounted) setState(() => _isSpeaking = false);
-    });
-    _flutterTts.setCancelHandler(() {
-      if (mounted) setState(() => _isSpeaking = false);
-    });
-    _flutterTts.setErrorHandler((_) {
-      if (mounted) setState(() => _isSpeaking = false);
+  void _initializeAudioPlayer() {
+    _audioPlayer.playerStateStream.listen((state) {
+      if (!mounted) return;
+      if (state.processingState == ProcessingState.completed) {
+        setState(() {
+          _isSpeaking = false;
+          _audioPlayer.seek(Duration.zero);
+          _audioPlayer.pause();
+        });
+      } else if (state.playing) {
+        setState(() => _isSpeaking = true);
+      } else {
+        setState(() => _isSpeaking = false);
+      }
     });
   }
 
@@ -170,17 +189,28 @@ class _JournalArticlePageState extends State<JournalArticlePage> {
   Future<void> _toggleReadAloud() async {
     try {
       if (_isSpeaking) {
-        await _flutterTts.stop();
-        if (mounted) {
-          setState(() => _isSpeaking = false);
-        }
+        await _audioPlayer.pause();
         return;
       }
-      await _flutterTts.stop();
-      await _flutterTts.speak(_speakableArticleText);
+      
+      if (_audioPlayer.audioSource == null) {
+        setState(() => _isLoadingAudio = true);
+        final client = const AiCompanionClient();
+        // Use a "world-class" realistic voice. OpenAI's 'nova' or 'alloy' works well, 
+        // but 'nova' is particularly good for soothing/calm articles.
+        final bytes = await client.generateSpeech(_speakableArticleText, voice: 'nova', model: 'tts-1-hd');
+        await _audioPlayer.setAudioSource(MyCustomSource(bytes));
+        if (!mounted) return;
+        setState(() => _isLoadingAudio = false);
+      }
+      
+      await _audioPlayer.play();
     } catch (_) {
       if (!mounted) return;
-      setState(() => _isSpeaking = false);
+      setState(() {
+        _isSpeaking = false;
+        _isLoadingAudio = false;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Unable to read this article aloud right now.')),
       );
@@ -210,6 +240,7 @@ class _JournalArticlePageState extends State<JournalArticlePage> {
             isFavorite: _isFavorite,
             isSavingFavorite: _isSavingFavorite,
             isSpeaking: _isSpeaking,
+            isLoadingAudio: _isLoadingAudio,
             onFavoriteTap: () {
               _toggleFavorite();
             },
@@ -288,6 +319,9 @@ class _JournalArticlePageState extends State<JournalArticlePage> {
                 subtitle: widget.subtitle,
                 author: widget.authorName,
                 role: widget.authorRole,
+                isSpeaking: _isSpeaking,
+                isLoadingAudio: _isLoadingAudio,
+                onListenTap: _toggleReadAloud,
               ),
               const SizedBox(height: 28),
               _ArticleBody(),
@@ -333,6 +367,7 @@ class _FloatingActions extends StatelessWidget {
   final bool isFavorite;
   final bool isSavingFavorite;
   final bool isSpeaking;
+  final bool isLoadingAudio;
   final VoidCallback onFavoriteTap;
   final VoidCallback onReadAloudTap;
 
@@ -340,6 +375,7 @@ class _FloatingActions extends StatelessWidget {
     required this.isFavorite,
     required this.isSavingFavorite,
     required this.isSpeaking,
+    required this.isLoadingAudio,
     required this.onFavoriteTap,
     required this.onReadAloudTap,
   });
@@ -358,7 +394,8 @@ class _FloatingActions extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           _GlassButton(
-            icon: isSpeaking ? Icons.stop_circle_outlined : Icons.headphones_rounded,
+            icon: isSpeaking ? Icons.pause_rounded : Icons.headphones_rounded,
+            isLoading: isLoadingAudio,
             onTap: onReadAloudTap,
           ),
           const SizedBox(height: 10),
@@ -372,7 +409,8 @@ class _FloatingActions extends StatelessWidget {
 class _GlassButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
-  const _GlassButton({required this.icon, required this.onTap});
+  final bool isLoading;
+  const _GlassButton({required this.icon, required this.onTap, this.isLoading = false});
 
   @override
   Widget build(BuildContext context) {
@@ -383,10 +421,12 @@ class _GlassButton extends StatelessWidget {
       shadowColor: Colors.black.withOpacity(0.12),
       child: InkWell(
         customBorder: const CircleBorder(),
-        onTap: onTap,
+        onTap: isLoading ? null : onTap,
         child: Padding(
           padding: const EdgeInsets.all(12),
-          child: Icon(icon, size: 20, color: const Color(0xFF0F172A)),
+          child: isLoading 
+            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0F172A))) 
+            : Icon(icon, size: 20, color: const Color(0xFF0F172A)),
         ),
       ),
     );
@@ -398,7 +438,19 @@ class _HeadingBlock extends StatelessWidget {
   final String subtitle;
   final String author;
   final String role;
-  const _HeadingBlock({required this.title, required this.subtitle, required this.author, required this.role});
+  final bool isSpeaking;
+  final bool isLoadingAudio;
+  final VoidCallback onListenTap;
+
+  const _HeadingBlock({
+    required this.title, 
+    required this.subtitle, 
+    required this.author, 
+    required this.role,
+    required this.isSpeaking,
+    required this.isLoadingAudio,
+    required this.onListenTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -447,7 +499,11 @@ class _HeadingBlock extends StatelessWidget {
             const Spacer(),
             _GhostButton(label: 'Follow', icon: Icons.add, onTap: () {}),
             const SizedBox(width: 10),
-            _GhostButton(label: 'Listen', icon: Icons.play_arrow_rounded, onTap: () {}),
+            _GhostButton(
+              label: isLoadingAudio ? 'Loading...' : (isSpeaking ? 'Pause' : 'Listen'), 
+              icon: isLoadingAudio ? Icons.hourglass_top_rounded : (isSpeaking ? Icons.pause_rounded : Icons.play_arrow_rounded), 
+              onTap: isLoadingAudio ? () {} : onListenTap,
+            ),
           ],
         ),
       ],

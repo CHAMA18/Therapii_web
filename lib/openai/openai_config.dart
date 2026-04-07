@@ -1,6 +1,13 @@
 import 'dart:async';
 
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:http/http.dart' as http;
+
+const apiKey = String.fromEnvironment('OPENAI_PROXY_API_KEY');
+const endpoint = String.fromEnvironment('OPENAI_PROXY_ENDPOINT');
 
 class AiChatMessage {
   const AiChatMessage({required this.role, required this.content});
@@ -49,6 +56,35 @@ class AiCompanionClient {
       throw AiChatException('The AI companion returned an empty response.');
     }
     return response;
+  }
+
+  Future<Uint8List> generateSpeech(String text, {String voice = 'alloy', String model = 'tts-1'}) async {
+    if (apiKey.isEmpty || endpoint.isEmpty) {
+      throw AiChatException('OpenAI proxy is not configured.');
+    }
+
+    final ttsEndpoint = endpoint.replaceAll('chat/completions', 'audio/speech');
+    final uri = Uri.parse(ttsEndpoint);
+
+    final response = await http.post(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $apiKey',
+      },
+      body: jsonEncode({
+        'model': model,
+        'input': text,
+        'voice': voice,
+        'response_format': 'mp3',
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return response.bodyBytes;
+    } else {
+      throw AiChatException('Failed to generate speech: ${response.statusCode} - ${response.body}', statusCode: response.statusCode);
+    }
   }
 
   Stream<String> sendChatStream({

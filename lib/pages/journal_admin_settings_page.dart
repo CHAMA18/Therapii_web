@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:therapii/auth/firebase_auth_manager.dart';
 import 'package:therapii/pages/billing_page.dart' as therapii_billing;
 import 'package:therapii/pages/journal_admin_analytics_page.dart';
+import 'package:therapii/pages/journal_admin_content_feed_page.dart';
 import 'package:therapii/pages/journal_admin_dashboard_page.dart';
 import 'package:therapii/pages/journal_admin_patients_hub_page.dart';
 import 'package:therapii/pages/journal_admin_studio_page.dart';
@@ -18,22 +19,15 @@ class JournalAdminSettingsPage extends StatefulWidget {
 }
 
 class _JournalAdminSettingsPageState extends State<JournalAdminSettingsPage> {
-  final TextEditingController _orgNameController =
-      TextEditingController(text: 'Mindful Health Group');
-  String _selectedTimezone = 'Pacific Time (PT) - US & Canada';
-  String _selectedTab = 'General';
+  String _selectedTab = 'Security';
 
-  static const _tabs = ['General', 'Security', 'Notifications', 'Billing'];
-  static const _timezones = [
-    'Pacific Time (PT) - US & Canada',
-    'Mountain Time (MT) - US & Canada',
-    'Central Time (CT) - US & Canada',
-    'Eastern Time (ET) - US & Canada',
-  ];
+  static const _tabs = ['Security', 'Notifications', 'Billing'];
+
+  bool _emailNotificationsEnabled = true;
+  bool _pushNotificationsEnabled = false;
 
   @override
   void dispose() {
-    _orgNameController.dispose();
     super.dispose();
   }
 
@@ -47,6 +41,12 @@ class _JournalAdminSettingsPageState extends State<JournalAdminSettingsPage> {
       case JournalAdminSidebarItem.articles:
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const JournalAdminStudioPage()),
+        );
+        break;
+      case JournalAdminSidebarItem.contentFeed:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+              builder: (_) => const JournalAdminContentFeedPage()),
         );
         break;
       case JournalAdminSidebarItem.team:
@@ -78,6 +78,7 @@ class _JournalAdminSettingsPageState extends State<JournalAdminSettingsPage> {
         backgroundColor: const Color(0xFFF6F7F8),
         body: SafeArea(
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               JournalAdminSidebar(
                 activeItem: JournalAdminSidebarItem.settings,
@@ -85,8 +86,9 @@ class _JournalAdminSettingsPageState extends State<JournalAdminSettingsPage> {
               ),
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(28, 12, 28, 28),
-                  child: Center(
+                  padding: const EdgeInsets.fromLTRB(28, 48, 28, 28),
+                  child: Align(
+                    alignment: Alignment.topCenter,
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 980),
                       child: Column(
@@ -96,13 +98,31 @@ class _JournalAdminSettingsPageState extends State<JournalAdminSettingsPage> {
                           const SizedBox(height: 18),
                           _buildTabs(),
                           const SizedBox(height: 28),
-                          const _SectionHeader(
-                            title: 'Organization Profile',
-                            subtitle:
-                                'Update your organization\'s basic information and regional settings.',
-                          ),
-                          const SizedBox(height: 14),
-                          _buildOrganizationCard(),
+                          if (_selectedTab == 'Security') ...[
+                            const _SectionHeader(
+                              title: 'Security Settings',
+                              subtitle:
+                                  'Manage your password, two-factor authentication, and security preferences.',
+                            ),
+                            const SizedBox(height: 14),
+                            _buildSecurityCard(),
+                          ] else if (_selectedTab == 'Notifications') ...[
+                            const _SectionHeader(
+                              title: 'Notification Settings',
+                              subtitle:
+                                  'Manage your email and push notification preferences.',
+                            ),
+                            const SizedBox(height: 14),
+                            _buildNotificationsCard(),
+                          ] else if (_selectedTab == 'Billing') ...[
+                            const _SectionHeader(
+                              title: 'Billing & Subscriptions',
+                              subtitle:
+                                  'Manage your payment methods, view invoices, and upgrade your plan.',
+                            ),
+                            const SizedBox(height: 14),
+                            _buildBillingCard(),
+                          ],
                           const SizedBox(height: 38),
                           _buildFooterActions(),
                         ],
@@ -179,13 +199,7 @@ class _JournalAdminSettingsPageState extends State<JournalAdminSettingsPage> {
                   label: tab,
                   active: _selectedTab == tab,
                   onTap: () {
-                    if (tab == 'Billing') {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const therapii_billing.BillingPage()),
-                      );
-                    } else {
-                      setState(() => _selectedTab = tab);
-                    }
+                    setState(() => _selectedTab = tab);
                   },
                 ))
             .toList(growable: false),
@@ -193,7 +207,7 @@ class _JournalAdminSettingsPageState extends State<JournalAdminSettingsPage> {
     );
   }
 
-  Widget _buildOrganizationCard() {
+  Widget _buildSecurityCard() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -202,125 +216,355 @@ class _JournalAdminSettingsPageState extends State<JournalAdminSettingsPage> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE8EDF4)),
       ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final wide = constraints.maxWidth > 760;
-          return Column(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Change Password',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF111418),
+            ),
+          ),
+          const SizedBox(height: 16),
+          _passwordField('CURRENT PASSWORD'),
+          const SizedBox(height: 16),
+          _passwordField('NEW PASSWORD'),
+          const SizedBox(height: 16),
+          _passwordField('CONFIRM NEW PASSWORD'),
+          const SizedBox(height: 24),
+          const Divider(color: Color(0xFFE8EDF4)),
+          const SizedBox(height: 24),
+          Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (wide)
-                Row(
+              const Expanded(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(child: _orgNameField()),
-                    const SizedBox(width: 20),
-                    Expanded(child: _timezoneField()),
+                    Text(
+                      'Two-Factor Authentication',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF111418),
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Add an extra layer of security to your account by requiring a verification code when you sign in.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
                   ],
-                )
-              else ...[
-                _orgNameField(),
-                const SizedBox(height: 18),
-                _timezoneField(),
-              ],
-              const SizedBox(height: 18),
-              const _SettingsFieldLabel('ORGANIZATION LOGO'),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 12,
-                runSpacing: 10,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  Container(
-                    width: 62,
-                    height: 62,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFAFCFF),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                          color: const Color(0xFFD5DFEC),
-                          style: BorderStyle.solid),
-                    ),
-                    child: const Icon(Icons.image_outlined,
-                        size: 20, color: Color(0xFF9CA3AF)),
-                  ),
-                  OutlinedButton(
-                    onPressed: () {},
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF334155),
-                      side: const BorderSide(color: Color(0xFFD8E1EE)),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 12),
-                    ),
-                    child: const Text('Upload New',
-                        style: TextStyle(fontWeight: FontWeight.w700)),
-                  ),
-                  TextButton(
-                    onPressed: () {},
-                    style: TextButton.styleFrom(
-                        foregroundColor: const Color(0xFFEF4444)),
-                    child: const Text('Remove',
-                        style: TextStyle(fontWeight: FontWeight.w700)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                'JPG, PNG or SVG. Max size 2MB. Recommended 256x256px.',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF94A3B8),
                 ),
               ),
+              const SizedBox(width: 16),
+              Switch(
+                value: true,
+                onChanged: (val) {},
+                activeColor: const Color(0xFF2B8CEE),
+              ),
             ],
-          );
-        },
+          ),
+        ],
       ),
     );
   }
 
-  Widget _orgNameField() {
+  Widget _passwordField(String label) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _SettingsFieldLabel('ORGANIZATION NAME'),
+        _SettingsFieldLabel(label),
         const SizedBox(height: 8),
         TextField(
-          controller: _orgNameController,
-          decoration: _fieldDecoration(),
+          obscureText: true,
+          decoration: _fieldDecoration().copyWith(
+            suffixIcon: const Icon(Icons.visibility_off, color: Color(0xFF94A3B8), size: 20),
+          ),
         ),
       ],
     );
   }
 
-  Widget _timezoneField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _SettingsFieldLabel('DEFAULT TIMEZONE'),
-        const SizedBox(height: 8),
-        DropdownButtonFormField<String>(
-          value: _selectedTimezone,
-          decoration: _fieldDecoration(),
-          items: _timezones
-              .map(
-                (tz) => DropdownMenuItem<String>(
-                  value: tz,
-                  child: Text(
-                    tz,
-                    overflow: TextOverflow.ellipsis,
-                    style:
-                        const TextStyle(fontSize: 14, color: Color(0xFF1F2937)),
+  Widget _buildNotificationsCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE8EDF4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _notificationToggle(
+            'Email Notifications',
+            'Receive daily summaries and important alerts via email.',
+            _emailNotificationsEnabled,
+            (val) => setState(() => _emailNotificationsEnabled = val),
+          ),
+          const SizedBox(height: 20),
+          const Divider(color: Color(0xFFE8EDF4)),
+          const SizedBox(height: 20),
+          _notificationToggle(
+            'Push Notifications',
+            'Get instant alerts for new messages and activities.',
+            _pushNotificationsEnabled,
+            (val) => setState(() => _pushNotificationsEnabled = val),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBillingCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE8EDF4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Current Plan',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF111418),
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'You are currently on the Professional Plan. Billed at \$49/month.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              OutlinedButton(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const therapii_billing.BillingPage()),
+                  );
+                },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF334155),
+                  side: const BorderSide(color: Color(0xFFD8E1EE)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 12),
+                ),
+                child: const Text('Upgrade Plan',
+                    style: TextStyle(fontWeight: FontWeight.w700)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          const Divider(color: Color(0xFFE8EDF4)),
+          const SizedBox(height: 24),
+          const Text(
+            'Payment Method',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF111418),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFD9E2EE)),
+                ),
+                child: const Icon(Icons.credit_card, color: Color(0xFF64748B)),
+              ),
+              const SizedBox(width: 16),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Visa ending in 4242',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF111418),
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Expires 12/2024',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              TextButton(
+                onPressed: () {},
+                style: TextButton.styleFrom(
+                    foregroundColor: const Color(0xFF2B8CEE)),
+                child: const Text('Update',
+                    style: TextStyle(fontWeight: FontWeight.w700)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          const Divider(color: Color(0xFFE8EDF4)),
+          const SizedBox(height: 24),
+          const Text(
+            'Billing History',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF111418),
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildInvoiceRow('INV-2023-001', 'Oct 1, 2023', '\$49.00', 'Paid'),
+          const SizedBox(height: 12),
+          _buildInvoiceRow('INV-2023-002', 'Nov 1, 2023', '\$49.00', 'Paid'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInvoiceRow(
+      String id, String date, String amount, String status) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFE8EDF4)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.receipt_long_outlined,
+              color: Color(0xFF64748B), size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  id,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF111418),
                   ),
                 ),
-              )
-              .toList(growable: false),
-          onChanged: (value) {
-            if (value == null) return;
-            setState(() => _selectedTimezone = value);
-          },
+                Text(
+                  date,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            amount,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF111418),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE0F2FE),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              status,
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF0284C7),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(Icons.download_rounded,
+                size: 18, color: Color(0xFF64748B)),
+            onPressed: () {},
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _notificationToggle(
+      String title, String subtitle, bool value, ValueChanged<bool> onChanged) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF111418),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF64748B),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 16),
+        Switch(
+          value: value,
+          onChanged: onChanged,
+          activeColor: const Color(0xFF2B8CEE),
         ),
       ],
     );

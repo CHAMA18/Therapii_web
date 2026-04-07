@@ -3,6 +3,7 @@ import 'package:therapii/widgets/world_class_button.dart';
 import 'package:therapii/auth/firebase_auth_manager.dart';
 import 'package:therapii/services/invitation_service.dart';
 import 'package:therapii/pages/journal_admin_analytics_page.dart';
+import 'package:therapii/pages/journal_admin_content_feed_page.dart';
 import 'package:therapii/pages/journal_admin_dashboard_page.dart';
 import 'package:therapii/pages/journal_admin_patients_hub_page.dart';
 import 'package:therapii/pages/journal_admin_settings_page.dart';
@@ -23,6 +24,12 @@ class JournalAdminTeamHubPage extends StatelessWidget {
       case JournalAdminSidebarItem.articles:
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const JournalAdminStudioPage()),
+        );
+        break;
+      case JournalAdminSidebarItem.contentFeed:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+              builder: (_) => const JournalAdminContentFeedPage()),
         );
         break;
       case JournalAdminSidebarItem.team:
@@ -54,6 +61,7 @@ class JournalAdminTeamHubPage extends StatelessWidget {
         backgroundColor: const Color(0xFFF6F7F8),
         body: SafeArea(
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               JournalAdminSidebar(
                 activeItem: JournalAdminSidebarItem.team,
@@ -75,35 +83,87 @@ class _TeamHubContent extends StatefulWidget {
 }
 
 class _TeamHubContentState extends State<_TeamHubContent> {
-  bool _showInvitePanel = false;
+  static const _dummyTeamData = [
+    _TeamRowData(
+      name: 'Dr. Sarah Mitchell',
+      email: 'sarah.m@therapii.com',
+      avatarBg: Color(0xFFEFF6FF),
+      role: 'Lead Clinical Director',
+      roleBg: Color(0xFFF1F5F9),
+      roleFg: Color(0xFF475569),
+      status: 'Online Now',
+      statusBg: Color(0xFFEBF9F3),
+      statusFg: Color(0xFF10B981),
+      assignmentMain: 'Cognitive Behavioral Therapy',
+      assignmentSub: '45 Active Patients',
+      lastLogin: '10 mins ago',
+    ),
+    _TeamRowData(
+      name: 'James Wilson',
+      email: 'james.w@therapii.com',
+      avatarBg: Color(0xFFFDF4FF),
+      role: 'Senior Therapist',
+      roleBg: Color(0xFFF1F5F9),
+      roleFg: Color(0xFF475569),
+      status: 'In Session',
+      statusBg: Color(0xFFFEF3C7),
+      statusFg: Color(0xFFD97706),
+      assignmentMain: 'Family Counseling',
+      assignmentSub: '28 Active Patients',
+      lastLogin: '2 hours ago',
+    ),
+    _TeamRowData(
+      name: 'Emily Chen',
+      email: 'emily.c@therapii.com',
+      avatarBg: Color(0xFFF0FDF4),
+      role: 'Psychiatrist',
+      roleBg: Color(0xFFF1F5F9),
+      roleFg: Color(0xFF475569),
+      status: 'Offline',
+      statusBg: Color(0xFFF1F5F9),
+      statusFg: Color(0xFF64748B),
+      assignmentMain: 'Medication Management',
+      assignmentSub: '112 Active Patients',
+      lastLogin: 'Yesterday, 4:30 PM',
+    ),
+  ];
 
-  void _toggleInvitePanel() {
-    setState(() => _showInvitePanel = !_showInvitePanel);
+  void _showInviteDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: _InvitePanel(
+              onInvite: (name, email, role) async {
+                await _sendInvite(name, email, role);
+                if (context.mounted && Navigator.canPop(context)) {
+                  Navigator.pop(context);
+                }
+              },
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(28, 0, 28, 28),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 980),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _TeamHeader(onInvite: _toggleInvitePanel),
-              const SizedBox(height: 20),
-              const _SearchAndFiltersBar(),
-              const SizedBox(height: 20),
-              // Invite flow panel replaces the default static team table
-              if (_showInvitePanel) _InvitePanel(onInvite: _sendInvite),
-              if (_showInvitePanel) ...[
-                const SizedBox(height: 12),
-              ],
-              // Invite flow panel (no default team member rows shown)
-            ],
-          ),
-        ),
+      padding: const EdgeInsets.fromLTRB(28, 28, 28, 28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _TeamHeader(onInvite: _showInviteDialog),
+          const SizedBox(height: 20),
+          const _SearchAndFiltersBar(),
+          const SizedBox(height: 20),
+          const _TeamTable(rows: _dummyTeamData),
+        ],
       ),
     );
   }
@@ -172,79 +232,91 @@ class _InvitePanelState extends State<_InvitePanel> {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Invite New Member',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Full Name',
-                border: OutlineInputBorder(),
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Invite New Member',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
               ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _emailController,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                border: OutlineInputBorder(),
+              IconButton(
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(Icons.close_rounded, size: 20, color: Color(0xFF64748B)),
+                splashRadius: 24,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
               ),
-              keyboardType: TextInputType.emailAddress,
+            ],
+          ),
+          const SizedBox(height: 20),
+          TextField(
+            controller: _nameController,
+            decoration: const InputDecoration(
+              labelText: 'Full Name',
+              border: OutlineInputBorder(),
+              isDense: true,
             ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              value: _role,
-              items: const [
-                'Senior Therapist',
-                'Therapist',
-                'Content Editor',
-              ].map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
-              onChanged: (v) {
-                if (v != null) setState(() => _role = v);
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _emailController,
+            decoration: const InputDecoration(
+              labelText: 'Email',
+              border: OutlineInputBorder(),
+              isDense: true,
+            ),
+            keyboardType: TextInputType.emailAddress,
+          ),
+          const SizedBox(height: 16),
+          DropdownButtonFormField<String>(
+            value: _role,
+            items: const [
+              'Senior Therapist',
+              'Therapist',
+              'Content Editor',
+            ].map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
+            onChanged: (v) {
+              if (v != null) setState(() => _role = v);
+            },
+            decoration: const InputDecoration(
+                border: OutlineInputBorder(), labelText: 'Role', isDense: true),
+          ),
+          const SizedBox(height: 24),
+          Align(
+            alignment: Alignment.centerRight,
+            child: ElevatedButton(
+              onPressed: () {
+                final name = _nameController.text.trim();
+                final email = _emailController.text.trim();
+                if (name.isEmpty || email.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text('Please enter name and email.')),
+                  );
+                  return;
+                }
+                widget.onInvite(name, email, _role);
               },
-              decoration: const InputDecoration(
-                  border: OutlineInputBorder(), labelText: 'Role'),
-            ),
-            const SizedBox(height: 16),
-            Align(
-              alignment: Alignment.centerRight,
-              child: ElevatedButton(
-                onPressed: () {
-                  final name = _nameController.text.trim();
-                  final email = _emailController.text.trim();
-                  if (name.isEmpty || email.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('Please enter name and email.')),
-                    );
-                    return;
-                  }
-                  widget.onInvite(name, email, _role);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2B8CEE),
-                  foregroundColor: Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                  textStyle: const TextStyle(fontWeight: FontWeight.w700),
-                ),
-                child: const Text('Invite'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF2B8CEE),
+                foregroundColor: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+                textStyle: const TextStyle(fontWeight: FontWeight.w700),
+                elevation: 0,
               ),
+              child: const Text('Send Invitation'),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

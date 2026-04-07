@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:therapii/auth/firebase_auth_manager.dart';
+import 'package:therapii/pages/journal_admin_content_feed_page.dart';
 import 'package:therapii/pages/journal_admin_dashboard_page.dart';
 import 'package:therapii/pages/journal_admin_patients_hub_page.dart';
 import 'package:therapii/pages/journal_admin_settings_page.dart';
@@ -23,6 +24,12 @@ class JournalAdminAnalyticsPage extends StatelessWidget {
       case JournalAdminSidebarItem.articles:
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const JournalAdminStudioPage()),
+        );
+        break;
+      case JournalAdminSidebarItem.contentFeed:
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+              builder: (_) => const JournalAdminContentFeedPage()),
         );
         break;
       case JournalAdminSidebarItem.team:
@@ -54,6 +61,7 @@ class JournalAdminAnalyticsPage extends StatelessWidget {
         backgroundColor: const Color(0xFFF6F7F8),
         body: SafeArea(
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               JournalAdminSidebar(
                 activeItem: JournalAdminSidebarItem.analytics,
@@ -886,17 +894,7 @@ class _MostDiscussedThemesCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const chips = [
-      _ThemeChipData(
-          'Relationships (42%)', Color(0xFFE8F3FF), Color(0xFF2B8CEE)),
-      _ThemeChipData(
-          'Career Growth (18%)', Color(0xFFE6F8F2), Color(0xFF22A37A)),
-      _ThemeChipData('Self-Esteem (15%)', Color(0xFFFFF4E8), Color(0xFFDD8B18)),
-      _ThemeChipData('Social Anxiety', Color(0xFFFFECF2), Color(0xFFE34978)),
-      _ThemeChipData('Mindfulness', Color(0xFFF3EDFF), Color(0xFF7E50E9)),
-      _ThemeChipData('Sleep Quality', Color(0xFFF3F6FB), Color(0xFF5C7DA3)),
-      _ThemeChipData('Grief', Color(0xFFE9EDFF), Color(0xFF5A67D8)),
-    ];
+    const chips = <_ThemeChipData>[];
 
     return _CardShell(
       child: Column(
@@ -978,7 +976,7 @@ class _TopicDonut extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                '12',
+                '0',
                 style: TextStyle(
                   fontSize: 25,
                   fontWeight: FontWeight.w800,
@@ -1006,23 +1004,14 @@ class _DonutPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final rect = Rect.fromLTWH(0, 0, size.width, size.height);
     final stroke = size.width * 0.12;
-    final segments = [
-      (const Color(0xFF2B8CEE), 0.44),
-      (const Color(0xFF32C79A), 0.20),
-      (const Color(0xFFE6EBF2), 0.36),
-    ];
-
-    var start = -math.pi / 2;
-    for (final segment in segments) {
-      final sweep = math.pi * 2 * segment.$2;
-      final paint = Paint()
-        ..color = segment.$1
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = stroke
-        ..strokeCap = StrokeCap.round;
-      canvas.drawArc(rect, start, sweep, false, paint);
-      start += sweep;
-    }
+    
+    final paint = Paint()
+      ..color = const Color(0xFFE6EBF2)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..strokeCap = StrokeCap.round;
+      
+    canvas.drawArc(rect, 0, math.pi * 2, false, paint);
   }
 
   @override

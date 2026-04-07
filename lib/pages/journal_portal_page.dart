@@ -247,7 +247,9 @@ class _PortalPalette {
 }
 
 class JournalPortalPage extends StatefulWidget {
-  const JournalPortalPage({super.key});
+  final bool hidePortalSidebar;
+
+  const JournalPortalPage({super.key, this.hidePortalSidebar = false});
 
   @override
   State<JournalPortalPage> createState() => _JournalPortalPageState();
@@ -442,7 +444,7 @@ class _JournalPortalPageState extends State<JournalPortalPage> {
     }
 
     final width = MediaQuery.sizeOf(context).width;
-    final showLeftRail = width >= 1100;
+    final showLeftRail = width >= 1100 && !widget.hidePortalSidebar;
     final showRightRail = width >= 1480;
     final isAdmin =
         AdminAccess.isAdminEmail(FirebaseAuthManager().currentUser?.email);
@@ -456,7 +458,6 @@ class _JournalPortalPageState extends State<JournalPortalPage> {
         body: SafeArea(
           child: Stack(
             children: [
-              const _AmbientBackground(),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -592,45 +593,6 @@ class _JournalPortalPageState extends State<JournalPortalPage> {
   }
 }
 
-class _AmbientBackground extends StatelessWidget {
-  const _AmbientBackground();
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = _PortalPalette.of(context);
-
-    return IgnorePointer(
-      child: Stack(
-        children: [
-          Positioned(
-            left: -120,
-            top: -130,
-            child: Container(
-              width: 360,
-              height: 360,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: palette.ambientPrimary,
-              ),
-            ),
-          ),
-          Positioned(
-            right: 120,
-            top: 36,
-            child: Container(
-              width: 300,
-              height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: palette.ambientSecondary,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _LeftRail extends StatelessWidget {
   final bool isAdmin;
@@ -1397,7 +1359,6 @@ class _FavoritesPageState extends State<_FavoritesPage> {
       body: SafeArea(
         child: Stack(
           children: [
-            const _AmbientBackground(),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -3553,25 +3514,6 @@ class _RightRail extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: palette.panelStrong,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: palette.border),
-                boxShadow: [
-                  BoxShadow(
-                    color: palette.shadow,
-                    blurRadius: 14,
-                    offset: const Offset(0, 7),
-                  ),
-                ],
-              ),
-              child:
-                  const _WeeklyProgressWidget(progress: 0.75, minutesRead: 45),
-            ),
-            const SizedBox(height: 20),
             Row(
               children: [
                 Text(
@@ -3700,96 +3642,6 @@ class _RightRail extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _WeeklyProgressWidget extends StatelessWidget {
-  final double progress;
-  final int minutesRead;
-  const _WeeklyProgressWidget(
-      {required this.progress, required this.minutesRead});
-
-  @override
-  Widget build(BuildContext context) {
-    final percentage = (progress * 100).round();
-    final palette = _PortalPalette.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Weekly Progress',
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w800,
-            color: palette.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 14),
-        Center(
-          child: SizedBox(
-            width: 122,
-            height: 122,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                SizedBox(
-                  width: 122,
-                  height: 122,
-                  child: CircularProgressIndicator(
-                    value: progress,
-                    strokeWidth: 11,
-                    strokeCap: StrokeCap.round,
-                    backgroundColor: palette.controlBorder,
-                    color: const Color(0xFF1754CF),
-                  ),
-                ),
-                Container(
-                  width: 90,
-                  height: 90,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: palette.panelStrong,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        '$percentage%',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w800,
-                          color: palette.textPrimary,
-                        ),
-                      ),
-                      const Text(
-                        'GOAL',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF7B8498),
-                          letterSpacing: 0.8,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        Center(
-          child: Text(
-            '$minutesRead mins read this week',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: palette.textSecondary,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

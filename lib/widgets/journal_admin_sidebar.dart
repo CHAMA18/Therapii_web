@@ -6,6 +6,7 @@ import 'package:therapii/utils/admin_access.dart';
 enum JournalAdminSidebarItem {
   dashboard,
   articles,
+  contentFeed,
   team,
   patients,
   analytics,
@@ -178,6 +179,14 @@ class _JournalAdminSidebarState extends State<JournalAdminSidebar> {
                             JournalAdminSidebarItem.articles,
                         onTap: () =>
                             _handleNavigate(JournalAdminSidebarItem.articles),
+                      ),
+                      _SidebarNavItemData(
+                        icon: Icons.dynamic_feed_rounded,
+                        label: 'Content Feed',
+                        active: widget.activeItem ==
+                            JournalAdminSidebarItem.contentFeed,
+                        onTap: () =>
+                            _handleNavigate(JournalAdminSidebarItem.contentFeed),
                       ),
                     ],
                   ),
