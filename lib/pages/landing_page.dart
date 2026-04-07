@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/world_class_button.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:google_fonts/google_fonts.dart';
@@ -549,7 +550,8 @@ class _LandingPageState extends State<LandingPage>
                   onPressed: () => Navigator.of(context).pop(),
                   child: const Text('Cancel'),
                 ),
-                ElevatedButton(
+                WorldClassButton(
+                  label: 'Unlock',
                   onPressed: () {
                     if (pinController.text == '1000') {
                       setState(() => error = null);
@@ -559,7 +561,6 @@ class _LandingPageState extends State<LandingPage>
                       setState(() => error = 'Incorrect code');
                     }
                   },
-                  child: const Text('Unlock'),
                 ),
               ],
             );

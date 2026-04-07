@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../widgets/date_time_input.dart';
 import 'package:flutter/material.dart';
 import 'package:therapii/auth/firebase_auth_manager.dart';
 import 'package:therapii/pages/journal_admin_analytics_page.dart';
@@ -2111,6 +2112,9 @@ class _ScheduleCard extends StatelessWidget {
   final ValueChanged<bool> onPublishImmediatelyChanged;
   final TextEditingController dateController;
   final TextEditingController timeController;
+
+  // Note: Input fields for date/time are now enhanced using the
+  // DateTimeInput widget for a world-class experience.
   const _ScheduleCard({
     required this.publishImmediately,
     required this.onPublishImmediatelyChanged,
@@ -2143,28 +2147,18 @@ class _ScheduleCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          TextField(
-            controller: dateController,
-            enabled: !publishImmediately,
-            decoration: const InputDecoration(
-              labelText: 'Date',
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(),
-              isDense: true,
-            ),
+          DateTimeInput(
+            label: 'Date',
+            mode: DateTimeInputMode.date,
+            initialValue: dateController.text,
+            onChanged: (val) => dateController.text = val,
           ),
           const SizedBox(height: 8),
-          TextField(
-            controller: timeController,
-            enabled: !publishImmediately,
-            decoration: const InputDecoration(
-              labelText: 'Time',
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(),
-              isDense: true,
-            ),
+          DateTimeInput(
+            label: 'Time',
+            mode: DateTimeInputMode.time,
+            initialValue: timeController.text,
+            onChanged: (val) => timeController.text = val,
           ),
         ],
       ),

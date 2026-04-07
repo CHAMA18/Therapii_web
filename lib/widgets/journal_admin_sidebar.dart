@@ -196,7 +196,7 @@ class _JournalAdminSidebarState extends State<JournalAdminSidebar> {
                       ),
                       _SidebarNavItemData(
                         icon: Icons.people_alt_outlined,
-                        label: 'Patients',
+                        label: 'Clients',
                         active: widget.activeItem ==
                             JournalAdminSidebarItem.patients,
                         onTap: () =>

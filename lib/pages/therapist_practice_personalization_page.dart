@@ -3,6 +3,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import '../widgets/date_time_input.dart';
 import 'package:therapii/auth/firebase_auth_manager.dart';
 import 'package:therapii/data/universities.dart';
 import 'package:therapii/pages/landing_page.dart';
@@ -1196,10 +1197,12 @@ class _LicensureDialogState extends State<_LicensureDialog> {
               decoration: const InputDecoration(labelText: 'License Number'),
             ),
             const SizedBox(height: 16),
-            TextField(
-              controller: _expirationController,
-              decoration:
-                  const InputDecoration(labelText: 'Expiration Date (MM/YYYY)'),
+            DateTimeInput(
+              label: 'Expiration Date (MM/YYYY)',
+              mode: DateTimeInputMode.monthYear,
+              initialValue: _expirationController.text,
+              onChanged: (val) =>
+                  setState(() => _expirationController.text = val),
             ),
           ],
         ),

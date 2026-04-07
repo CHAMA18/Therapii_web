@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:therapii/widgets/world_class_button.dart';
+import 'package:therapii/auth/firebase_auth_manager.dart';
+import 'package:therapii/services/invitation_service.dart';
 import 'package:therapii/pages/journal_admin_analytics_page.dart';
 import 'package:therapii/pages/journal_admin_dashboard_page.dart';
 import 'package:therapii/pages/journal_admin_patients_hub_page.dart';
@@ -56,7 +59,7 @@ class JournalAdminTeamHubPage extends StatelessWidget {
                 activeItem: JournalAdminSidebarItem.team,
                 onNavigate: (item) => _onSidebarNavigate(context, item),
               ),
-              const Expanded(child: _TeamHubContent()),
+              Expanded(child: _TeamHubContent()),
             ],
           ),
         ),
@@ -65,73 +68,182 @@ class JournalAdminTeamHubPage extends StatelessWidget {
   }
 }
 
-class _TeamHubContent extends StatelessWidget {
+class _TeamHubContent extends StatefulWidget {
   const _TeamHubContent();
+  @override
+  State<_TeamHubContent> createState() => _TeamHubContentState();
+}
 
-  static const _rows = <_TeamRowData>[
-    _TeamRowData(
-      name: 'Dr. Sarah Stone',
-      email: 'sarah.stone@mindful.ai',
-      avatarBg: Color(0xFFF3F4EE),
-      role: 'Senior Therapist',
-      roleBg: Color(0xFFEAF2FF),
-      roleFg: Color(0xFF4B8EED),
-      status: 'Online',
-      statusBg: Color(0xFFE9F9F2),
-      statusFg: Color(0xFF10B981),
-      assignmentMain: '14 Patients',
-      assignmentSub: '8 Active Articles',
-      lastLogin: 'Just now',
-    ),
-    _TeamRowData(
-      name: 'Marcus J.',
-      email: 'm.jordan@mindful.ai',
-      avatarBg: Color(0xFFF3F4F6),
-      role: 'Content Editor',
-      roleBg: Color(0xFFF2E9FF),
-      roleFg: Color(0xFFA855F7),
-      status: 'Away',
-      statusBg: Color(0xFFFFF3E2),
-      statusFg: Color(0xFFF59E0B),
-      assignmentMain: '24 Articles',
-      assignmentSub: 'Drafting Stage',
-      lastLogin: '42 mins ago',
-    ),
-    _TeamRowData(
-      name: 'Dr. Michael Chen',
-      email: 'm.chen@mindful.ai',
-      avatarBg: Color(0xFFEAF6DE),
-      role: 'Therapist',
-      roleBg: Color(0xFFEAF2FF),
-      roleFg: Color(0xFF4B8EED),
-      status: 'Offline',
-      statusBg: Color(0xFFF1F5F9),
-      statusFg: Color(0xFF94A3B8),
-      assignmentMain: '8 Patients',
-      assignmentSub: '0 New Requests',
-      lastLogin: '3 days ago',
-    ),
-  ];
+class _TeamHubContentState extends State<_TeamHubContent> {
+  bool _showInvitePanel = false;
+
+  void _toggleInvitePanel() {
+    setState(() => _showInvitePanel = !_showInvitePanel);
+  }
 
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(28, 12, 28, 28),
+      padding: const EdgeInsets.fromLTRB(28, 0, 28, 28),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 980),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const _TeamHeader(),
+              _TeamHeader(onInvite: _toggleInvitePanel),
               const SizedBox(height: 20),
               const _SearchAndFiltersBar(),
               const SizedBox(height: 20),
-              _TeamTable(rows: _rows),
-              const SizedBox(height: 20),
-              const _TeamSummaryRow(),
+              // Invite flow panel replaces the default static team table
+              if (_showInvitePanel) _InvitePanel(onInvite: _sendInvite),
+              if (_showInvitePanel) ...[
+                const SizedBox(height: 12),
+              ],
+              // Invite flow panel (no default team member rows shown)
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _sendInvite(String name, String email, String role) async {
+    // Basic client-side validation and wiring to existing invitation flow
+    final therapist = FirebaseAuthManager().currentUser;
+    if (therapist == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please sign in to invite members.')),
+        );
+      }
+      return;
+    }
+
+    final therapistId = therapist.uid;
+    final firstName = name.split(' ').first;
+    final lastName =
+        name.contains(' ') ? name.split(' ').sublist(1).join(' ') : '';
+
+    try {
+      final service = InvitationService();
+      final result = await service.createInvitationAndSendEmail(
+        therapistId: therapistId,
+        patientEmail: email,
+        patientFirstName: firstName,
+        patientLastName: lastName,
+      );
+      final sent = result.emailSent;
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(sent
+            ? 'Invitation sent to $email'
+            : 'Invitation created. Email may be queued.'),
+      ));
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to send invitation: $e')),
+        );
+      }
+    }
+  }
+}
+
+class _InvitePanel extends StatefulWidget {
+  final Future<void> Function(String name, String email, String role) onInvite;
+  const _InvitePanel({required this.onInvite});
+
+  @override
+  State<_InvitePanel> createState() => _InvitePanelState();
+}
+
+class _InvitePanelState extends State<_InvitePanel> {
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  String _role = 'Senior Therapist';
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Invite New Member',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _nameController,
+              decoration: const InputDecoration(
+                labelText: 'Full Name',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _emailController,
+              decoration: const InputDecoration(
+                labelText: 'Email',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.emailAddress,
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              value: _role,
+              items: const [
+                'Senior Therapist',
+                'Therapist',
+                'Content Editor',
+              ].map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
+              onChanged: (v) {
+                if (v != null) setState(() => _role = v);
+              },
+              decoration: const InputDecoration(
+                  border: OutlineInputBorder(), labelText: 'Role'),
+            ),
+            const SizedBox(height: 16),
+            Align(
+              alignment: Alignment.centerRight,
+              child: ElevatedButton(
+                onPressed: () {
+                  final name = _nameController.text.trim();
+                  final email = _emailController.text.trim();
+                  if (name.isEmpty || email.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text('Please enter name and email.')),
+                    );
+                    return;
+                  }
+                  widget.onInvite(name, email, _role);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2B8CEE),
+                  foregroundColor: Colors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                  textStyle: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                child: const Text('Invite'),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -139,7 +251,8 @@ class _TeamHubContent extends StatelessWidget {
 }
 
 class _TeamHeader extends StatelessWidget {
-  const _TeamHeader();
+  final VoidCallback? onInvite;
+  const _TeamHeader({this.onInvite});
 
   @override
   Widget build(BuildContext context) {
@@ -169,7 +282,7 @@ class _TeamHeader extends StatelessWidget {
               ),
             ),
             FilledButton.icon(
-              onPressed: () {},
+              onPressed: onInvite,
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFF2B8CEE),
                 foregroundColor: Colors.white,

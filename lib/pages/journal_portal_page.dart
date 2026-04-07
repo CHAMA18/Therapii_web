@@ -15,6 +15,7 @@ import 'package:therapii/services/app_page_state_service.dart';
 import 'package:therapii/services/therapist_service.dart';
 import 'package:therapii/services/user_service.dart';
 import 'package:therapii/theme_mode_controller.dart';
+import 'package:therapii/widgets/journal_input_field.dart';
 import 'package:therapii/utils/admin_access.dart';
 
 enum _PortalSidebarItem { home, journal, favorites }
@@ -2053,38 +2054,13 @@ class _ReflectionEditor extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(28, 26, 28, 26),
         child: Stack(
           children: [
-            TextField(
+            JournalInputField(
               controller: controller,
-              expands: true,
-              minLines: null,
+              hint: 'Begin typing to release...',
+              minLines: 6,
               maxLines: null,
-              textCapitalization: TextCapitalization.sentences,
-              style: TextStyle(
-                color: palette.textSecondary,
-                fontSize: 21,
-                height: 1.65,
-              ),
-              decoration: const InputDecoration(
-                border: InputBorder.none,
-                isCollapsed: true,
-                contentPadding: EdgeInsets.zero,
-              ),
+              keyboardType: TextInputType.multiline,
             ),
-            if (!hasText)
-              IgnorePointer(
-                child: Padding(
-                  padding: EdgeInsets.only(top: 6),
-                  child: Text(
-                    'Begin typing to release...',
-                    style: TextStyle(
-                      color: palette.textMuted.withValues(alpha: 0.55),
-                      fontFamily: 'Satoshi',
-                      fontSize: 23,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ),
           ],
         ),
       ),

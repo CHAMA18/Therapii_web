@@ -6,6 +6,7 @@ import 'package:therapii/pages/journal_admin_settings_page.dart';
 import 'package:therapii/pages/journal_admin_studio_page.dart';
 import 'package:therapii/pages/journal_admin_team_hub_page.dart';
 import 'package:therapii/services/app_page_state_service.dart';
+import 'package:therapii/services/invitation_service.dart';
 import 'package:therapii/widgets/journal_admin_sidebar.dart';
 
 class JournalAdminPatientsHubPage extends StatelessWidget {
@@ -65,8 +66,88 @@ class JournalAdminPatientsHubPage extends StatelessWidget {
   }
 }
 
-class _PatientsHubContent extends StatelessWidget {
+class _PatientsHubContent extends StatefulWidget {
   const _PatientsHubContent();
+  @override
+  State<_PatientsHubContent> createState() => _PatientsHubContentState();
+}
+
+class _PatientsHubContentState extends State<_PatientsHubContent> {
+  void _showAddClientDialog() {
+    final nameCtl = TextEditingController();
+    final emailCtl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Add New Client'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameCtl,
+              decoration: const InputDecoration(
+                  labelText: 'Full Name', border: OutlineInputBorder()),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: emailCtl,
+              decoration: const InputDecoration(
+                  labelText: 'Email', border: OutlineInputBorder()),
+              keyboardType: TextInputType.emailAddress,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () {
+              final name = nameCtl.text.trim();
+              final email = emailCtl.text.trim();
+              if (name.isEmpty || email.isEmpty) {
+                ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(
+                    content: Text('Please enter name and email.')));
+                return;
+              }
+              Navigator.of(ctx).pop();
+              _sendInvite(name, email);
+            },
+            style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF2B8CEE),
+                foregroundColor: Colors.white),
+            child: const Text('Invite',
+                style: TextStyle(fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _sendInvite(String name, String email) async {
+    final user = FirebaseAuthManager().currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please sign in to invite clients.')));
+      return;
+    }
+    try {
+      final res = await InvitationService().createInvitationAndSendEmail(
+        therapistId: user.uid,
+        patientEmail: email,
+        patientFirstName: name.split(' ').first,
+        patientLastName:
+            name.contains(' ') ? name.split(' ').sublist(1).join(' ') : '',
+      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(res.emailSent
+              ? 'Invitation sent to $email'
+              : 'Invitation created')));
+    } catch (e) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Invite failed: $e')));
+    }
+  }
 
   static const _rows = <_PatientRowData>[
     _PatientRowData(
@@ -117,19 +198,19 @@ class _PatientsHubContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(28, 12, 28, 28),
+      padding: const EdgeInsets.fromLTRB(28, 0, 28, 28),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 980),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const _PatientsHeader(),
-              const SizedBox(height: 20),
+              _PatientsHeader(onAdd: _showAddClientDialog),
+              const SizedBox(height: 12),
               const _SearchAndFiltersBar(),
-              const SizedBox(height: 20),
+              const SizedBox(height: 12),
               _PatientsTable(rows: _rows),
-              const SizedBox(height: 20),
+              const SizedBox(height: 12),
               const _PatientsSummaryRow(),
             ],
           ),
@@ -140,7 +221,8 @@ class _PatientsHubContent extends StatelessWidget {
 }
 
 class _PatientsHeader extends StatelessWidget {
-  const _PatientsHeader();
+  final VoidCallback onAdd;
+  const _PatientsHeader({required this.onAdd});
 
   @override
   Widget build(BuildContext context) {
@@ -160,7 +242,7 @@ class _PatientsHeader extends StatelessWidget {
                 border: Border.all(color: const Color(0xFFFFD4DC)),
               ),
               child: const Text(
-                '4 PATIENTS AT RISK',
+                '4 CLIENTS AT RISK',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w800,
@@ -169,7 +251,7 @@ class _PatientsHeader extends StatelessWidget {
               ),
             ),
             FilledButton.icon(
-              onPressed: () {},
+              onPressed: onAdd,
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFF2B8CEE),
                 foregroundColor: Colors.white,
@@ -180,7 +262,7 @@ class _PatientsHeader extends StatelessWidget {
               ),
               icon: const Icon(Icons.group_add_rounded, size: 18),
               label: const Text(
-                'Add New Patient',
+                'Add New Client',
                 style: TextStyle(fontWeight: FontWeight.w700),
               ),
             ),
@@ -191,7 +273,7 @@ class _PatientsHeader extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Admin Patients Management Hub',
+              'Admin Clients Management Hub',
               style: TextStyle(
                 fontSize: 31 / 2,
                 fontWeight: FontWeight.w800,
@@ -200,7 +282,7 @@ class _PatientsHeader extends StatelessWidget {
             ),
             SizedBox(height: 2),
             Text(
-              'Oversee patient health status and AI sentiment tracking',
+              'Oversee client health status and AI sentiment tracking',
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
@@ -296,7 +378,7 @@ class _SearchAndFiltersBar extends StatelessWidget {
                     EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 prefixIcon:
                     Icon(Icons.search_rounded, color: Color(0xFF94A3B8)),
-                hintText: 'Search patients by name, ID or therapist...',
+                hintText: 'Search clients by name, ID or therapist...',
                 hintStyle: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
@@ -379,7 +461,7 @@ class _PatientsTable extends StatelessWidget {
                     ),
                     child: const Row(
                       children: [
-                        _TableHeadCell('PATIENT DETAILS', flex: 28),
+                        _TableHeadCell('CLIENT DETAILS', flex: 28),
                         _TableHeadCell('UNIQUE\nID', flex: 10),
                         _TableHeadCell('ASSIGNED\nTHERAPIST', flex: 16),
                         _TableHeadCell('AI\nSENTIMENT', flex: 12),
@@ -398,7 +480,7 @@ class _PatientsTable extends StatelessWidget {
                     child: Row(
                       children: [
                         const Text(
-                          'SHOWING 1-10 OF 142 PATIENTS',
+                          'SHOWING 1-10 OF 142 CLIENTS',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w800,
@@ -704,8 +786,8 @@ class _PatientsSummaryRow extends StatelessWidget {
         final cards = const [
           _SummaryCard(
             icon: Icons.format_list_bulleted_rounded,
-            title: 'TOTAL ACTIVE PATIENTS',
-            value: '128 Patients',
+            title: 'TOTAL ACTIVE CLIENTS',
+            value: '128 Clients',
             tint: Color(0xFFEAF2FF),
             iconColor: Color(0xFF2B8CEE),
           ),
@@ -718,7 +800,7 @@ class _PatientsSummaryRow extends StatelessWidget {
           ),
           _SummaryCard(
             icon: Icons.person_add_alt_1_rounded,
-            title: 'NEW PATIENTS THIS WEEK',
+            title: 'NEW CLIENTS THIS WEEK',
             value: '+18 Growth',
             tint: Color(0xFFEBF9F3),
             iconColor: Color(0xFF22C55E),
@@ -931,7 +1013,7 @@ class _PatientsHubSidebar extends StatelessWidget {
                   ),
                   const _SidebarItem(
                     icon: Icons.people_alt_outlined,
-                    label: 'Patients',
+                    label: 'Clients',
                     active: true,
                   ),
                   const SizedBox(height: 16),
