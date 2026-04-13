@@ -119,9 +119,24 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
         .orderBy('updatedAt', descending: true)
         .snapshots()
         .listen((snapshot) async {
-      if (snapshot.docs.isEmpty && !_hasSeededInitialArticles) {
-        _hasSeededInitialArticles = true;
-        await _seedInitialArticles();
+      final defaultTitles = {
+        'Building Resilience in Daily Life',
+        '5 Steps to Better Sleep Hygiene',
+        'Understanding CBT Core Principles',
+        'Managing Workplace Anxiety'
+      };
+
+      final toDelete = snapshot.docs.where((d) {
+        final data = d.data();
+        return defaultTitles.contains(data['title']);
+      }).toList();
+
+      if (toDelete.isNotEmpty) {
+        final batch = _firestore.batch();
+        for (final d in toDelete) {
+          batch.delete(d.reference);
+        }
+        await batch.commit();
         return;
       }
 
@@ -165,146 +180,6 @@ class _JournalAdminStudioPageState extends State<JournalAdminStudioPage> {
     return articles.first.id;
   }
 
-  Future<void> _seedInitialArticles() async {
-    final user = FirebaseAuthManager().currentUser;
-    final author = _authorNameFromUser(user);
-    final batch = _firestore.batch();
-    final now = DateTime.now();
-
-    final docs = [
-      _seedArticlePayload(
-        title: 'Building Resilience in Daily Life',
-        quote:
-            'Resilience is not just about bouncing back; it is about growing through what you go through.',
-        intro:
-            'In our fast-paced world, the ability to adapt to difficult situations is more crucial than ever. When we talk about resilience in a therapeutic context, we are not suggesting that you ignore your feelings.',
-        sectionTitle: 'The Psychology of Bouncing Back',
-        sectionBody:
-            'Research indicates that resilience is not a fixed trait. It is a set of behaviors, thoughts, and actions that can be learned and developed by anyone.',
-        bullets: const [
-          'Emotional Awareness',
-          'Realistic Optimism',
-          'Social Support'
-        ],
-        tags: const ['Resilience', 'Anxiety'],
-        summary:
-            'A practical primer on resilience and the behaviors that strengthen it.',
-        status: 'draft',
-        authorName: author,
-        updatedAt: now,
-      ),
-      _seedArticlePayload(
-        title: '5 Steps to Better Sleep Hygiene',
-        quote:
-            'Rest is not a reward. It is a biological foundation for emotional steadiness.',
-        intro:
-            'Addressing insomnia through behavioral design, environmental cues, and consistent nighttime routines.',
-        sectionTitle: 'How Sleep Rebuilds the Nervous System',
-        sectionBody:
-            'Small habit changes can improve restorative sleep and reduce next-day stress reactivity.',
-        bullets: const [
-          'Light Management',
-          'Consistent Schedule',
-          'Caffeine Boundaries'
-        ],
-        tags: const ['Sleep'],
-        summary:
-            'A behavioral guide to improving sleep hygiene and reducing insomnia patterns.',
-        status: 'published',
-        authorName: 'Dr. Mark Chen',
-        updatedAt: now.subtract(const Duration(days: 2)),
-      ),
-      _seedArticlePayload(
-        title: 'Understanding CBT Core Principles',
-        quote:
-            'Thoughts, feelings, and behaviors are connected. Shift one, and the system responds.',
-        intro:
-            'A guide for new therapy patients exploring cognitive behavioral therapy for the first time.',
-        sectionTitle: 'What CBT Actually Trains',
-        sectionBody:
-            'CBT helps patients notice patterns, challenge distortions, and test more adaptive responses.',
-        bullets: const [
-          'Pattern Tracking',
-          'Cognitive Reframing',
-          'Behavioral Experiments'
-        ],
-        tags: const ['CBT', 'Growth'],
-        summary:
-            'An introduction to the core principles behind cognitive behavioral therapy.',
-        status: 'published',
-        authorName: 'Dr. Admin Portal',
-        updatedAt: now.subtract(const Duration(days: 5)),
-      ),
-      _seedArticlePayload(
-        title: 'Managing Workplace Anxiety',
-        quote: 'Pressure narrows the mind. Structure helps it widen again.',
-        intro:
-            'Strategies for high-stress environments and the emotional load of modern performance culture.',
-        sectionTitle: 'Naming Stress Before It Escalates',
-        sectionBody:
-            'Workplace anxiety becomes more manageable when patterns are named early and regulated consistently.',
-        bullets: const [
-          'Boundary Planning',
-          'Somatic Resets',
-          'Expectation Audits'
-        ],
-        tags: const ['Anxiety', 'Work Harmony'],
-        summary:
-            'A scheduled article on recognizing and regulating workplace anxiety.',
-        status: 'scheduled',
-        authorName: 'Dr. Emily Stone',
-        publishImmediately: false,
-        date: 'Nov 14',
-        time: '09:00',
-        updatedAt: now.subtract(const Duration(days: 8)),
-      ),
-    ];
-
-    for (final payload in docs) {
-      final ref = _articlesCollection.doc();
-      batch.set(ref, payload);
-    }
-
-    await batch.commit();
-  }
-
-  Map<String, dynamic> _seedArticlePayload({
-    required String title,
-    required String quote,
-    required String intro,
-    required String sectionTitle,
-    required String sectionBody,
-    required List<String> bullets,
-    required List<String> tags,
-    required String summary,
-    required String status,
-    required String authorName,
-    required DateTime updatedAt,
-    bool publishImmediately = true,
-    bool isPublic = true,
-    String date = '',
-    String time = '',
-  }) {
-    return {
-      'title': title,
-      'quote': quote,
-      'intro': intro,
-      'sectionTitle': sectionTitle,
-      'sectionBody': sectionBody,
-      'bullets': bullets,
-      'continueText': '',
-      'summary': summary,
-      'date': date,
-      'time': time,
-      'publishImmediately': publishImmediately,
-      'isPublic': isPublic,
-      'tags': tags,
-      'status': status,
-      'authorName': authorName,
-      'updatedAt': Timestamp.fromDate(updatedAt),
-      'createdAt': Timestamp.fromDate(updatedAt),
-    };
-  }
 
   _StudioArticle? get _selectedArticle {
     final selectedId = _selectedArticleId;

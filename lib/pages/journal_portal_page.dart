@@ -273,117 +273,7 @@ class _JournalPortalPageState extends State<JournalPortalPage> {
     'Growth',
   ];
 
-  final List<_FeedCardData> _cards = const [
-    _FeedCardData(
-      category: 'Cognitive Therapy',
-      title: 'Understanding Attachment Styles',
-      subtitle: 'How early bonds shape relationship patterns today.',
-      readTime: '5 min read',
-      accent: Color(0xFF1E56D9),
-      imageUrl:
-          'https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&w=1200&q=80',
-      imageHeight: 220,
-      personalized: true,
-      estimatedHeight: 410,
-    ),
-    _FeedCardData(
-      category: 'Mindfulness',
-      title: '5 Breathing Techniques for Instant Calm',
-      subtitle: 'Simple methods to regulate your nervous system.',
-      readTime: '3 min read',
-      accent: Color(0xFF0F8A85),
-      imageUrl:
-          'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=1200&q=80',
-      imageHeight: 250,
-      estimatedHeight: 430,
-    ),
-    _FeedCardData.quote(
-      title:
-          '"The curious paradox is that when I accept myself just as I am, then I can change."',
-      subtitle: 'Carl Rogers',
-      readTime: 'Daily Wisdom',
-      estimatedHeight: 360,
-    ),
-    _FeedCardData(
-      category: 'Self-Care',
-      title: 'Why Journaling Works',
-      subtitle: 'Expressive writing lowers stress and sharpens clarity.',
-      readTime: '7 min read',
-      accent: Color(0xFF8D46D8),
-      imageUrl:
-          'https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=1200&q=80',
-      imageHeight: 190,
-      personalized: true,
-      estimatedHeight: 390,
-    ),
-    _FeedCardData(
-      category: 'Sleep Hygiene',
-      title: 'Sleep Hygiene Basics',
-      subtitle: 'Small environmental tweaks that improve sleep quality.',
-      readTime: '4 min read',
-      accent: Color(0xFF3D5DCC),
-      imageUrl:
-          'https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?auto=format&fit=crop&w=1200&q=80',
-      imageHeight: 210,
-      estimatedHeight: 398,
-    ),
-    _FeedCardData(
-      category: 'Boundaries',
-      title: 'How to Say No Without Guilt',
-      subtitle:
-          'Scripts and mindset shifts for protecting your energy with compassion.',
-      readTime: '6 min read',
-      accent: Color(0xFF1F7A73),
-      imageUrl:
-          'https://images.unsplash.com/photo-1516589091380-5d8e87df6999?auto=format&fit=crop&w=1200&q=80',
-      imageHeight: 230,
-      estimatedHeight: 414,
-    ),
-    _FeedCardData(
-      category: 'Resilience',
-      title: 'Rebuilding Confidence After Setbacks',
-      subtitle:
-          'A steadier way to regain momentum when life interrupts your plans.',
-      readTime: '5 min read',
-      accent: Color(0xFF3157D5),
-      imageUrl:
-          'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80',
-      imageHeight: 208,
-      estimatedHeight: 396,
-    ),
-    _FeedCardData.quote(
-      title:
-          '"Healing is not becoming someone new. It is returning to who you were beneath survival."',
-      subtitle: 'Therapii Wisdom',
-      readTime: "Editor's Note",
-      estimatedHeight: 334,
-    ),
-    _FeedCardData(
-      category: 'Relationships',
-      title: 'Rupture and Repair in Close Relationships',
-      subtitle:
-          'Conflict does not have to mean disconnection when repair is intentional.',
-      readTime: '8 min read',
-      accent: Color(0xFF8452D6),
-      imageUrl:
-          'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&w=1200&q=80',
-      imageHeight: 214,
-      personalized: true,
-      estimatedHeight: 404,
-    ),
-    _FeedCardData(
-      category: 'Anxiety',
-      title: 'What to Do When Your Mind Won’t Slow Down',
-      subtitle:
-          'Grounding patterns for nights when overthinking keeps your body awake.',
-      readTime: '4 min read',
-      accent: Color(0xFFCC6A24),
-      imageUrl:
-          'https://images.unsplash.com/photo-1493836512294-502baa1986e2?auto=format&fit=crop&w=1200&q=80',
-      imageHeight: 224,
-      estimatedHeight: 404,
-    ),
-  ];
+  final List<_FeedCardData> _cards = const [];
 
   int _selectedTopicIndex = 0;
   int _visibleCardCount = _initialVisibleCardCount;
@@ -1419,24 +1309,51 @@ class _FavoritesPageState extends State<_FavoritesPage> {
   }
 }
 
-class _FavoritesPane extends StatelessWidget {
+class _FavoritesPane extends StatefulWidget {
   final bool showCompactHeader;
 
   const _FavoritesPane({required this.showCompactHeader});
 
-  Query<Map<String, dynamic>>? get _favoritesQuery {
+  @override
+  State<_FavoritesPane> createState() => _FavoritesPaneState();
+}
+
+class _FavoritesPaneState extends State<_FavoritesPane> {
+  Stream<QuerySnapshot<Map<String, dynamic>>>? _favoritesStream;
+  String? _currentUserId;
+
+  @override
+  void initState() {
+    super.initState();
+    _initStream();
+  }
+
+  void _initStream() {
     final userId = FirebaseAuthManager().currentUser?.uid;
-    if (userId == null || userId.isEmpty) return null;
-    return FirebaseFirestore.instance
-        .collection('users')
-        .doc(userId)
-        .collection('favorite_journal_articles');
+    _currentUserId = userId;
+    if (userId != null && userId.isNotEmpty) {
+      _favoritesStream = FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('favorite_journal_articles')
+          .snapshots();
+    } else {
+      _favoritesStream = null;
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _FavoritesPane oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final userId = FirebaseAuthManager().currentUser?.uid;
+    if (userId != _currentUserId) {
+      _initStream();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final query = _favoritesQuery;
-    final horizontalPadding = showCompactHeader ? 16.0 : 30.0;
+    final horizontalPadding = widget.showCompactHeader ? 16.0 : 30.0;
     final palette = _PortalPalette.of(context);
 
     return CustomScrollView(
@@ -1444,7 +1361,7 @@ class _FavoritesPane extends StatelessWidget {
       slivers: [
         SliverPadding(
           padding: EdgeInsets.fromLTRB(horizontalPadding,
-              showCompactHeader ? 12 : 24, horizontalPadding, 24),
+              widget.showCompactHeader ? 12 : 24, horizontalPadding, 24),
           sliver: SliverToBoxAdapter(
             child: Center(
               child: ConstrainedBox(
@@ -1452,7 +1369,7 @@ class _FavoritesPane extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (showCompactHeader) ...[
+                    if (widget.showCompactHeader) ...[
                       const _CompactPortalHeader(),
                       const SizedBox(height: 22),
                     ],
@@ -1475,7 +1392,7 @@ class _FavoritesPane extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    if (query == null)
+                    if (_favoritesStream == null)
                       const _FavoriteStateCard(
                         icon: Icons.person_off_rounded,
                         title: 'Sign in to view favorites',
@@ -1484,7 +1401,7 @@ class _FavoritesPane extends StatelessWidget {
                       )
                     else
                       StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                        stream: query.snapshots(),
+                        stream: _favoritesStream,
                         builder: (context, snapshot) {
                           final items = snapshot.hasData
                               ? snapshot.data!.docs
@@ -1510,6 +1427,7 @@ class _FavoritesPane extends StatelessWidget {
                           }
 
                           if (snapshot.hasError) {
+                            debugPrint('Favorites error: ${snapshot.error}');
                             return const _FavoriteStateCard(
                               icon: Icons.cloud_off_rounded,
                               title: 'Unable to load favorites',
@@ -2977,8 +2895,6 @@ class _FeedPane extends StatelessWidget {
                         fontSize: 15,
                       ),
                     ),
-                    const SizedBox(height: 22),
-                    const _FeaturedHeroCard(),
                   ],
                 ),
               ),
@@ -3720,21 +3636,16 @@ class _QuoteCard extends StatelessWidget {
   }
 }
 
-class _RightRail extends StatelessWidget {
+class _RightRail extends StatefulWidget {
   const _RightRail();
 
-  Query<Map<String, dynamic>>? get _favoritesQuery {
-    final userId = FirebaseAuthManager().currentUser?.uid;
-    if (userId == null || userId.isEmpty) return null;
-    return FirebaseFirestore.instance
-        .collection('users')
-        .doc(userId)
-        .collection('favorite_journal_articles');
-  }
+  @override
+  State<_RightRail> createState() => _RightRailState();
+}
 
+class _RightRailState extends State<_RightRail> {
   @override
   Widget build(BuildContext context) {
-    final query = _favoritesQuery;
     final palette = _PortalPalette.of(context);
 
     return Container(
@@ -3749,96 +3660,68 @@ class _RightRail extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
               children: [
                 Text(
                   'Favorites',
                   style: TextStyle(
-                    fontSize: 17,
                     fontWeight: FontWeight.w800,
+                    fontSize: 16,
                     color: palette.textPrimary,
                   ),
                 ),
-                const Spacer(),
                 TextButton(
-                  onPressed: () async {
-                    final prefs = await SharedPreferences.getInstance();
-                    await prefs.setString(
-                        _portalDestinationKey, _portalDestinationFavorites);
-                    if (!context.mounted) return;
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(builder: (_) => const _FavoritesPage()),
-                    );
-                  },
-                  child: const Text(
-                    'View All',
-                    style: TextStyle(
-                      color: Color(0xFF1754CF),
-                      fontWeight: FontWeight.w700,
+                  onPressed: () {},
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    foregroundColor: const Color(0xFF1754CF),
+                    textStyle: const TextStyle(
+                      fontWeight: FontWeight.w800,
                       fontSize: 12,
                     ),
                   ),
+                  child: const Text('View All'),
                 ),
               ],
             ),
-            const SizedBox(height: 6),
-            if (query == null)
-              const _MiniStateTile(
-                title: 'Sign in to sync favorites',
-                subtitle: 'Saved journal articles will appear here.',
-              )
-            else
-              StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                stream: query.snapshots(),
-                builder: (context, snapshot) {
-                  var items = snapshot.hasData
-                      ? snapshot.data!.docs
-                          .map(_FavoriteArticleData.fromDoc)
-                          .toList()
-                      : <_FavoriteArticleData>[];
-                  
-                  items.sort((a, b) {
-                    final aDate = a.savedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-                    final bDate = b.savedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-                    return bDate.compareTo(aDate);
-                  });
-                  if (items.length > 3) {
-                    items = items.sublist(0, 3);
-                  }
-
-                  if (snapshot.connectionState == ConnectionState.waiting &&
-                      items.isEmpty) {
-                    return const _MiniStateTile(
-                      title: 'Loading favorites',
-                      subtitle: 'Fetching your saved articles.',
-                    );
-                  }
-
-                  if (snapshot.hasError) {
-                    return const _MiniStateTile(
-                      title: 'Favorites unavailable',
-                      subtitle: 'We could not load saved articles right now.',
-                    );
-                  }
-
-                  if (items.isEmpty) {
-                    return const _MiniStateTile(
-                      title: 'Nothing saved yet',
-                      subtitle:
-                          'Use the save icon on any article to pin it here.',
-                    );
-                  }
-
-                  return Column(
-                    children: [
-                      for (var i = 0; i < items.length; i++) ...[
-                        _SavedItemTile(item: items[i]),
-                        if (i < items.length - 1) const SizedBox(height: 12),
-                      ],
-                    ],
-                  );
-                },
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: palette.panelStrong,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: palette.border),
               ),
-            const SizedBox(height: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Favorites unavailable',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13,
+                      color: palette.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'We could not load saved articles right now.',
+                    style: TextStyle(
+                      color: palette.textSecondary,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 12,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
@@ -3884,140 +3767,6 @@ class _RightRail extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _SavedItemTile extends StatelessWidget {
-  final _FavoriteArticleData item;
-  const _SavedItemTile({required this.item});
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = _PortalPalette.of(context);
-
-    return Material(
-      color: palette.panelStrong,
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => JournalArticlePage(
-                title: item.title,
-                category: item.category,
-                subtitle: item.subtitle,
-                readTime: item.readTime,
-                imageUrl: item.imageUrl,
-                authorName: item.authorName,
-                authorRole: item.authorRole,
-                publishedDate: item.publishedDate,
-              ),
-            ),
-          );
-        },
-        borderRadius: BorderRadius.circular(14),
-        child: Ink(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: palette.border),
-          ),
-          child: Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: SizedBox(
-                  width: 48,
-                  height: 48,
-                  child: Image.network(
-                    item.imageUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) =>
-                        Container(color: palette.panelSoft),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: palette.textPrimary,
-                        height: 1.25,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      item.readTime,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: palette.textMuted,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _MiniStateTile extends StatelessWidget {
-  final String title;
-  final String subtitle;
-
-  const _MiniStateTile({
-    required this.title,
-    required this.subtitle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = _PortalPalette.of(context);
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: palette.panelStrong,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: palette.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w800,
-              color: palette.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            subtitle,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: palette.textMuted,
-              height: 1.4,
-            ),
-          ),
-        ],
       ),
     );
   }

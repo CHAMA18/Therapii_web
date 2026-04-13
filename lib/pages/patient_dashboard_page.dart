@@ -866,13 +866,18 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
         backgroundColor: Theme.of(context).colorScheme.surface,
         body: _buildContent(context),
         floatingActionButton: FloatingActionButton(
-          onPressed: () => Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const SupportChatPage()),
-          ),
+          onPressed: () {
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (context) => const SupportChatPage(),
+            );
+          },
           backgroundColor: Theme.of(context).colorScheme.primary,
           foregroundColor: Theme.of(context).colorScheme.onPrimary,
           elevation: 4,
-          child: const Icon(Icons.support_agent_rounded),
+          child: const Icon(Icons.chat_bubble_rounded),
         ),
       ),
     );
@@ -1473,24 +1478,8 @@ class _ChatWithAiCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: isDisabled
-                            ? colorScheme.onSurface.withValues(alpha: 0.08)
-                            : Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Icon(
-                        Icons.auto_awesome_rounded,
-                        color: isDisabled
-                            ? colorScheme.onSurface.withValues(alpha: 0.4)
-                            : colorScheme.onPrimary,
-                        size: 24,
-                      ),
-                    ),
                     Row(
                       children: [
                         InkWell(

@@ -67,91 +67,213 @@ class _SupportChatPageState extends State<SupportChatPage> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     
+    // We want the modal to take up 90% of screen height
+    final height = MediaQuery.of(context).size.height * 0.9;
+
     if (_userId == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Support Chat')),
-        body: const Center(child: Text('Must be logged in')),
+      return Container(
+        height: height,
+        decoration: BoxDecoration(
+          color: scheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: const Center(child: Text('Must be logged in to access support.')),
       );
     }
 
-    return Scaffold(
-      backgroundColor: scheme.surface,
-      appBar: AppBar(
-        backgroundColor: scheme.surface,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_rounded, color: scheme.onSurface),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Text(
-          'Support Team',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: scheme.onSurface,
-              ),
-        ),
+    return Container(
+      height: height,
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 20,
+            offset: const Offset(0, -5),
+          )
+        ],
       ),
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 800),
-            child: Column(
-              children: [
-                Expanded(
-                  child: StreamBuilder<List<SupportMessage>>(
-                    stream: _supportService.streamMessages(_userId!),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      if (snapshot.hasError) {
-                        return Center(child: Text('Error: ${snapshot.error}'));
-                      }
-                      final messages = snapshot.data ?? [];
-                      if (messages.isEmpty) {
-                        return Center(
-                          child: Text(
-                            'Send a message to start the conversation.',
+      child: Column(
+        children: [
+          _buildIntercomHeader(theme),
+          Expanded(
+            child: StreamBuilder<List<SupportMessage>>(
+              stream: _supportService.streamMessages(_userId!),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                }
+                final messages = snapshot.data ?? [];
+                
+                if (messages.isEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.mark_chat_unread_rounded, size: 64, color: scheme.primary.withValues(alpha: 0.2)),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Start a conversation',
+                            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Send us a message and we\'ll get back to you as soon as possible.',
+                            textAlign: TextAlign.center,
                             style: TextStyle(color: scheme.onSurface.withValues(alpha: 0.5)),
                           ),
-                        );
-                      }
-                      
-                      // Delay scrolling to ensure list is rendered
-                      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+                        ],
+                      ),
+                    ),
+                  );
+                }
+                
+                // Delay scrolling to ensure list is rendered
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _supportService.markRead(_userId!, isAdmin: false);
+                  _scrollToBottom();
+                });
 
-                      return ListView.builder(
-                        controller: _scrollController,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                        itemCount: messages.length,
-                        itemBuilder: (context, index) {
-                          final msg = messages[index];
-                          final isMe = msg.senderId == _userId;
-                          return _buildMessageBubble(msg, isMe, scheme);
-                        },
-                      );
-                    },
-                  ),
-                ),
-                _buildInputArea(scheme),
-              ],
+                return ListView.builder(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  itemCount: messages.length,
+                  itemBuilder: (context, index) {
+                    final msg = messages[index];
+                    final isMe = msg.senderId == _userId;
+                    
+                    // Add slight margin top if previous message was from someone else
+                    bool addMargin = false;
+                    if (index > 0) {
+                      addMargin = messages[index - 1].senderId != msg.senderId;
+                    } else {
+                      addMargin = true;
+                    }
+
+                    return _buildMessageBubble(msg, isMe, addMargin, scheme);
+                  },
+                );
+              },
             ),
           ),
-        ),
+          _buildInputArea(scheme),
+        ],
       ),
     );
   }
 
-  Widget _buildMessageBubble(SupportMessage msg, bool isMe, ColorScheme scheme) {
+  Widget _buildIntercomHeader(ThemeData theme) {
+    final scheme = theme.colorScheme;
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            scheme.primary,
+            scheme.primaryContainer,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Image.asset('assets/images/therapii_logo_white.png', height: 28, errorBuilder: (c, e, s) => const SizedBox()),
+              IconButton(
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white, size: 32),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Hi there 👋',
+            style: theme.textTheme.headlineMedium?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'We help your experience be as smooth as possible. How can we help today?',
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: Colors.white.withValues(alpha: 0.9),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              SizedBox(
+                width: 70,
+                height: 36,
+                child: Stack(
+                  children: [
+                    Positioned(
+                      left: 0,
+                      child: CircleAvatar(radius: 16, backgroundColor: scheme.secondaryContainer, child: Icon(Icons.person, color: scheme.onSecondaryContainer, size: 20)),
+                    ),
+                    Positioned(
+                      left: 20,
+                      child: CircleAvatar(radius: 16, backgroundColor: scheme.tertiaryContainer, child: Icon(Icons.person, color: scheme.onTertiaryContainer, size: 20)),
+                    ),
+                    Positioned(
+                      left: 40,
+                      child: CircleAvatar(radius: 16, backgroundColor: scheme.surface, child: Icon(Icons.person, color: scheme.primary, size: 20)),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Our usual reply time',
+                      style: theme.textTheme.labelSmall?.copyWith(color: Colors.white.withValues(alpha: 0.7)),
+                    ),
+                    Row(
+                      children: [
+                        const Icon(Icons.access_time_filled_rounded, color: Colors.white, size: 14),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Under 5 mins',
+                          style: theme.textTheme.labelMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMessageBubble(SupportMessage msg, bool isMe, bool addMargin, ColorScheme scheme) {
     final format = DateFormat('h:mm a');
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
+        margin: EdgeInsets.only(bottom: 4, top: addMargin ? 16 : 0),
         constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
         decoration: BoxDecoration(
           color: isMe ? scheme.primary : scheme.surfaceContainerHighest,
@@ -191,18 +313,24 @@ class _SupportChatPageState extends State<SupportChatPage> {
 
   Widget _buildInputArea(ColorScheme scheme) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 12,
+        bottom: 12 + MediaQuery.of(context).viewInsets.bottom + MediaQuery.of(context).padding.bottom,
+      ),
       decoration: BoxDecoration(
         color: scheme.surface,
-        border: Border(top: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.5))),
+        border: Border(top: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.3))),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Expanded(
             child: TextField(
               controller: _textController,
               decoration: InputDecoration(
-                hintText: 'Type a message...',
+                hintText: 'Send a message...',
                 hintStyle: TextStyle(color: scheme.onSurfaceVariant.withValues(alpha: 0.6)),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
@@ -210,22 +338,27 @@ class _SupportChatPageState extends State<SupportChatPage> {
                 ),
                 filled: true,
                 fillColor: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                isDense: true,
               ),
               textCapitalization: TextCapitalization.sentences,
-              maxLines: null,
+              minLines: 1,
+              maxLines: 5,
               onSubmitted: (_) => _sendMessage(),
             ),
           ),
           const SizedBox(width: 8),
           Container(
+            margin: const EdgeInsets.only(bottom: 2),
             decoration: BoxDecoration(
               color: scheme.primary,
               shape: BoxShape.circle,
             ),
             child: IconButton(
-              icon: Icon(Icons.send_rounded, color: scheme.onPrimary),
+              icon: Icon(Icons.send_rounded, color: scheme.onPrimary, size: 20),
               onPressed: _sendMessage,
+              padding: const EdgeInsets.all(12),
+              constraints: const BoxConstraints(),
             ),
           ),
         ],

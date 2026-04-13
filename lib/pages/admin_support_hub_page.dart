@@ -13,10 +13,24 @@ class AdminSupportHubPage extends StatelessWidget {
     final supportService = SupportService();
 
     return Scaffold(
-      backgroundColor: scheme.surface,
+      backgroundColor: scheme.surfaceContainerHighest.withValues(alpha: 0.3),
       appBar: AppBar(
-        title: const Text('Support Hub'),
-        centerTitle: true,
+        backgroundColor: scheme.surface,
+        title: const Text('Support Inbox', style: TextStyle(fontWeight: FontWeight.bold)),
+        centerTitle: false,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search_rounded),
+            onPressed: () {},
+          ),
+          IconButton(
+            icon: const Icon(Icons.filter_list_rounded),
+            onPressed: () {},
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: SafeArea(
         child: Center(
@@ -35,75 +49,132 @@ class AdminSupportHubPage extends StatelessWidget {
                 final conversations = snapshot.data ?? [];
                 
                 if (conversations.isEmpty) {
-                  return const Center(child: Text('No support conversations.'));
+                  return Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.inbox_rounded, size: 64, color: scheme.primary.withValues(alpha: 0.3)),
+                        const SizedBox(height: 16),
+                        Text(
+                          'All caught up!',
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'No active support conversations.',
+                          style: TextStyle(color: scheme.onSurfaceVariant),
+                        ),
+                      ],
+                    ),
+                  );
                 }
 
                 return ListView.separated(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   itemCount: conversations.length,
-                  separatorBuilder: (_, __) => const Divider(),
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
                     final convo = conversations[index];
                     final unread = convo.adminUnreadCount > 0;
                     final format = DateFormat('MMM d, h:mm a');
                     
-                    return ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      tileColor: unread ? scheme.primaryContainer.withValues(alpha: 0.3) : null,
-                      leading: CircleAvatar(
-                        backgroundColor: scheme.primaryContainer,
-                        child: Text(
-                          convo.userEmail.isNotEmpty ? convo.userEmail[0].toUpperCase() : 'U',
-                          style: TextStyle(color: scheme.onPrimaryContainer),
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: scheme.surface,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: unread ? scheme.primary.withValues(alpha: 0.5) : scheme.outlineVariant.withValues(alpha: 0.5),
+                          width: unread ? 1.5 : 1,
                         ),
-                      ),
-                      title: Text(
-                        convo.userEmail,
-                        style: TextStyle(fontWeight: unread ? FontWeight.bold : FontWeight.normal),
-                      ),
-                      subtitle: Text(
-                        convo.lastMessageText ?? 'No messages yet',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: unread ? scheme.onSurface : scheme.onSurfaceVariant,
-                          fontWeight: unread ? FontWeight.w500 : FontWeight.normal,
-                        ),
-                      ),
-                      trailing: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            format.format(convo.updatedAt),
-                            style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.02),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
                           ),
-                          if (unread)
-                            Container(
-                              margin: const EdgeInsets.only(top: 4),
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: scheme.primary,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
+                        ]
+                      ),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        leading: CircleAvatar(
+                          radius: 24,
+                          backgroundColor: unread ? scheme.primaryContainer : scheme.surfaceContainerHighest,
+                          child: Text(
+                            convo.userEmail.isNotEmpty ? convo.userEmail[0].toUpperCase() : 'U',
+                            style: TextStyle(
+                              color: unread ? scheme.onPrimaryContainer : scheme.onSurfaceVariant,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
+                          ),
+                        ),
+                        title: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
                               child: Text(
-                                '${convo.adminUnreadCount}',
-                                style: TextStyle(color: scheme.onPrimary, fontSize: 12, fontWeight: FontWeight.bold),
+                                convo.userEmail,
+                                style: TextStyle(
+                                  fontWeight: unread ? FontWeight.w700 : FontWeight.w600,
+                                  color: scheme.onSurface,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                        ],
-                      ),
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => AdminSupportChatPage(
-                              userId: convo.userId,
-                              userEmail: convo.userEmail,
+                            Text(
+                              format.format(convo.updatedAt),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: unread ? scheme.primary : scheme.onSurfaceVariant,
+                                fontWeight: unread ? FontWeight.w600 : FontWeight.normal,
+                              ),
                             ),
+                          ],
+                        ),
+                        subtitle: Padding(
+                          padding: const EdgeInsets.only(top: 6.0),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  convo.lastMessageText ?? 'No messages yet',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: unread ? scheme.onSurface : scheme.onSurfaceVariant,
+                                    fontWeight: unread ? FontWeight.w500 : FontWeight.normal,
+                                  ),
+                                ),
+                              ),
+                              if (unread)
+                                Container(
+                                  margin: const EdgeInsets.only(left: 8),
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: scheme.primary,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    '${convo.adminUnreadCount}',
+                                    style: TextStyle(color: scheme.onPrimary, fontSize: 12, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                            ],
                           ),
-                        );
-                      },
+                        ),
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => AdminSupportChatPage(
+                                userId: convo.userId,
+                                userEmail: convo.userEmail,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                     );
                   },
                 );

@@ -78,16 +78,55 @@ class _AdminSupportChatPageState extends State<AdminSupportChatPage> {
       backgroundColor: scheme.surface,
       appBar: AppBar(
         backgroundColor: scheme.surface,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        centerTitle: true,
-        title: Text(
-          widget.userEmail,
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: scheme.onSurface,
+        elevation: 1,
+        shadowColor: scheme.shadow.withValues(alpha: 0.1),
+        scrolledUnderElevation: 1,
+        titleSpacing: 0,
+        title: Row(
+          children: [
+            CircleAvatar(
+              radius: 18,
+              backgroundColor: scheme.primaryContainer,
+              child: Text(
+                widget.userEmail.isNotEmpty ? widget.userEmail[0].toUpperCase() : 'U',
+                style: TextStyle(
+                  color: scheme.onPrimaryContainer,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.userEmail,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: scheme.onSurface,
+                        ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    'User ID: ${widget.userId.substring(0, 8)}...',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.more_vert_rounded),
+            onPressed: () {},
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: SafeArea(
         child: Center(
@@ -118,12 +157,20 @@ class _AdminSupportChatPageState extends State<AdminSupportChatPage> {
 
                       return ListView.builder(
                         controller: _scrollController,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
                         itemCount: messages.length,
                         itemBuilder: (context, index) {
                           final msg = messages[index];
                           final isMe = msg.isAdmin;
-                          return _buildMessageBubble(msg, isMe, scheme);
+                          
+                          bool addMargin = false;
+                          if (index > 0) {
+                            addMargin = messages[index - 1].isAdmin != msg.isAdmin;
+                          } else {
+                            addMargin = true;
+                          }
+
+                          return _buildMessageBubble(msg, isMe, addMargin, scheme);
                         },
                       );
                     },
@@ -138,12 +185,12 @@ class _AdminSupportChatPageState extends State<AdminSupportChatPage> {
     );
   }
 
-  Widget _buildMessageBubble(SupportMessage msg, bool isMe, ColorScheme scheme) {
+  Widget _buildMessageBubble(SupportMessage msg, bool isMe, bool addMargin, ColorScheme scheme) {
     final format = DateFormat('h:mm a');
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
+        margin: EdgeInsets.only(bottom: 4, top: addMargin ? 16 : 0),
         constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
         decoration: BoxDecoration(
           color: isMe ? scheme.primary : scheme.surfaceContainerHighest,
@@ -183,12 +230,18 @@ class _AdminSupportChatPageState extends State<AdminSupportChatPage> {
 
   Widget _buildInputArea(ColorScheme scheme) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 12,
+        bottom: 12 + MediaQuery.of(context).viewInsets.bottom + MediaQuery.of(context).padding.bottom,
+      ),
       decoration: BoxDecoration(
         color: scheme.surface,
-        border: Border(top: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.5))),
+        border: Border(top: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.3))),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Expanded(
             child: TextField(
@@ -202,22 +255,27 @@ class _AdminSupportChatPageState extends State<AdminSupportChatPage> {
                 ),
                 filled: true,
                 fillColor: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                isDense: true,
               ),
               textCapitalization: TextCapitalization.sentences,
-              maxLines: null,
+              minLines: 1,
+              maxLines: 5,
               onSubmitted: (_) => _sendMessage(),
             ),
           ),
           const SizedBox(width: 8),
           Container(
+            margin: const EdgeInsets.only(bottom: 2),
             decoration: BoxDecoration(
               color: scheme.primary,
               shape: BoxShape.circle,
             ),
             child: IconButton(
-              icon: Icon(Icons.send_rounded, color: scheme.onPrimary),
+              icon: Icon(Icons.send_rounded, color: scheme.onPrimary, size: 20),
               onPressed: _sendMessage,
+              padding: const EdgeInsets.all(12),
+              constraints: const BoxConstraints(),
             ),
           ),
         ],
