@@ -70,34 +70,36 @@ class _SupportChatPageState extends State<SupportChatPage> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     
-    // We want the modal to take up 90% of screen height
-    final height = MediaQuery.of(context).size.height * 0.9;
-
     if (_userId == null) {
-      return Container(
-        height: height,
-        decoration: BoxDecoration(
-          color: scheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      return Material(
+        color: Colors.transparent,
+        child: Container(
+          decoration: BoxDecoration(
+            color: scheme.surface,
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: const Center(child: Text('Must be logged in to access support.')),
         ),
-        child: const Center(child: Text('Must be logged in to access support.')),
       );
     }
 
-    return Container(
-      height: height,
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        boxShadow: [
+    return Material(
+      color: Colors.transparent,
+      child: Container(
+        decoration: BoxDecoration(
+          color: scheme.surface,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 20,
-            offset: const Offset(0, -5),
+            offset: const Offset(0, 5),
           )
         ],
       ),
-      child: Column(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Column(
         children: [
           _buildIntercomHeader(theme),
           Expanded(
@@ -168,7 +170,7 @@ class _SupportChatPageState extends State<SupportChatPage> {
           _buildInputArea(scheme),
         ],
       ),
-    );
+    )));
   }
 
   Widget _buildIntercomHeader(ThemeData theme) {

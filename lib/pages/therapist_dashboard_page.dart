@@ -199,8 +199,32 @@ class _TherapistDashboardPageState extends State<TherapistDashboardPage> {
       backgroundColor: colorScheme.surface,
       body: body,
       floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const SupportChatPage()),
+        onPressed: () => showDialog(
+          context: context,
+          barrierColor: Colors.transparent,
+          builder: (context) {
+            final size = MediaQuery.of(context).size;
+            return Dialog(
+              alignment: Alignment.bottomRight,
+              insetPadding: EdgeInsets.only(
+                right: 24, 
+                bottom: 80, 
+                top: 24, 
+                left: size.width > 600 ? size.width - 400 - 24 : 24
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+              elevation: 8,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: 400,
+                  maxHeight: size.height * 0.8,
+                ),
+                child: const SupportChatPage(),
+              ),
+            );
+          },
         ),
         backgroundColor: colorScheme.primary,
         foregroundColor: colorScheme.onPrimary,

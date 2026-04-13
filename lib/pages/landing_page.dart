@@ -3477,113 +3477,139 @@ class _FooterSection extends StatelessWidget {
         horizontal: isWide ? 48 : 24,
         vertical: 48,
       ),
-      child: isWide
-          ? Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Logo
-                Row(
+      child: Column(
+        children: [
+          isWide
+              ? Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Opacity(
-                      opacity: 0.5,
-                      child: Image.asset(
-                        'assets/images/Therapii_image.png',
-                        width: 20,
-                        height: 20,
-                        fit: BoxFit.contain,
+                    // Logo
+                    Row(
+                      children: [
+                        Opacity(
+                          opacity: 0.5,
+                          child: Image.asset(
+                            'assets/images/Therapii_image.png',
+                            width: 20,
+                            height: 20,
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: editMode ? onEditBrand : null,
+                          child: Text(
+                            brand,
+                            style: GoogleFonts.playfairDisplay(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white.withValues(alpha: 0.5),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    // Copyright
+                    GestureDetector(
+                      onTap: editMode ? onEditLocations : null,
+                      child: Text(
+                        locations,
+                        style: GoogleFonts.dmSans(
+                          fontSize: 10,
+                          color: Colors.white.withValues(alpha: 0.3),
+                          letterSpacing: 2,
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    // Social links
+                    Row(
+                      children: [
+                        _FooterLink(
+                            label: link1, editMode: editMode, onEdit: onEditLink1),
+                        const SizedBox(width: 24),
+                        _FooterLink(
+                            label: link2, editMode: editMode, onEdit: onEditLink2),
+                      ],
+                    ),
+                  ],
+                )
+              : Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Opacity(
+                          opacity: 0.5,
+                          child: Image.asset(
+                            'assets/images/Therapii_image.png',
+                            width: 20,
+                            height: 20,
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: editMode ? onEditBrand : null,
+                          child: Text(
+                            brand,
+                            style: GoogleFonts.playfairDisplay(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white.withValues(alpha: 0.5),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _FooterLink(
+                            label: link1, editMode: editMode, onEdit: onEditLink1),
+                        const SizedBox(width: 24),
+                        _FooterLink(
+                            label: link2, editMode: editMode, onEdit: onEditLink2),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
                     GestureDetector(
-                      onTap: editMode ? onEditBrand : null,
+                      onTap: editMode ? onEditCopyright : null,
                       child: Text(
-                        brand,
-                        style: GoogleFonts.playfairDisplay(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.white.withValues(alpha: 0.5),
+                        copyright,
+                        style: GoogleFonts.dmSans(
+                          fontSize: 10,
+                          color: Colors.white.withValues(alpha: 0.3),
+                          letterSpacing: 2,
                         ),
                       ),
                     ),
                   ],
                 ),
-                // Copyright
-                GestureDetector(
-                  onTap: editMode ? onEditLocations : null,
-                  child: Text(
-                    locations,
-                    style: GoogleFonts.dmSans(
-                      fontSize: 10,
-                      color: Colors.white.withValues(alpha: 0.3),
-                      letterSpacing: 2,
-                    ),
-                  ),
+          const SizedBox(height: 48),
+          Container(
+            padding: const EdgeInsets.only(top: 24),
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.1),
                 ),
-                // Social links
-                Row(
-                  children: [
-                    _FooterLink(
-                        label: link1, editMode: editMode, onEdit: onEditLink1),
-                    const SizedBox(width: 24),
-                    _FooterLink(
-                        label: link2, editMode: editMode, onEdit: onEditLink2),
-                  ],
-                ),
-              ],
-            )
-          : Column(
+              ),
+            ),
+            child: Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 32,
+              runSpacing: 16,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Opacity(
-                      opacity: 0.5,
-                      child: Image.asset(
-                        'assets/images/Therapii_image.png',
-                        width: 20,
-                        height: 20,
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: editMode ? onEditBrand : null,
-                      child: Text(
-                        brand,
-                        style: GoogleFonts.playfairDisplay(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.white.withValues(alpha: 0.5),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _FooterLink(
-                        label: link1, editMode: editMode, onEdit: onEditLink1),
-                    const SizedBox(width: 24),
-                    _FooterLink(
-                        label: link2, editMode: editMode, onEdit: onEditLink2),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                GestureDetector(
-                  onTap: editMode ? onEditCopyright : null,
-                  child: Text(
-                    copyright,
-                    style: GoogleFonts.dmSans(
-                      fontSize: 10,
-                      color: Colors.white.withValues(alpha: 0.3),
-                      letterSpacing: 2,
-                    ),
-                  ),
-                ),
+                _FooterLink(label: 'Terms of Use', editMode: false),
+                _FooterLink(label: 'Privacy Policy', editMode: false),
+                _FooterLink(label: 'Cookie Policy', editMode: false),
+                _FooterLink(label: 'Contact Us', editMode: false),
               ],
             ),
+          ),
+        ],
+      ),
     );
   }
 }

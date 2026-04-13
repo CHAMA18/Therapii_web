@@ -867,11 +867,32 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
         body: _buildContent(context),
         floatingActionButton: FloatingActionButton(
           onPressed: () {
-            showModalBottomSheet(
+            showDialog(
               context: context,
-              isScrollControlled: true,
-              backgroundColor: Colors.transparent,
-              builder: (context) => const SupportChatPage(),
+              barrierColor: Colors.transparent,
+              builder: (context) {
+                final size = MediaQuery.of(context).size;
+                return Dialog(
+                  alignment: Alignment.bottomRight,
+                  insetPadding: EdgeInsets.only(
+                    right: 24, 
+                    bottom: 80, 
+                    top: 24, 
+                    left: size.width > 600 ? size.width - 400 - 24 : 24
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  elevation: 8,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: 400,
+                      maxHeight: size.height * 0.8,
+                    ),
+                    child: const SupportChatPage(),
+                  ),
+                );
+              },
             );
           },
           backgroundColor: Theme.of(context).colorScheme.primary,

@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:therapii/auth/firebase_auth_manager.dart';
 import 'package:therapii/pages/admin_dashboard_page.dart';
@@ -10,70 +11,47 @@ import 'package:therapii/pages/edit_profile_page.dart';
 import 'package:therapii/pages/journal_admin_studio_page.dart';
 import 'package:therapii/pages/journal_portal_page.dart';
 import 'package:therapii/pages/landing_page.dart';
+import 'package:therapii/theme.dart';
 import 'package:therapii/theme_mode_controller.dart';
 import 'package:therapii/utils/admin_access.dart';
 
-/// Shows an elegant settings popup modal.
-/// Call this function instead of using Scaffold.endDrawer
+/// Opens the full-page settings screen.
+/// Kept named `showSettingsPopup` for backward compatibility.
 Future<void> showSettingsPopup(BuildContext context, {bool hideBilling = false}) async {
-  await showGeneralDialog(
-    context: context,
-    barrierDismissible: true,
-    barrierLabel: 'Settings',
-    barrierColor: Colors.black54,
-    transitionDuration: const Duration(milliseconds: 320),
-    pageBuilder: (ctx, animation, secondaryAnimation) =>
-        _SettingsPopupContent(hideBilling: hideBilling),
-    transitionBuilder: (ctx, animation, secondaryAnimation, child) {
-      final curved =
-          CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
-      return SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0, 0.08),
-          end: Offset.zero,
-        ).animate(curved),
-        child: FadeTransition(opacity: curved, child: child),
-      );
-    },
+  await Navigator.of(context).push(
+    PageRouteBuilder(
+      pageBuilder: (context, animation, secondaryAnimation) =>
+          CommonSettingsPage(hideBilling: hideBilling),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        return FadeTransition(
+          opacity: animation,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, 0.05),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutCubic,
+            )),
+            child: child,
+          ),
+        );
+      },
+      transitionDuration: const Duration(milliseconds: 300),
+    ),
   );
 }
 
-Route<void> _buildWorkspaceSwitchRoute(Widget page) {
-  return PageRouteBuilder<void>(
-    transitionDuration: const Duration(milliseconds: 320),
-    reverseTransitionDuration: const Duration(milliseconds: 220),
-    pageBuilder: (context, animation, secondaryAnimation) => page,
-    transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      final curved = CurvedAnimation(
-        parent: animation,
-        curve: Curves.easeOutCubic,
-        reverseCurve: Curves.easeInCubic,
-      );
-
-      return FadeTransition(
-        opacity: Tween<double>(begin: 0.58, end: 1).animate(curved),
-        child: SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0.028, 0),
-            end: Offset.zero,
-          ).animate(curved),
-          child: child,
-        ),
-      );
-    },
-  );
-}
-
-class _SettingsPopupContent extends StatefulWidget {
+class CommonSettingsPage extends StatefulWidget {
   final bool hideBilling;
 
-  const _SettingsPopupContent({this.hideBilling = false});
+  const CommonSettingsPage({super.key, this.hideBilling = false});
 
   @override
-  State<_SettingsPopupContent> createState() => _SettingsPopupContentState();
+  State<CommonSettingsPage> createState() => _CommonSettingsPageState();
 }
 
-class _SettingsPopupContentState extends State<_SettingsPopupContent> {
+class _CommonSettingsPageState extends State<CommonSettingsPage> {
   bool _isLoadingSubscription = true;
   bool _isPaidUser = false;
   String _planName = 'Free Plan';
@@ -126,13 +104,15 @@ class _SettingsPopupContentState extends State<_SettingsPopupContent> {
     if (_isSwitchingJournal) return;
 
     setState(() => _isSwitchingJournal = true);
-    final navigator = Navigator.of(context, rootNavigator: true);
     final destination =
         _isAdmin() ? const JournalAdminStudioPage() : const JournalPortalPage();
 
-    navigator.pop();
     await Future<void>.delayed(const Duration(milliseconds: 40));
-    await navigator.pushReplacement(_buildWorkspaceSwitchRoute(destination));
+    if (mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => destination),
+      );
+    }
   }
 
   String _displayName() {
@@ -140,6 +120,11 @@ class _SettingsPopupContentState extends State<_SettingsPopupContent> {
     final email = user?.email ?? '';
     final local = email.contains('@') ? email.split('@').first : email;
     return local.isNotEmpty ? local : 'Guest';
+  }
+
+  String _email() {
+    final user = FirebaseAuthManager().currentUser;
+    return user?.email ?? '';
   }
 
   String _initials(String name) {
@@ -158,231 +143,284 @@ class _SettingsPopupContentState extends State<_SettingsPopupContent> {
     final scheme = theme.colorScheme;
     final isAdmin = _isAdmin();
     final name = _displayName();
+    final email = _email();
     final initials = _initials(name);
 
     return AnimatedBuilder(
       animation: themeModeController,
       builder: (context, _) {
         final isDark = _isDarkMode(context);
-        return Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+        return Scaffold(
+          backgroundColor: scheme.surfaceContainerHighest.withValues(alpha: 0.3),
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            centerTitle: true,
+            title: Text(
+              'Settings',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.5,
+              ),
+            ),
+          ),
+          body: Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420, maxHeight: 680),
-              child: Material(
-                color: Colors.transparent,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(28),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: scheme.surface.withValues(alpha: 0.92),
-                        borderRadius: BorderRadius.circular(28),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.12),
-                            blurRadius: 40,
-                            offset: const Offset(0, 22),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _PopupHeader(
-                              name: name,
-                              initials: initials,
-                              onClose: () => Navigator.pop(context)),
-                          Flexible(
-                            child: SingleChildScrollView(
-                              padding:
-                                  const EdgeInsets.fromLTRB(16, 14, 16, 20),
+              constraints: const BoxConstraints(maxWidth: 800),
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 64),
+                children: [
+                  // Breathtaking User Profile Header
+                  Hero(
+                    tag: 'settings_profile_header',
+                    child: Material(
+                      color: Colors.transparent,
+                      child: Container(
+                        padding: const EdgeInsets.all(28),
+                        decoration: BoxDecoration(
+                          gradient: AppGradients.primaryFor(theme.brightness),
+                          borderRadius: BorderRadius.circular(32),
+                          boxShadow: [
+                            BoxShadow(
+                              color: scheme.primary.withValues(alpha: 0.25),
+                              blurRadius: 24,
+                              offset: const Offset(0, 12),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 86,
+                              height: 86,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: scheme.onPrimary.withValues(alpha: 0.15),
+                                border: Border.all(
+                                    color: scheme.onPrimary.withValues(alpha: 0.3),
+                                    width: 2),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  initials,
+                                  style: theme.textTheme.headlineLarge?.copyWith(
+                                    color: scheme.onPrimary,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 24),
+                            Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  if (!widget.hideBilling) ...[
-                                    _SettingsCard(
-                                      icon: _isPaidUser
-                                          ? Icons.workspace_premium_rounded
-                                          : Icons.star_border_rounded,
-                                      iconColor: _isPaidUser
-                                          ? scheme.primary
-                                          : const Color(0xFF38BDF8),
-                                      title: _isLoadingSubscription
-                                          ? 'Loading...'
-                                          : _planName,
-                                      subtitle: _isLoadingSubscription
-                                          ? 'Checking subscription'
-                                          : (_isPaidUser
-                                              ? 'Premium member'
-                                              : 'Tap to upgrade'),
-                                      isLoading: _isLoadingSubscription,
-                                      onTap: () {
-                                        Navigator.pop(context);
-                                        Navigator.of(context).push(
-                                          MaterialPageRoute(
-                                              builder: (_) =>
-                                                  const BillingPage()),
-                                        );
-                                      },
-                                    ),
-                                    const SizedBox(height: 12),
-                                  ],
-                                  if (isAdmin) ...[
-                                    _SettingsCard(
-                                      icon: Icons.space_dashboard_outlined,
-                                      iconColor: scheme.secondary,
-                                      title: 'Admin Dashboard',
-                                      subtitle:
-                                          'Approve therapists & view platform health',
-                                      onTap: () {
-                                        Navigator.pop(context);
-                                        Navigator.of(context).push(
-                                          MaterialPageRoute(
-                                              builder: (_) =>
-                                                  const AdminDashboardPage()),
-                                        );
-                                      },
-                                    ),
-                                    const SizedBox(height: 10),
-                                    _SettingsCard(
-                                      icon: Icons.admin_panel_settings,
-                                      iconColor: scheme.secondary,
-                                      title: 'Admin Settings',
-                                      subtitle: 'Configure OpenAI & SendGrid',
-                                      onTap: () {
-                                        Navigator.pop(context);
-                                        Navigator.of(context).push(
-                                          MaterialPageRoute(
-                                              builder: (_) =>
-                                                  const AdminSettingsPage()),
-                                        );
-                                      },
-                                    ),
-                                    const SizedBox(height: 12),
-                                  ],
-                                  _SettingsCard(
-                                    icon: Icons.manage_accounts_rounded,
-                                    iconColor: scheme.primary,
-                                    title: 'Edit Profile',
-                                    subtitle: 'Change email or password',
-                                    onTap: () {
-                                      Navigator.pop(context);
-                                      Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                            builder: (_) =>
-                                                const EditProfilePage()),
-                                      );
-                                    },
-                                  ),
-                                  const SizedBox(height: 18),
                                   Text(
-                                    'WORKSPACES',
-                                    style: theme.textTheme.labelSmall?.copyWith(
-                                      color: scheme.onSurface
-                                          .withValues(alpha: 0.6),
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 1.1,
+                                    name,
+                                    style: theme.textTheme.headlineMedium?.copyWith(
+                                      color: scheme.onPrimary,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: -0.5,
                                     ),
                                   ),
-                                  const SizedBox(height: 8),
-                                  _WorkspaceSwitchCard(
-                                    isAdmin: isAdmin,
-                                    isLoading: _isSwitchingJournal,
-                                    onTap: _openJournalWorkspace,
-                                  ),
-                                  const SizedBox(height: 18),
+                                  const SizedBox(height: 6),
                                   Text(
-                                    'LEGAL',
-                                    style: theme.textTheme.labelSmall?.copyWith(
-                                      color: scheme.onSurface
-                                          .withValues(alpha: 0.6),
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 1.1,
+                                    email,
+                                    style: theme.textTheme.titleMedium?.copyWith(
+                                      color: scheme.onPrimary.withValues(alpha: 0.8),
+                                      fontWeight: FontWeight.w500,
                                     ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: _MiniActionCard(
-                                          icon: Icons.privacy_tip_outlined,
-                                          label: 'Privacy Policy',
-                                          onTap: () {
-                                            Navigator.pop(context);
-                                            Navigator.of(context).push(
-                                              MaterialPageRoute(
-                                                builder: (_) =>
-                                                    const _StaticContentPage(
-                                                  title: 'Privacy Policy',
-                                                  paragraphs:
-                                                      _privacyPolicyParagraphs,
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: _MiniActionCard(
-                                          icon: Icons.description_outlined,
-                                          label: 'Terms',
-                                          onTap: () {
-                                            Navigator.pop(context);
-                                            Navigator.of(context).push(
-                                              MaterialPageRoute(
-                                                builder: (_) =>
-                                                    const _StaticContentPage(
-                                                  title: 'Terms and Conditions',
-                                                  paragraphs:
-                                                      _termsAndConditionsParagraphs,
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 18),
-                                  Text(
-                                    'APPEARANCE',
-                                    style: theme.textTheme.labelSmall?.copyWith(
-                                      color: scheme.onSurface
-                                          .withValues(alpha: 0.6),
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 1.1,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  _DarkModeToggleCard(isDark: isDark),
-                                  const SizedBox(height: 16),
-                                  _LogoutButton(
-                                    onTap: () async {
-                                      Navigator.pop(context);
-                                      await FirebaseAuthManager().signOut();
-                                      if (context.mounted) {
-                                        Navigator.of(context)
-                                            .pushAndRemoveUntil(
-                                          MaterialPageRoute(
-                                              builder: (_) =>
-                                                  const LandingPage()),
-                                          (route) => false,
-                                        );
-                                      }
-                                    },
                                   ),
                                 ],
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
+                  const SizedBox(height: 32),
+
+                  // Account Section
+                  _SettingsSection(
+                    title: 'Account',
+                    children: [
+                      _SettingsRow(
+                        icon: Icons.manage_accounts_rounded,
+                        iconColor: scheme.primary,
+                        title: 'Edit Profile',
+                        subtitle: 'Change email or password',
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                                builder: (_) => const EditProfilePage()),
+                          );
+                        },
+                      ),
+                      if (!widget.hideBilling)
+                        _SettingsRow(
+                          icon: _isPaidUser
+                              ? Icons.workspace_premium_rounded
+                              : Icons.star_border_rounded,
+                          iconColor: _isPaidUser
+                              ? scheme.primary
+                              : const Color(0xFF38BDF8),
+                          title: _isLoadingSubscription ? 'Loading...' : _planName,
+                          subtitle: _isLoadingSubscription
+                              ? 'Checking subscription'
+                              : (_isPaidUser
+                                  ? 'Premium member'
+                                  : 'Tap to upgrade'),
+                          isLoading: _isLoadingSubscription,
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                  builder: (_) => const BillingPage()),
+                            );
+                          },
+                        ),
+                    ],
+                  ),
+
+                  // Admin Section
+                  if (isAdmin)
+                    _SettingsSection(
+                      title: 'Administration',
+                      children: [
+                        _SettingsRow(
+                          icon: Icons.space_dashboard_outlined,
+                          iconColor: scheme.secondary,
+                          title: 'Admin Dashboard',
+                          subtitle: 'Approve therapists & view platform health',
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                  builder: (_) => const AdminDashboardPage()),
+                            );
+                          },
+                        ),
+                        _SettingsRow(
+                          icon: Icons.admin_panel_settings,
+                          iconColor: scheme.secondary,
+                          title: 'System Settings',
+                          subtitle: 'Configure OpenAI & SendGrid',
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                  builder: (_) => const AdminSettingsPage()),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+
+                  // Workspaces Section
+                  _SettingsSection(
+                    title: 'Workspaces',
+                    children: [
+                      _SettingsRow(
+                        icon: isAdmin
+                            ? Icons.auto_stories_rounded
+                            : Icons.menu_book_rounded,
+                        iconColor: const Color(0xFF8B5CF6), // Purple accent
+                        title: isAdmin
+                            ? 'Switch to Journal Studio'
+                            : 'Switch to Journal',
+                        subtitle: isAdmin
+                            ? 'Open the publishing studio & analytics'
+                            : 'Open your journal workspace for reflections',
+                        isLoading: _isSwitchingJournal,
+                        onTap: _openJournalWorkspace,
+                      ),
+                    ],
+                  ),
+
+                  // Appearance Section
+                  _SettingsSection(
+                    title: 'Appearance',
+                    children: [
+                      _SettingsRow(
+                        icon: isDark
+                            ? Icons.dark_mode_rounded
+                            : Icons.light_mode_rounded,
+                        iconColor: isDark ? scheme.primary : Colors.amber.shade700,
+                        title: 'Dark Mode',
+                        subtitle: isDark ? 'Enabled' : 'Disabled',
+                        trailing: CupertinoSwitch(
+                          value: isDark,
+                          activeColor: scheme.primary,
+                          onChanged: (value) {
+                            themeModeController.setMode(
+                                value ? ThemeMode.dark : ThemeMode.light);
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  // Legal Section
+                  _SettingsSection(
+                    title: 'Legal',
+                    children: [
+                      _SettingsRow(
+                        icon: Icons.privacy_tip_outlined,
+                        iconColor: scheme.tertiary,
+                        title: 'Privacy Policy',
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const _StaticContentPage(
+                                title: 'Privacy Policy',
+                                paragraphs: _privacyPolicyParagraphs,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      _SettingsRow(
+                        icon: Icons.description_outlined,
+                        iconColor: scheme.tertiary,
+                        title: 'Terms of Service',
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const _StaticContentPage(
+                                title: 'Terms and Conditions',
+                                paragraphs: _termsAndConditionsParagraphs,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Danger Zone
+                  _SettingsSection(
+                    title: 'Account Actions',
+                    children: [
+                      _SettingsRow(
+                        icon: Icons.logout_rounded,
+                        iconColor: scheme.error,
+                        title: 'Sign Out',
+                        titleColor: scheme.error,
+                        onTap: () async {
+                          await FirebaseAuthManager().signOut();
+                          if (context.mounted) {
+                            Navigator.of(context).pushAndRemoveUntil(
+                              MaterialPageRoute(
+                                  builder: (_) => const LandingPage()),
+                              (route) => false,
+                            );
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),
@@ -392,115 +430,95 @@ class _SettingsPopupContentState extends State<_SettingsPopupContent> {
   }
 }
 
-/// Popup Header with gradient and user avatar
-class _PopupHeader extends StatelessWidget {
-  final String name;
-  final String initials;
-  final VoidCallback onClose;
+class _SettingsSection extends StatelessWidget {
+  final String title;
+  final List<Widget> children;
 
-  const _PopupHeader(
-      {required this.name, required this.initials, required this.onClose});
+  const _SettingsSection({required this.title, required this.children});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 18, 12, 18),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            scheme.primary,
-            Color.lerp(scheme.primary, scheme.primaryContainer, 0.5) ??
-                scheme.primaryContainer,
-          ],
-        ),
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(32),
-          topRight: Radius.circular(32),
-        ),
-      ),
-      child: Row(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: scheme.onPrimary.withValues(alpha: 0.15),
-              border: Border.all(
-                  color: scheme.onPrimary.withValues(alpha: 0.25), width: 2),
-            ),
-            child: Center(
-              child: Text(
-                initials,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: scheme.onPrimary,
-                  fontWeight: FontWeight.w800,
-                ),
+          Padding(
+            padding: const EdgeInsets.only(left: 16, bottom: 10),
+            child: Text(
+              title.toUpperCase(),
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                letterSpacing: 1.5,
+                fontWeight: FontWeight.w800,
               ),
             ),
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.settings_rounded,
-                        size: 18, color: scheme.onPrimary),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Settings',
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        color: scheme.onPrimary,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Personalize your experience',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: scheme.onPrimary.withValues(alpha: 0.85),
-                  ),
+          Container(
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: theme.colorScheme.outline.withValues(alpha: 0.1),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: theme.colorScheme.shadow.withValues(alpha: 0.03),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
-          ),
-          IconButton(
-            onPressed: onClose,
-            icon: Icon(Icons.close_rounded, color: scheme.onPrimary),
-            style: IconButton.styleFrom(
-              backgroundColor: scheme.onPrimary.withValues(alpha: 0.12),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: Column(
+                children: _buildSeparatedChildren(theme),
+              ),
             ),
           ),
         ],
       ),
     );
   }
+
+  List<Widget> _buildSeparatedChildren(ThemeData theme) {
+    List<Widget> separated = [];
+    for (int i = 0; i < children.length; i++) {
+      separated.add(children[i]);
+      if (i < children.length - 1) {
+        separated.add(
+          Divider(
+            height: 1,
+            thickness: 1,
+            indent: 64, // Aligns with text start
+            color: theme.colorScheme.outline.withValues(alpha: 0.08),
+          ),
+        );
+      }
+    }
+    return separated;
+  }
 }
 
-/// Settings card with icon, title, subtitle and tap action
-class _SettingsCard extends StatelessWidget {
+class _SettingsRow extends StatelessWidget {
   final IconData icon;
   final Color iconColor;
   final String title;
-  final String subtitle;
-  final VoidCallback onTap;
+  final String? subtitle;
+  final Color? titleColor;
+  final Widget? trailing;
+  final VoidCallback? onTap;
   final bool isLoading;
 
-  const _SettingsCard({
+  const _SettingsRow({
     required this.icon,
     required this.iconColor,
     required this.title,
-    required this.subtitle,
-    required this.onTap,
+    this.subtitle,
+    this.titleColor,
+    this.trailing,
+    this.onTap,
     this.isLoading = false,
   });
 
@@ -513,44 +531,30 @@ class _SettingsCard extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        hoverColor: scheme.onSurface.withValues(alpha: 0.04),
+        highlightColor: scheme.onSurface.withValues(alpha: 0.05),
         splashColor: scheme.onSurface.withValues(alpha: 0.08),
-        highlightColor: scheme.onSurface.withValues(alpha: 0.06),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            color: scheme.surface,
-            border: Border.all(color: scheme.outline.withValues(alpha: 0.1)),
-            boxShadow: [
-              BoxShadow(
-                color: iconColor.withValues(alpha: 0.08),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           child: Row(
             children: [
               Container(
-                width: 46,
-                height: 46,
+                width: 42,
+                height: 42,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14),
                   color: iconColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: isLoading
                     ? Padding(
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(10),
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                           color: iconColor,
                         ),
                       )
-                    : Icon(icon, color: iconColor, size: 24),
+                    : Icon(icon, color: iconColor, size: 22),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -559,408 +563,29 @@ class _SettingsCard extends StatelessWidget {
                       title,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
+                        color: titleColor ?? scheme.onSurface,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: scheme.onSurface.withValues(alpha: 0.6),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle!,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: scheme.onSurface.withValues(alpha: 0.6),
+                        ),
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    ]
                   ],
                 ),
               ),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: scheme.onSurface.withValues(alpha: 0.35),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _WorkspaceSwitchCard extends StatefulWidget {
-  final bool isAdmin;
-  final bool isLoading;
-  final Future<void> Function() onTap;
-
-  const _WorkspaceSwitchCard({
-    required this.isAdmin,
-    required this.isLoading,
-    required this.onTap,
-  });
-
-  @override
-  State<_WorkspaceSwitchCard> createState() => _WorkspaceSwitchCardState();
-}
-
-class _WorkspaceSwitchCardState extends State<_WorkspaceSwitchCard> {
-  bool _hovered = false;
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
-    final elevated = _hovered || _pressed || widget.isLoading;
-
-    final shellColor =
-        isDark ? const Color(0xFF0F1D38) : const Color(0xFFEEF4FF);
-    final borderColor =
-        isDark ? const Color(0xFF28426F) : const Color(0xFFC9DAFF);
-    final badgeColor =
-        isDark ? const Color(0xFF18335B) : Colors.white.withValues(alpha: 0.86);
-    final badgeBorder =
-        isDark ? const Color(0xFF335486) : const Color(0xFFD6E3FF);
-    final iconColor = scheme.primary;
-    final title =
-        widget.isAdmin ? 'Switch to Journal Studio' : 'Switch to Journal';
-    final subtitle = widget.isAdmin
-        ? 'Open the publishing studio, analytics, and editorial controls.'
-        : 'Open your journal workspace for reflections, favorites, and reading flow.';
-    final footer = widget.isLoading
-        ? 'Opening journal workspace...'
-        : 'Open journal session';
-
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      child: AnimatedScale(
-        scale: _pressed ? 0.987 : 1,
-        duration: const Duration(milliseconds: 160),
-        curve: Curves.easeOutCubic,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOutCubic,
-          decoration: BoxDecoration(
-            color: shellColor,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: borderColor, width: 1.15),
-            boxShadow: [
-              BoxShadow(
-                color: scheme.primary.withValues(
-                    alpha: elevated
-                        ? (isDark ? 0.22 : 0.14)
-                        : (isDark ? 0.12 : 0.08)),
-                blurRadius: elevated ? 26 : 18,
-                offset: Offset(0, elevated ? 16 : 10),
-                spreadRadius: elevated ? 0 : -4,
-              ),
-            ],
-          ),
-          child: Material(
-            color: Colors.transparent,
-            borderRadius: BorderRadius.circular(24),
-            child: InkWell(
-              onTap: widget.onTap,
-              borderRadius: BorderRadius.circular(24),
-              splashColor: scheme.primary.withValues(alpha: 0.12),
-              highlightColor: Colors.transparent,
-              onHighlightChanged: (value) => setState(() => _pressed = value),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: badgeColor,
-                        borderRadius: BorderRadius.circular(999),
-                        border: Border.all(color: badgeBorder),
-                      ),
-                      child: Text(
-                        'JOURNAL SESSION',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: scheme.primary,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 0.7,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
-                            color: iconColor.withValues(
-                                alpha: isDark ? 0.2 : 0.14),
-                          ),
-                          child: Icon(
-                            widget.isAdmin
-                                ? Icons.auto_stories_rounded
-                                : Icons.menu_book_rounded,
-                            color: iconColor,
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                title,
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w900,
-                                  height: 1.05,
-                                  letterSpacing: -0.2,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                subtitle,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color:
-                                      scheme.onSurface.withValues(alpha: 0.68),
-                                  height: 1.42,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 11),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(18),
-                        color: scheme.surface
-                            .withValues(alpha: isDark ? 0.18 : 0.7),
-                        border: Border.all(
-                            color: scheme.outline.withValues(alpha: 0.1)),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              footer,
-                              style: theme.textTheme.labelLarge?.copyWith(
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 180),
-                            child: widget.isLoading
-                                ? SizedBox(
-                                    key: const ValueKey('spinner'),
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2.2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                          scheme.primary),
-                                    ),
-                                  )
-                                : Icon(
-                                    Icons.arrow_forward_rounded,
-                                    key: const ValueKey('arrow'),
-                                    color: scheme.primary,
-                                    size: 18,
-                                  ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+              if (trailing != null)
+                trailing!
+              else if (onTap != null)
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: scheme.onSurface.withValues(alpha: 0.3),
+                  size: 24,
                 ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Mini action card for legal links
-class _MiniActionCard extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  const _MiniActionCard(
-      {required this.icon, required this.label, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        hoverColor: scheme.onSurface.withValues(alpha: 0.04),
-        splashColor: scheme.onSurface.withValues(alpha: 0.08),
-        highlightColor: scheme.onSurface.withValues(alpha: 0.06),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
-            border: Border.all(color: scheme.outline.withValues(alpha: 0.08)),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 18, color: scheme.primary),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  label,
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: scheme.onSurface,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Dark mode toggle card with animated switch
-class _DarkModeToggleCard extends StatelessWidget {
-  final bool isDark;
-
-  const _DarkModeToggleCard({required this.isDark});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        color: scheme.surface,
-        border: Border.all(color: scheme.outline.withValues(alpha: 0.1)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              gradient: LinearGradient(
-                colors: isDark
-                    ? [
-                        scheme.primary.withValues(alpha: 0.2),
-                        scheme.secondary.withValues(alpha: 0.15)
-                      ]
-                    : [
-                        Colors.amber.withValues(alpha: 0.2),
-                        Colors.orange.withValues(alpha: 0.15)
-                      ],
-              ),
-            ),
-            child: Icon(
-              isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-              color: isDark ? scheme.primary : Colors.amber.shade700,
-              size: 22,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Dark Mode',
-                  style: theme.textTheme.titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w700),
-                ),
-                Text(
-                  isDark ? 'Enabled' : 'Disabled',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: scheme.onSurface.withValues(alpha: 0.6),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Switch.adaptive(
-            value: isDark,
-            onChanged: (value) {
-              themeModeController
-                  .setMode(value ? ThemeMode.dark : ThemeMode.light);
-            },
-            activeColor: scheme.primary,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Logout button with destructive styling
-class _LogoutButton extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const _LogoutButton({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        hoverColor: scheme.error.withValues(alpha: 0.12),
-        splashColor: scheme.error.withValues(alpha: 0.15),
-        highlightColor: scheme.error.withValues(alpha: 0.1),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            color: scheme.error.withValues(alpha: 0.08),
-            border: Border.all(color: scheme.error.withValues(alpha: 0.2)),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.logout_rounded, color: scheme.error, size: 20),
-              const SizedBox(width: 10),
-              Text(
-                'Sign Out',
-                style: theme.textTheme.titleSmall?.copyWith(
-                  color: scheme.error,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
             ],
           ),
         ),
@@ -976,7 +601,6 @@ class CommonSettingsDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Return an empty drawer - actual popup should be triggered via showSettingsPopup
     return const Drawer(child: SizedBox.shrink());
   }
 }
