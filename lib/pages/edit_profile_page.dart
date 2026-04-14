@@ -306,9 +306,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
         physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
         child: Align(
           alignment: Alignment.topCenter,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 600),
+          child: SizedBox(
+            width: double.infinity,
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
             _Header(
               emailMasked: emailMasked,
@@ -562,6 +563,7 @@ class _Header extends StatelessWidget {
     final showSpinner = isLoading && imageProvider == null && !hasBytes;
 
     return Container(
+      width: double.infinity,
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,

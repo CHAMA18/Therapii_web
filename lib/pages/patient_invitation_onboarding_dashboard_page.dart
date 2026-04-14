@@ -423,67 +423,6 @@ class _PatientInvitationOnboardingDashboardPageState extends State<PatientInvita
     );
   }
 
-  Widget _buildListenSection(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: scheme.outline.withOpacity(0.08)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 14, offset: const Offset(0, 10))],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: scheme.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(Icons.headphones, color: scheme.primary),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Listen in', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Review AI conversation transcripts so you and your therapist stay aligned.',
-                      style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurface.withOpacity(0.7)),
-                    ),
-                  ],
-                ),
-              ),
-              FilledButton.tonalIcon(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Listening micro-summaries will appear once conversations begin.')),
-                  );
-                },
-                icon: const Icon(Icons.play_circle_outline),
-                label: const Text('Open listen view'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Text(
-            'New summaries and audio recaps from your AI sessions will live here. You will be notified once they are ready.',
-            style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurface.withOpacity(0.7), height: 1.5),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -535,8 +474,6 @@ class _PatientInvitationOnboardingDashboardPageState extends State<PatientInvita
                             _buildQuickActions(context),
                             const SizedBox(height: 24),
                             _buildSummarySection(context),
-                            const SizedBox(height: 24),
-                            _buildListenSection(context),
                             const SizedBox(height: 36),
                           ],
                         ),

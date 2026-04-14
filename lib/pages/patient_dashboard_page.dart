@@ -12,11 +12,11 @@ import 'package:therapii/pages/billing_page.dart';
 import 'package:therapii/pages/patient_chat_page.dart';
 import 'package:therapii/pages/patient_voice_conversation_page.dart';
 import 'package:therapii/pages/support_chat_page.dart';
-import 'package:therapii/pages/support_center_page.dart';
 import 'package:therapii/services/app_page_state_service.dart';
 import 'package:therapii/services/chat_service.dart';
 import 'package:therapii/services/invitation_service.dart';
 import 'package:therapii/services/user_service.dart';
+import 'package:therapii/services/daily_thought_service.dart';
 import 'package:therapii/widgets/common_settings_drawer.dart';
 
 class PatientDashboardPage extends StatefulWidget {
@@ -40,7 +40,10 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
   final UserService _userService = UserService();
   final InvitationService _invitationService = InvitationService();
   final ChatService _chatService = ChatService();
-  final TextEditingController _aiNotesController = TextEditingController();
+  final DailyThoughtService _dailyThoughtService = DailyThoughtService();
+  late final AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
   app_user.User? _patient;
   List<TherapistProfile> _therapistProfiles = [];
@@ -48,6 +51,7 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
   bool _loading = true;
   bool _processingCode = false;
   String? _error;
+  String _dailyThought = '"The only way out is through."';
   bool _showDailyThought = true;
 
   @override
@@ -58,7 +62,7 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
 
   @override
   void dispose() {
-    _aiNotesController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
@@ -86,10 +90,6 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
 
       setState(() {
         _patient = patient;
-        _aiNotesController.text =
-            (patient.patientOnboardingData?['anything_else'] as String?)
-                    ?.trim() ??
-                '';
       });
 
       await _loadAllTherapists(patient.id);
@@ -105,6 +105,11 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
       }
 
       setState(() => _loading = false);
+
+      final thought = await _dailyThoughtService.getDailyThought();
+      if (mounted) {
+        setState(() => _dailyThought = thought);
+      }
     } catch (error) {
       if (!mounted) return;
       setState(() {
@@ -456,208 +461,6 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
     );
   }
 
-  Future<void> _showAiNotesSheet() async {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
-
-    if (_patient == null) {
-      _showTherapistRequiredSnack();
-      return;
-    }
-
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) {
-        return Padding(
-          padding: MediaQuery.of(sheetContext).viewInsets,
-          child: Container(
-            margin: const EdgeInsets.all(16),
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF0F172A) : Colors.white,
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(
-                color:
-                    isDark ? const Color(0xFF1F2937) : const Color(0xFFE2E8F0),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.15),
-                  blurRadius: 30,
-                  offset: const Offset(0, 18),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: colorScheme.primary.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Icon(Icons.edit_note_rounded,
-                          color: colorScheme.primary),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Add training notes for your AI',
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: colorScheme.onSurface,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.of(sheetContext).pop(),
-                      icon: Icon(Icons.close_rounded,
-                          color: colorScheme.onSurface.withValues(alpha: 0.5)),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'These notes help your AI companion respond in a way that feels more personal and supportive.',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurface.withValues(alpha: 0.6),
-                    height: 1.4,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? const Color(0xFF111827)
-                        : const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(
-                      color: isDark
-                          ? const Color(0xFF1F2937)
-                          : const Color(0xFFE2E8F0),
-                    ),
-                  ),
-                  child: TextField(
-                    controller: _aiNotesController,
-                    maxLines: 6,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: colorScheme.onSurface,
-                    ),
-                    decoration: InputDecoration(
-                      hintText:
-                          'Example: I respond best to warm, encouraging language. Remind me to pause and breathe.',
-                      hintStyle: theme.textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurface.withValues(alpha: 0.4),
-                      ),
-                      border: InputBorder.none,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () {
-                          _aiNotesController.clear();
-                        },
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14)),
-                          side: BorderSide(
-                              color:
-                                  colorScheme.primary.withValues(alpha: 0.3)),
-                        ),
-                        child: Text(
-                          'Clear',
-                          style: theme.textTheme.labelLarge?.copyWith(
-                            color: colorScheme.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          final firebaseUser =
-                              firebase_auth.FirebaseAuth.instance.currentUser;
-                          if (firebaseUser == null) {
-                            Navigator.of(sheetContext).pop();
-                            return;
-                          }
-
-                          final existing = Map<String, dynamic>.from(
-                            _patient?.patientOnboardingData ??
-                                <String, dynamic>{},
-                          );
-                          existing['anything_else'] =
-                              _aiNotesController.text.trim();
-
-                          try {
-                            await _userService.savePatientOnboardingData(
-                              userId: firebaseUser.uid,
-                              data: existing,
-                              completed:
-                                  _patient?.patientOnboardingCompleted ?? false,
-                            );
-                            if (!mounted) return;
-                            setState(() {
-                              _patient = _patient?.copyWith(
-                                  patientOnboardingData: existing);
-                            });
-                            Navigator.of(sheetContext).pop();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content:
-                                      Text('Notes saved to your AI profile.')),
-                            );
-                          } catch (error) {
-                            if (!mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content:
-                                      Text('Unable to save notes right now.')),
-                            );
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          backgroundColor: colorScheme.primary,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14)),
-                          elevation: 0,
-                        ),
-                        child: Text(
-                          'Save notes',
-                          style: theme.textTheme.labelLarge?.copyWith(
-                            color: colorScheme.onPrimary,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   void _openVoiceRecording(app_user.User therapist) {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -789,56 +592,17 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
                       onTherapistChanged: (index) =>
                           setState(() => _selectedTherapistIndex = index),
                       onTap: _openAiTherapist,
-                      onNotesTap: _showAiNotesSheet,
                       isDisabled: _therapistUser == null,
                     ),
                     const SizedBox(height: 18),
-                    if (isWide)
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _PatientMiniCard(
-                              title: 'Billing',
-                              subtitle: 'Manage subscription',
-                              icon: Icons.credit_card_rounded,
-                              onTap: () => Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                      builder: (_) => const BillingPage())),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: _PatientMiniCard(
-                              title: 'Support Center',
-                              subtitle: 'FAQs and resources',
-                              icon: Icons.help_outline_rounded,
-                              onTap: () => Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                      builder: (_) =>
-                                          const SupportCenterPage())),
-                            ),
-                          ),
-                        ],
-                      )
-                    else ...[
-                      _PatientMiniCard(
-                        title: 'Billing',
-                        subtitle: 'Manage subscription',
-                        icon: Icons.credit_card_rounded,
-                        onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                                builder: (_) => const BillingPage())),
-                      ),
-                      const SizedBox(height: 12),
-                      _PatientMiniCard(
-                        title: 'Support Center',
-                        subtitle: 'FAQs and resources',
-                        icon: Icons.help_outline_rounded,
-                        onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                                builder: (_) => const SupportCenterPage())),
-                      ),
-                    ],
+                    _PatientMiniCard(
+                      title: 'Billing',
+                      subtitle: 'Manage subscription',
+                      icon: Icons.credit_card_rounded,
+                      onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                              builder: (_) => const BillingPage())),
+                    ),
                     const SizedBox(height: 24),
                     if (_showDailyThought)
                       GestureDetector(
@@ -846,7 +610,7 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
                             _showDeleteDailyThoughtDialog(context),
                         child: _PatientThoughtCard(
                           label: 'Daily Thought',
-                          quote: '"The only way out is through."',
+                          quote: _dailyThought,
                         ),
                       ),
                     const SizedBox(height: 32),
@@ -1349,7 +1113,6 @@ class _ChatWithAiCard extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onTherapistChanged;
   final VoidCallback onTap;
-  final VoidCallback onNotesTap;
   final bool isDisabled;
 
   const _ChatWithAiCard({
@@ -1360,7 +1123,6 @@ class _ChatWithAiCard extends StatelessWidget {
     required this.selectedIndex,
     required this.onTherapistChanged,
     required this.onTap,
-    required this.onNotesTap,
     this.isDisabled = false,
   });
 
@@ -1490,6 +1252,7 @@ class _ChatWithAiCard extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
+          hoverColor: isDisabled ? null : Colors.white.withValues(alpha: 0.08),
           splashColor: isDisabled ? null : Colors.white.withValues(alpha: 0.12),
           highlightColor:
               isDisabled ? null : Colors.white.withValues(alpha: 0.06),
@@ -1501,43 +1264,11 @@ class _ChatWithAiCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    Row(
-                      children: [
-                        InkWell(
-                          onTap: isDisabled ? null : onNotesTap,
-                          borderRadius: BorderRadius.circular(14),
-                          child: Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: isDisabled
-                                  ? colorScheme.onSurface
-                                      .withValues(alpha: 0.08)
-                                  : Colors.white.withValues(alpha: 0.18),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(
-                                color: isDisabled
-                                    ? Colors.transparent
-                                    : Colors.white.withValues(alpha: 0.2),
-                              ),
-                            ),
-                            child: Icon(
-                              Icons.edit_note_rounded,
-                              size: 20,
-                              color: isDisabled
-                                  ? colorScheme.onSurface
-                                      .withValues(alpha: 0.35)
-                                  : colorScheme.onPrimary,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Icon(
-                          Icons.arrow_forward_rounded,
-                          color: isDisabled
-                              ? colorScheme.onSurface.withValues(alpha: 0.2)
-                              : colorScheme.onPrimary.withValues(alpha: 0.6),
-                        ),
-                      ],
+                    Icon(
+                      Icons.arrow_forward_rounded,
+                      color: isDisabled
+                          ? colorScheme.onSurface.withValues(alpha: 0.2)
+                          : colorScheme.onPrimary.withValues(alpha: 0.6),
                     ),
                   ],
                 ),
@@ -1580,29 +1311,29 @@ class _ChatWithAiCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                ] else ...[
+                ] else if (hasMultipleTherapists) ...[
                   const SizedBox(height: 12),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
                     children: [
                       GestureDetector(
-                        onTap: onNotesTap,
+                        onTap: () => _showTherapistSwitcher(context),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.22),
+                            color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(100),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.edit_note_rounded,
+                              Icon(Icons.swap_horiz_rounded,
                                   color: Colors.white, size: 16),
                               const SizedBox(width: 6),
                               Text(
-                                'Add training notes',
+                                'Switch therapist',
                                 style: theme.textTheme.labelSmall?.copyWith(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w600,
@@ -1612,33 +1343,6 @@ class _ChatWithAiCard extends StatelessWidget {
                           ),
                         ),
                       ),
-                      if (hasMultipleTherapists)
-                        GestureDetector(
-                          onTap: () => _showTherapistSwitcher(context),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(100),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.swap_horiz_rounded,
-                                    color: Colors.white, size: 16),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'Switch therapist',
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
                     ],
                   ),
                 ],

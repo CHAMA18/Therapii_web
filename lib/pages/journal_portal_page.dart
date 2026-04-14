@@ -644,7 +644,7 @@ class _BrandCard extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      isAdmin ? 'Admin Account' : 'Free Member',
+                      isAdmin ? 'Admin Account' : 'Member',
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 12,

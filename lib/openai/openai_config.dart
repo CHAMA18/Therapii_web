@@ -40,6 +40,7 @@ class AiCompanionClient {
     String model = 'gpt-4o',
     int maxOutputTokens = 2000,
     bool preferChatCompletions = false,
+    String? agentWorkflowId = 'wf_69dd97fad7988190849d59cdf5e8197d076f6affb8c2ec8c',
   }) async {
     final buffer = StringBuffer();
     await for (final chunk in sendChatStream(
@@ -47,6 +48,7 @@ class AiCompanionClient {
       model: model,
       maxOutputTokens: maxOutputTokens,
       preferChatCompletions: preferChatCompletions,
+      agentWorkflowId: agentWorkflowId,
     )) {
       buffer.write(chunk);
     }
@@ -92,6 +94,7 @@ class AiCompanionClient {
     String model = 'gpt-4o',
     int maxOutputTokens = 2000,
     bool preferChatCompletions = false,
+    String? agentWorkflowId = 'wf_69dd97fad7988190849d59cdf5e8197d076f6affb8c2ec8c',
   }) async* {
     if (messages.isEmpty) {
       throw AiChatException('At least one message is required to contact the AI companion.');
@@ -108,6 +111,7 @@ class AiCompanionClient {
         'messages': messages.map((m) => m.toJson()).toList(),
         'model': model,
         'maxOutputTokens': maxOutputTokens,
+        if (agentWorkflowId != null) 'agentWorkflowId': agentWorkflowId,
       });
 
       final data = result.data;

@@ -87,6 +87,7 @@ class DashboardActionCard extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
+          hoverColor: isPrimary ? Colors.white.withValues(alpha: 0.08) : null,
           splashColor: isPrimary ? Colors.white.withValues(alpha: 0.1) : colorScheme.primary.withValues(alpha: 0.05),
           highlightColor: isPrimary ? Colors.white.withValues(alpha: 0.05) : colorScheme.primary.withValues(alpha: 0.02),
           child: Padding(

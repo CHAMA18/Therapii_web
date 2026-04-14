@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:therapii/auth/firebase_auth_manager.dart';
 import 'package:therapii/pages/landing_page.dart';
-import 'package:therapii/pages/listen_page.dart';
 import 'package:therapii/pages/new_patient_info_page.dart';
 import 'package:therapii/pages/therapist_details_page.dart';
 import 'package:therapii/pages/patient_chat_page.dart';
@@ -25,8 +24,6 @@ import 'package:therapii/services/app_page_state_service.dart';
 import 'package:therapii/widgets/therapist_approval_gate.dart';
 import 'package:therapii/theme_mode_controller.dart';
 
-enum TopNavSection { patients, listen }
-
 class MyPatientsPage extends StatefulWidget {
   const MyPatientsPage({super.key});
 
@@ -35,8 +32,6 @@ class MyPatientsPage extends StatefulWidget {
 }
 
 class _MyPatientsPageState extends State<MyPatientsPage> {
-  final TopNavSection _selected = TopNavSection.patients;
-
   final _invitationService = InvitationService();
   final _userService = UserService();
   final _chatService = ChatService();
@@ -655,17 +650,6 @@ class _MyPatientsPageState extends State<MyPatientsPage> {
                                 builder: (_) => const NewPatientInfoPage()),
                           ),
                         );
-                        final listenTile = _HeroTile(
-                          gradient: false,
-                          title: 'Listen',
-                          subtitle:
-                              'AI summaries, transcripts and voice updates.',
-                          icon: Icons.graphic_eq_rounded,
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                                builder: (_) => const ListenPage()),
-                          ),
-                        );
 
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -702,18 +686,7 @@ class _MyPatientsPageState extends State<MyPatientsPage> {
                                       ],
                                     ),
                             ),
-                            if (useStackedActions) ...[
-                              inviteTile,
-                              SizedBox(height: actionGap),
-                              listenTile,
-                            ] else
-                              Row(
-                                children: [
-                                  Expanded(flex: 11, child: inviteTile),
-                                  SizedBox(width: actionGap),
-                                  Expanded(flex: 10, child: listenTile),
-                                ],
-                              ),
+                            inviteTile,
                             const SizedBox(height: 28),
                             _ActivePatientsCard(
                               isLoading: _loading,
@@ -830,95 +803,6 @@ class _TherapistAvatarChip extends StatelessWidget {
             fontWeight: FontWeight.w800,
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _TopNav extends StatelessWidget {
-  final TopNavSection selected;
-  final VoidCallback onMenuTap;
-  final VoidCallback onPatientsTap;
-  final VoidCallback onListenTap;
-  const _TopNav({
-    required this.selected,
-    required this.onMenuTap,
-    required this.onPatientsTap,
-    required this.onListenTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final primary = theme.colorScheme.primary;
-    return Row(
-      children: [
-        IconButton(
-          onPressed: onMenuTap,
-          icon: const Icon(Icons.menu),
-          color: theme.colorScheme.onSurface,
-          style: IconButton.styleFrom(
-            backgroundColor:
-                theme.colorScheme.surfaceContainerHighest.withOpacity(0.6),
-            padding: const EdgeInsets.all(12),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _HeaderTab(
-                  label: 'My Clients',
-                  selected: selected == TopNavSection.patients,
-                  color: primary,
-                  onTap: onPatientsTap),
-              _HeaderTab(
-                  label: 'Listen',
-                  selected: selected == TopNavSection.listen,
-                  color: primary,
-                  onTap: onListenTap),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _HeaderTab extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final Color color;
-  final VoidCallback? onTap;
-  const _HeaderTab(
-      {required this.label,
-      required this.selected,
-      required this.color,
-      this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final inactiveColor = theme.colorScheme.onSurface.withOpacity(0.6);
-    final textStyle = theme.textTheme.titleLarge?.copyWith(
-      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-      color: selected ? color : inactiveColor,
-    );
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.only(bottom: 6),
-        decoration: selected
-            ? BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: color, width: 3),
-                ),
-              )
-            : null,
-        child: Text(label, style: textStyle),
       ),
     );
   }

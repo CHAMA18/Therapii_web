@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
@@ -10,6 +11,7 @@ import 'package:therapii/openai/openai_config.dart';
 import 'package:therapii/services/ai_conversation_service.dart';
 import 'package:therapii/models/ai_conversation_summary.dart';
 import 'package:therapii/services/user_service.dart';
+import 'package:therapii/services/therapist_service.dart';
 
 class AiTherapistChatPage extends StatefulWidget {
   /// The therapist ID whose AI model the patient will chat with.
@@ -29,6 +31,7 @@ class AiTherapistChatPage extends StatefulWidget {
 
 class _AiTherapistChatPageState extends State<AiTherapistChatPage> {
   final UserService _userService = UserService();
+  final TherapistService _therapistService = TherapistService();
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final AiCompanionClient _client = const AiCompanionClient();
@@ -46,6 +49,7 @@ class _AiTherapistChatPageState extends State<AiTherapistChatPage> {
   String? _personalizationSummary;
   app_user.User? _patientProfile;
   Map<String, dynamic>? _patientContext;
+  String? _therapistAiSummary;
   bool _ending = false;
 
   @override
@@ -61,6 +65,14 @@ class _AiTherapistChatPageState extends State<AiTherapistChatPage> {
     final buffer = StringBuffer();
     buffer.write('You are $_aiName, Therapii\'s AI companion. Respond with warmth, empathy, and actionable guidance. '
         'Keep replies under 6 sentences, reinforce healthy coping techniques, and align with the client\'s therapist-led goals.');
+
+    if (_therapistAiSummary != null && _therapistAiSummary!.isNotEmpty) {
+      buffer
+        ..writeln()
+        ..writeln()
+        ..writeln('Your Persona (Therapist Configuration):')
+        ..writeln(_therapistAiSummary);
+    }
 
     final profile = _patientProfile;
     final context = _patientContext;
@@ -127,7 +139,9 @@ class _AiTherapistChatPageState extends State<AiTherapistChatPage> {
 
     buffer
       ..writeln()
-      ..writeln('Anchor every response in these preferences, reflect back key themes, and coordinate with the human therapist when appropriate.');
+      ..writeln('CRITICAL INSTRUCTION:')
+      ..writeln('You MUST directly tailor your therapeutic approach, tone, and advice to the Client\'s profile setup provided above. '
+                'Anchor every response in their specific therapy goals and focus areas, reflect back key themes, and coordinate with the human therapist when appropriate.');
 
     return buffer.toString();
   }
@@ -273,12 +287,29 @@ class _AiTherapistChatPageState extends State<AiTherapistChatPage> {
     try {
       final profile = await _userService.getUser(firebaseUser.uid);
       if (!mounted) return;
+
+      String? therapistSummary;
+      if (widget.therapistId.isNotEmpty) {
+        try {
+          final doc = await FirebaseFirestore.instance.collection('therapists').doc(widget.therapistId).get();
+          if (doc.exists) {
+            final data = doc.data();
+            if (data != null && data['ai_training_result'] is Map) {
+              therapistSummary = data['ai_training_result']['summary'] as String?;
+            }
+          }
+        } catch (e) {
+          debugPrint('Failed to load therapist AI training result: $e');
+        }
+      }
       
       final context = profile?.patientOnboardingData;
       final summary = _buildPersonalizationSummary(context);
+      if (!mounted) return;
       setState(() {
         _patientProfile = profile?.copyWith(therapistId: widget.therapistId);
         _patientContext = context != null && context.isNotEmpty ? context : null;
+        _therapistAiSummary = therapistSummary;
         _personalizationSummary = summary;
         _loadingContext = false;
         _contextError = null;

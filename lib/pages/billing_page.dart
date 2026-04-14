@@ -19,7 +19,7 @@ class _BillingPageState extends State<BillingPage> {
   
   // Billing data from Stripe
   bool _isPaidUser = false;
-  String _planName = 'Free Plan';
+  String _planName = 'Trial Period';
   double _creditBalance = 0;
   _PaymentMethodData? _paymentMethod;
   String? _nextBillingDate;
@@ -51,7 +51,7 @@ class _BillingPageState extends State<BillingPage> {
       if (mounted) {
         setState(() {
           _isPaidUser = data['isPaidUser'] == true;
-          _planName = data['planName'] as String? ?? 'Free Plan';
+          _planName = data['planName'] as String? ?? 'Trial Period';
           _creditBalance = (data['creditBalance'] as num?)?.toDouble() ?? 0;
           _nextBillingDate = data['nextBillingDate'] as String?;
           
@@ -234,21 +234,16 @@ class _BillingPageState extends State<BillingPage> {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1120),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
                 // Hero Plan Card
                 _isLoadingBilling
                     ? const _HeroCardShimmer()
                     : _HeroCard(
                         planName: _planName,
                         isPaidUser: _isPaidUser,
-                        highlights: _isPaidUser 
-                          ? const ['Unlimited chat', 'AI voice concierge', 'Analytics vault']
-                          : const ['Basic chat', 'Session summaries'],
+                        highlights: const ['Unlimited chat', 'AI voice concierge', 'Analytics vault'],
                         onUpgrade: () => _handleChangePlan(context),
                       ),
                 const SizedBox(height: 24),
@@ -276,8 +271,6 @@ class _BillingPageState extends State<BillingPage> {
                 const SizedBox(height: 40),
               ],
             ),
-          ),
-        ),
       ),
     );
   }
@@ -382,10 +375,10 @@ class _HeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final badgeLabel = isPaidUser ? 'Premium care' : 'Free tier';
+    final badgeLabel = isPaidUser ? 'Premium care' : 'Trial period';
     final description = isPaidUser
       ? 'AI-enhanced therapist partnership with voice journaling, session analytics, and concierge escalation.'
-      : 'Get started with basic chat support and session summaries. Upgrade for unlimited AI access.';
+      : 'Experience the full capabilities during your trial period. Upgrade to continue your premium access.';
 
     return Container(
       decoration: BoxDecoration(
@@ -529,9 +522,9 @@ class _MetricsGrid extends StatelessWidget {
         final metrics = [
           _MetricItem(
             icon: Icons.auto_awesome,
-            value: isPaidUser ? 'Unlimited' : '0%',
+            value: isPaidUser ? 'Unlimited' : '0',
             label: 'AI minutes used',
-            detail: isPaidUser ? 'Unlimited usage' : 'Upgrade for unlimited',
+            detail: isPaidUser ? 'Unlimited usage' : 'Upgrade for unlimited usage',
           ),
           _MetricItem(
             icon: Icons.schedule,

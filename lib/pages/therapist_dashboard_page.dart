@@ -4,11 +4,10 @@ import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:therapii/models/user.dart' as app_user;
 import 'package:therapii/pages/support_chat_page.dart';
 import 'package:therapii/services/user_service.dart';
+import 'package:therapii/services/daily_thought_service.dart';
 import 'package:therapii/widgets/common_settings_drawer.dart';
 import 'package:therapii/pages/my_patients_page.dart';
-import 'package:therapii/pages/listen_page.dart';
 import 'package:therapii/pages/therapist_training_page.dart';
-import 'package:therapii/pages/support_center_page.dart';
 import 'package:therapii/pages/billing_page.dart';
 
 class TherapistDashboardPage extends StatefulWidget {
@@ -19,10 +18,13 @@ class TherapistDashboardPage extends StatefulWidget {
 }
 
 class _TherapistDashboardPageState extends State<TherapistDashboardPage> {
-  final _userService = UserService();
-  app_user.User? _therapist;
+  final UserService _userService = UserService();
+  final DailyThoughtService _dailyThoughtService = DailyThoughtService();
+
   bool _loading = true;
   String? _error;
+  app_user.User? _therapist;
+  String _dailyThought = '"The only way out is through."';
 
   @override
   void initState() {
@@ -47,6 +49,11 @@ class _TherapistDashboardPageState extends State<TherapistDashboardPage> {
         _therapist = u;
         _loading = false;
       });
+
+      final thought = await _dailyThoughtService.getDailyThought();
+      if (mounted) {
+        setState(() => _dailyThought = thought);
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -154,36 +161,18 @@ class _TherapistDashboardPageState extends State<TherapistDashboardPage> {
                           ],
                         ),
                         const SizedBox(height: 16),
-                        GridView.count(
-                          crossAxisCount: isWide ? 2 : 1,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          childAspectRatio: isWide ? 2.6 : 2.4,
-                          children: [
-                            _DashboardMiniCard(
-                              title: 'Billing',
-                              subtitle: 'Manage subscription',
-                              icon: Icons.credit_card_rounded,
-                              onTap: () => Navigator.of(context).push(
-                                MaterialPageRoute(builder: (_) => const BillingPage()),
-                              ),
-                            ),
-                            _DashboardMiniCard(
-                              title: 'Support Center',
-                              subtitle: 'FAQs and resources',
-                              icon: Icons.help_outline_rounded,
-                              onTap: () => Navigator.of(context).push(
-                                MaterialPageRoute(builder: (_) => const SupportCenterPage()),
-                              ),
-                            ),
-                          ],
+                        _DashboardMiniCard(
+                          title: 'Billing',
+                          subtitle: 'Manage subscription',
+                          icon: Icons.credit_card_rounded,
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => const BillingPage()),
+                          ),
                         ),
                         const SizedBox(height: 20),
                         _DashboardThoughtCard(
                           label: 'Daily Thought',
-                          quote: '"The only way out is through."',
+                          quote: _dailyThought,
                         ),
                       ],
                     );

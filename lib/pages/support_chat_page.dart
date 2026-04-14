@@ -177,14 +177,7 @@ class _SupportChatPageState extends State<SupportChatPage> {
     final scheme = theme.colorScheme;
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            scheme.primary,
-            scheme.primaryContainer,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: scheme.primary,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),

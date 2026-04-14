@@ -116,6 +116,17 @@ class UserService {
     }
   }
 
+  // Update user last active time
+  Future<void> updateLastActive(String userId) async {
+    try {
+      await _firestore.collection(_collection).doc(userId).update({
+        'last_active_at': Timestamp.fromDate(DateTime.now()),
+      });
+    } catch (e) {
+      // Ignore if document doesn't exist
+    }
+  }
+
   // Link patient to therapist
   Future<void> linkPatientToTherapist({
     required String userId,

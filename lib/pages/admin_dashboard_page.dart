@@ -11,6 +11,7 @@ import 'package:therapii/pages/therapist_approvals_page.dart';
 import 'package:therapii/services/app_page_state_service.dart';
 import 'package:therapii/widgets/shimmer_widgets.dart';
 import 'package:therapii/theme_mode_controller.dart';
+import 'package:therapii/theme.dart';
 import 'package:therapii/utils/admin_access.dart';
 
 class AdminDashboardPage extends StatefulWidget {
@@ -350,20 +351,25 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       labelText: label,
       hintText: hint,
       filled: true,
-      fillColor: isDark ? const Color(0xFF1f2a3d) : const Color(0xFFf8fafc),
+      fillColor: isDark ? const Color(0xFF1E293B).withValues(alpha: 0.5) : Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide(
-            color: isDark ? const Color(0xFF334155) : const Color(0xFFe2e8f0)),
+            color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide(
-            color: isDark ? const Color(0xFF334155) : const Color(0xFFe2e8f0)),
+            color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: primaryColor),
+        borderSide: BorderSide(color: primaryColor, width: 2),
+      ),
+      labelStyle: TextStyle(
+        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+        fontWeight: FontWeight.w500,
       ),
     );
   }
@@ -883,73 +889,71 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   }
 
   Widget _buildHeader(ThemeData theme, bool isDark, Color primaryColor) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '${_greeting()},',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: isDark
-                      ? const Color(0xFF94a3b8)
-                      : const Color(0xFF64748b),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${_greeting()},',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF64748b),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                _adminName(),
-                style: TextStyle(
-                  fontSize: 36,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : const Color(0xFF0f172a),
-                  letterSpacing: -0.5,
+                const SizedBox(height: 4),
+                Text(
+                  _adminName(),
+                  style: theme.textTheme.displayMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: isDark ? Colors.white : const Color(0xFF0f172a),
+                    letterSpacing: -1.2,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Manage approvals, monitor activity, and configure the platform settings for your therapy network.',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: isDark
-                      ? const Color(0xFF64748b)
-                      : const Color(0xFF94a3b8),
+                const SizedBox(height: 12),
+                Text(
+                  'Manage approvals, monitor activity, and configure the platform settings for your therapy network.',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: isDark ? const Color(0xFF64748b) : const Color(0xFF64748b),
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 24),
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1e293b) : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isDark ? const Color(0xFF334155) : const Color(0xFFe2e8f0),
+              ],
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+          ),
+          const SizedBox(width: 24),
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: isDark ? theme.colorScheme.surfaceContainerHighest : Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: isDark ? [] : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+              border: Border.all(
+                color: isDark ? theme.colorScheme.outline.withValues(alpha: 0.2) : const Color(0xFFE2E8F0),
               ),
-            ],
-          ),
-          child: IconButton(
-            icon: Icon(
-              Icons.notifications_outlined,
-              color: isDark ? const Color(0xFF94a3b8) : const Color(0xFF64748b),
             ),
-            onPressed: () {},
+            child: IconButton(
+              icon: Icon(
+                Icons.notifications_none_rounded,
+                size: 28,
+                color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF475569),
+              ),
+              onPressed: () {},
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -958,21 +962,21 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       key: _landingSectionKey,
       decoration: BoxDecoration(
         color: isDark
-            ? const Color(0xFF1e293b).withValues(alpha: 0.4)
-            : Colors.white,
+            ? const Color(0xFF1e293b).withValues(alpha: 0.2)
+            : Colors.white.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(32),
         border: Border.all(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFe2e8f0),
+          color: isDark ? const Color(0xFF334155).withValues(alpha: 0.3) : const Color(0xFFe2e8f0),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1320,21 +1324,21 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       key: _userAccessSectionKey,
       decoration: BoxDecoration(
         color: isDark
-            ? const Color(0xFF1e293b).withValues(alpha: 0.4)
-            : Colors.white,
+            ? const Color(0xFF1e293b).withValues(alpha: 0.2)
+            : Colors.white.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(32),
         border: Border.all(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFe2e8f0),
+          color: isDark ? const Color(0xFF334155).withValues(alpha: 0.3) : const Color(0xFFe2e8f0),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1410,13 +1414,20 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   Widget _buildUserAccessForm(
       ThemeData theme, bool isDark, Color primaryColor) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF162133) : const Color(0xFFF8FAFC),
+        color: isDark ? const Color(0xFF1E293B).withValues(alpha: 0.3) : Colors.white,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+          color: isDark ? const Color(0xFF334155).withValues(alpha: 0.5) : const Color(0xFFE2E8F0),
         ),
+        boxShadow: isDark ? [] : [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          )
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1430,7 +1441,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               hint: 'patient@example.com',
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 20),
           TextField(
             controller: _accessStripeCustomerController,
             decoration: _textFieldDecoration(
@@ -1440,7 +1451,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               hint: 'cus_1234 or leave blank',
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 20),
           TextField(
             controller: _accessStripeConfigController,
             decoration: _textFieldDecoration(
@@ -1450,7 +1461,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               hint: 'Promotion code, checkout ref, or billing note',
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 20),
           DropdownButtonFormField<String>(
             value: _selectedAccessTier,
             decoration: _textFieldDecoration(
@@ -1472,7 +1483,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               setState(() => _selectedAccessTier = value);
             },
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 20),
           TextField(
             controller: _accessDurationController,
             keyboardType: TextInputType.number,
@@ -1489,7 +1500,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               }
             },
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 20),
           TextField(
             controller: _accessNotesController,
             maxLines: 3,
@@ -1556,13 +1567,20 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   Widget _buildUserAccessHistory(
       ThemeData theme, bool isDark, Color primaryColor) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF162133) : const Color(0xFFF8FAFC),
+        color: isDark ? const Color(0xFF1E293B).withValues(alpha: 0.3) : Colors.white,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+          color: isDark ? const Color(0xFF334155).withValues(alpha: 0.5) : const Color(0xFFE2E8F0),
         ),
+        boxShadow: isDark ? [] : [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          )
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2999,123 +3017,159 @@ class _ActionCardState extends State<_ActionCard> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        transform: Matrix4.translationValues(0, _isHovered ? -4 : 0, 0),
-        child: Material(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+        transform: Matrix4.translationValues(0, _isHovered ? -6 : 0, 0),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(28),
+          gradient: widget.isPrimary
+              ? AppGradients.primaryFor(theme.brightness)
+              : null,
           color: widget.isPrimary
-              ? widget.primaryColor
-              : (widget.isDark
-                  ? const Color(0xFF1e293b).withValues(alpha: 0.5)
-                  : Colors.white),
-          borderRadius: BorderRadius.circular(32),
-          elevation: widget.isPrimary ? 8 : 0,
-          shadowColor: widget.isPrimary
-              ? widget.primaryColor.withValues(alpha: 0.3)
-              : Colors.transparent,
+              ? null
+              : (widget.isDark ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5) : Colors.white),
+          border: widget.isPrimary
+              ? null
+              : Border.all(
+                  color: _isHovered
+                      ? widget.primaryColor.withValues(alpha: 0.3)
+                      : (widget.isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                  width: 1.5,
+                ),
+          boxShadow: [
+            if (widget.isPrimary)
+              BoxShadow(
+                color: widget.primaryColor.withValues(alpha: _isHovered ? 0.4 : 0.25),
+                blurRadius: _isHovered ? 20 : 12,
+                offset: Offset(0, _isHovered ? 10 : 6),
+              )
+            else if (!widget.isDark)
+              BoxShadow(
+                color: const Color(0xFF0F172A).withValues(alpha: _isHovered ? 0.08 : 0.03),
+                blurRadius: _isHovered ? 16 : 8,
+                offset: Offset(0, _isHovered ? 8 : 4),
+              ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(28),
           child: InkWell(
             onTap: widget.onTap,
-            borderRadius: BorderRadius.circular(32),
-            child: Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(32),
-                border: widget.isPrimary
-                    ? null
-                    : Border.all(
-                        color: _isHovered
-                            ? widget.primaryColor.withValues(alpha: 0.5)
-                            : (widget.isDark
-                                ? const Color(0xFF1e293b)
-                                : const Color(0xFFe2e8f0)),
-                      ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
+            borderRadius: BorderRadius.circular(28),
+            child: Stack(
+              children: [
+                // Watermark icon
+                Positioned(
+                  right: -20,
+                  bottom: -20,
+                  child: Icon(
+                    widget.icon,
+                    size: 120,
+                    color: widget.isPrimary
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : (widget.isDark
+                            ? Colors.white.withValues(alpha: 0.03)
+                            : widget.primaryColor.withValues(alpha: 0.03)),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: widget.isPrimary
-                              ? Colors.white.withValues(alpha: 0.2)
-                              : (widget.isDark
-                                  ? const Color(0xFF1e3a5f)
-                                      .withValues(alpha: 0.3)
-                                  : const Color(0xFFdbeafe)),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Icon(
-                          widget.icon,
-                          color: widget.isPrimary
-                              ? Colors.white
-                              : widget.primaryColor,
-                          size: 24,
-                        ),
-                      ),
-                      if (widget.isPrimary)
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          transform: Matrix4.translationValues(
-                              _isHovered ? 4 : 0, 0, 0),
-                          child: Icon(
-                            Icons.arrow_forward,
-                            color: Colors.white.withValues(alpha: 0.5),
-                            size: 24,
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: widget.isPrimary
-                              ? Colors.white
-                              : (widget.isDark
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            width: 52,
+                            height: 52,
+                            decoration: BoxDecoration(
+                              color: widget.isPrimary
+                                  ? Colors.white.withValues(alpha: 0.2)
+                                  : (widget.isDark
+                                      ? widget.primaryColor.withValues(alpha: 0.15)
+                                      : widget.primaryColor.withValues(alpha: 0.1)),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Icon(
+                              widget.icon,
+                              color: widget.isPrimary
                                   ? Colors.white
-                                  : const Color(0xFF0f172a)),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      if (widget.isLoading)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 2),
-                          child: AppShimmers.box(
-                              context: context, height: 12, width: 100),
-                        )
-                      else
-                        Text(
-                          widget.subtitle,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: widget.isPrimary
-                                ? Colors.white.withValues(alpha: 0.8)
-                                : (widget.isDark
-                                    ? const Color(0xFF64748b)
-                                    : const Color(0xFF94a3b8)),
+                                  : widget.primaryColor,
+                              size: 26,
+                            ),
                           ),
-                        ),
+                          if (widget.isPrimary)
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 250),
+                              curve: Curves.easeOutCubic,
+                              transform: Matrix4.translationValues(
+                                  _isHovered ? 6 : 0, 0, 0),
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.arrow_forward_rounded,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: widget.isPrimary
+                                  ? Colors.white
+                                  : (widget.isDark
+                                      ? Colors.white
+                                      : const Color(0xFF0F172A)),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          if (widget.isLoading)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 4),
+                              child: AppShimmers.box(
+                                  context: context, height: 14, width: 100),
+                            )
+                          else
+                            Text(
+                              widget.subtitle,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: widget.isPrimary
+                                    ? Colors.white.withValues(alpha: 0.9)
+                                    : (widget.isDark
+                                        ? const Color(0xFF94A3B8)
+                                        : const Color(0xFF64748B)),
+                              ),
+                            ),
+                        ],
+                      ),
                     ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),

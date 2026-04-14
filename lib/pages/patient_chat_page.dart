@@ -69,6 +69,8 @@ class _PatientChatPageState extends State<PatientChatPage> {
         _loading = false;
       });
       await _markConversationRead();
+      // Update last active time for viewer
+      _userService.updateLastActive(user.id);
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -101,6 +103,16 @@ class _PatientChatPageState extends State<PatientChatPage> {
     return user.email;
   }
 
+  String _formatLastActive(DateTime? lastActive, DateTime updatedAt) {
+    final activeTime = lastActive ?? updatedAt;
+    final diff = DateTime.now().difference(activeTime);
+    if (diff.inMinutes < 2) return 'Active now';
+    if (diff.inHours < 1) return 'Active ${diff.inMinutes}m ago';
+    if (diff.inDays < 1) return 'Active ${diff.inHours}h ago';
+    if (diff.inDays < 7) return 'Active ${diff.inDays}d ago';
+    return 'Offline';
+  }
+
   Future<void> _handleSendText() async {
     final viewer = _viewer;
     final therapistId = _therapistId;
@@ -123,6 +135,7 @@ class _PatientChatPageState extends State<PatientChatPage> {
       if (!mounted) return;
       _messageController.clear();
       await _markConversationRead();
+      _userService.updateLastActive(viewer.id);
       WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
     } catch (e) {
       if (!mounted) return;
@@ -161,6 +174,7 @@ class _PatientChatPageState extends State<PatientChatPage> {
 
       if (!mounted) return;
       await _markConversationRead();
+      _userService.updateLastActive(viewer.id);
       WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
     } catch (e) {
       if (!mounted) return;
@@ -212,12 +226,35 @@ class _PatientChatPageState extends State<PatientChatPage> {
           tooltip: 'Back',
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: Text(
-          _displayName,
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: scheme.onSurface,
-              ),
+        title: StreamBuilder<app_user.User?>(
+          stream: _userService.streamUser(widget.otherUser.id),
+          initialData: widget.otherUser,
+          builder: (context, snapshot) {
+            final currentUserInfo = snapshot.data ?? widget.otherUser;
+            final displayName = _fullNameOrEmail(currentUserInfo);
+            final lastActiveText = _formatLastActive(currentUserInfo.lastActiveAt, currentUserInfo.updatedAt);
+            
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  displayName,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: scheme.onSurface,
+                      ),
+                ),
+                if (lastActiveText.isNotEmpty)
+                  Text(
+                    lastActiveText,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: scheme.onSurface.withValues(alpha: 0.6),
+                          fontWeight: FontWeight.w500,
+                        ),
+                  ),
+              ],
+            );
+          },
         ),
         actions: [
           IconButton(
@@ -242,9 +279,7 @@ class _PatientChatPageState extends State<PatientChatPage> {
       ),
       body: SafeArea(
         child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1100),
-            child: _loading
+          child: _loading
                 ? const Center(child: CircularProgressIndicator())
                 : _error != null
                     ? Center(
@@ -328,6 +363,32 @@ class _PatientChatPageState extends State<PatientChatPage> {
                                             avatarInitial: widget.otherUser.firstName.isNotEmpty
                                                 ? widget.otherUser.firstName[0].toUpperCase()
                                                 : '•',
+                                            onDelete: isMe ? () async {
+                                              final confirm = await showDialog<bool>(
+                                                context: context,
+                                                builder: (context) => AlertDialog(
+                                                  title: const Text('Delete Message'),
+                                                  content: const Text('Are you sure you want to delete this message?'),
+                                                  actions: [
+                                                    TextButton(
+                                                      onPressed: () => Navigator.of(context).pop(false),
+                                                      child: const Text('Cancel'),
+                                                    ),
+                                                    TextButton(
+                                                      onPressed: () => Navigator.of(context).pop(true),
+                                                      child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+                                              if (confirm == true) {
+                                                await _chatService.deleteMessage(
+                                                  therapistId: therapistId,
+                                                  patientId: patientId,
+                                                  messageId: message.id,
+                                                );
+                                              }
+                                            } : null,
                                           ),
                                         );
                                       },
@@ -343,7 +404,6 @@ class _PatientChatPageState extends State<PatientChatPage> {
                               ),
                             ],
                           ),
-          ),
         ),
       ),
     );
@@ -356,12 +416,15 @@ class _ChatBubble extends StatefulWidget {
   final Color color;
   final bool showAvatar;
   final String avatarInitial;
+  final VoidCallback? onDelete;
+  
   const _ChatBubble({
     required this.message,
     required this.isMe,
     required this.color,
     this.showAvatar = false,
     this.avatarInitial = '?',
+    this.onDelete,
   });
 
   @override
@@ -494,46 +557,76 @@ class _ChatBubbleState extends State<_ChatBubble> {
     }
   }
 
+  String _formatTime(DateTime date) {
+    final hour = date.hour;
+    final minute = date.minute.toString().padLeft(2, '0');
+    final period = hour >= 12 ? 'PM' : 'AM';
+    final formattedHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour);
+    return '$formattedHour:$minute $period';
+  }
+
   @override
   Widget build(BuildContext context) {
+    Widget bubble = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: widget.isMe ? widget.color : const Color(0xFFE8ECEF),
+        borderRadius: _bubbleRadius(),
+      ),
+      child: _buildContent(
+        widget.isMe ? Colors.white : Colors.black87,
+        widget.isMe ? Colors.white.withValues(alpha: 0.3) : Colors.black12,
+        widget.isMe ? Colors.white : Colors.black87,
+      ),
+    );
+
     if (widget.isMe) {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          Flexible(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: widget.color,
-                borderRadius: _bubbleRadius(),
-              ),
-              child: _buildContent(Colors.white, Colors.white.withValues(alpha: 0.3), Colors.white),
+      return GestureDetector(
+        onLongPress: widget.onDelete,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Flexible(child: bubble),
+              ],
             ),
-          ),
-        ],
+            const SizedBox(height: 4),
+            Text(
+              _formatTime(widget.message.sentAt),
+              style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)),
+            ),
+          ],
+        ),
       );
     }
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      crossAxisAlignment: CrossAxisAlignment.end,
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (widget.showAvatar)
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: widget.color,
-            child: Text(widget.avatarInitial, style: const TextStyle(color: Colors.white, fontSize: 14)),
-          )
-        else
-          const SizedBox(width: 32),
-        const SizedBox(width: 8),
-        Flexible(
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFE8ECEF),
-              borderRadius: _bubbleRadius(),
-            ),
-            child: _buildContent(Colors.black87, Colors.black12, Colors.black87),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            if (widget.showAvatar)
+              CircleAvatar(
+                radius: 16,
+                backgroundColor: widget.color,
+                child: Text(widget.avatarInitial, style: const TextStyle(color: Colors.white, fontSize: 14)),
+              )
+            else
+              const SizedBox(width: 32),
+            const SizedBox(width: 8),
+            Flexible(child: bubble),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Padding(
+          padding: const EdgeInsets.only(left: 40),
+          child: Text(
+            _formatTime(widget.message.sentAt),
+            style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)),
           ),
         ),
       ],

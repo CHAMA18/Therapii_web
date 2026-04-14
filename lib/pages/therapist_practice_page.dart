@@ -127,7 +127,12 @@ class _TherapistPracticePageState extends State<TherapistPracticePage> {
         _fullNameController.text = data['full_name'] ?? user.displayName ?? '';
         _practiceNameController.text = data['practice_name'] ?? '';
         _cityController.text = data['city'] ?? '';
-        _selectedState = data['state'];
+        final stateVal = data['state'];
+        if (stateVal != null && _usStates.contains(stateVal)) {
+          _selectedState = stateVal;
+        } else {
+          _selectedState = null;
+        }
         _zipCodeController.text = data['zip_code'] ?? '';
         _phoneController.text = data['phone'] ?? '';
         _emailController.text = data['email'] ?? user.email ?? '';

@@ -13,6 +13,7 @@ class User {
   final bool isTherapist;
   final Map<String, dynamic>? patientOnboardingData;
   final bool patientOnboardingCompleted;
+  final DateTime? lastActiveAt;
 
   const User({
     required this.id,
@@ -27,6 +28,7 @@ class User {
     this.isTherapist = false,
     this.patientOnboardingData,
     this.patientOnboardingCompleted = false,
+    this.lastActiveAt,
   });
 
   Map<String, dynamic> toJson() => {
@@ -42,6 +44,7 @@ class User {
         'is_therapist': isTherapist,
         'patient_onboarding_data': patientOnboardingData,
         'patient_onboarding_completed': patientOnboardingCompleted,
+        if (lastActiveAt != null) 'last_active_at': Timestamp.fromDate(lastActiveAt!),
       };
 
   static User fromJson(Map<String, dynamic> json) => User(
@@ -63,6 +66,9 @@ class User {
             ? Map<String, dynamic>.from(json['patient_onboarding_data'] as Map)
             : null,
         patientOnboardingCompleted: json['patient_onboarding_completed'] ?? false,
+        lastActiveAt: json['last_active_at'] is Timestamp
+            ? (json['last_active_at'] as Timestamp).toDate()
+            : null,
       );
 
   User copyWith({
@@ -78,6 +84,7 @@ class User {
     bool? isTherapist,
     Map<String, dynamic>? patientOnboardingData,
     bool? patientOnboardingCompleted,
+    DateTime? lastActiveAt,
   }) =>
       User(
         id: id ?? this.id,
@@ -92,6 +99,7 @@ class User {
         isTherapist: isTherapist ?? this.isTherapist,
         patientOnboardingData: patientOnboardingData ?? this.patientOnboardingData,
         patientOnboardingCompleted: patientOnboardingCompleted ?? this.patientOnboardingCompleted,
+        lastActiveAt: lastActiveAt ?? this.lastActiveAt,
       );
 
   String get fullName => '$firstName $lastName';

@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:therapii/widgets/primary_button.dart';
-import 'package:therapii/pages/support_chat_page.dart';
 
 /// A concierge-style support hub with rich visuals and direct contact actions.
 /// Web-friendly responsive design.
@@ -16,34 +14,6 @@ class SupportCenterPage extends StatelessWidget {
         const SnackBar(content: Text('We couldn\'t open that link. Please try again in a browser.')),
       );
     }
-  }
-
-  void _showDocumentSheet(BuildContext context, {required String title, required String body}) {
-    showModalBottomSheet<void>(
-      context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
-      builder: (context) => Padding(
-        padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
-              const SizedBox(height: 16),
-              Text(body, style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.6)),
-              const SizedBox(height: 24),
-              Align(
-                alignment: Alignment.centerRight,
-                child: FilledButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Close'),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 
   @override
@@ -126,44 +96,6 @@ class SupportCenterPage extends StatelessWidget {
                         const SizedBox(height: 48),
                         // Quick Actions Grid
                         _QuickActionsGrid(actions: quickActions, isDark: isDark, scheme: scheme, theme: theme),
-                        const SizedBox(height: 48),
-                        // Concierge Card
-                        _ConciergeCard(
-                          isDark: isDark,
-                          scheme: scheme,
-                          theme: theme,
-                          onRequestFollowUp: () {
-                            showDialog(
-                              context: context,
-                              barrierColor: Colors.transparent,
-                              builder: (context) {
-                                final size = MediaQuery.of(context).size;
-                                return Dialog(
-                                  alignment: Alignment.bottomRight,
-                                  insetPadding: EdgeInsets.only(
-                                    right: 24, 
-                                    bottom: 80, 
-                                    top: 24, 
-                                    left: size.width > 600 ? size.width - 400 - 24 : 24
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(24),
-                                  ),
-                                  elevation: 8,
-                                  child: ConstrainedBox(
-                                    constraints: BoxConstraints(
-                                      maxWidth: 400,
-                                      maxHeight: size.height * 0.8,
-                                    ),
-                                    child: const SupportChatPage(),
-                                  ),
-                                );
-                              },
-                            );
-                          },
-                          onShowPrivacy: () => _showDocumentSheet(context, title: 'Privacy at Therapii', body: _privacyCopy),
-                          onShowTerms: () => _showDocumentSheet(context, title: 'Terms & Usage', body: _termsCopy),
-                        ),
                         const SizedBox(height: 48),
                         // FAQ Section
                         _FaqSection(faqs: faqs, isDark: isDark, scheme: scheme, theme: theme),
@@ -411,177 +343,6 @@ class _ActionCardState extends State<_ActionCard> {
   }
 }
 
-class _ConciergeCard extends StatelessWidget {
-  final bool isDark;
-  final ColorScheme scheme;
-  final ThemeData theme;
-  final VoidCallback onRequestFollowUp;
-  final VoidCallback onShowPrivacy;
-  final VoidCallback onShowTerms;
-
-  const _ConciergeCard({
-    required this.isDark,
-    required this.scheme,
-    required this.theme,
-    required this.onRequestFollowUp,
-    required this.onShowPrivacy,
-    required this.onShowTerms,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final borderColor = isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9);
-    final surfaceColor = isDark ? const Color(0xFF1E293B) : Colors.white;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: surfaceColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderColor),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 6,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: scheme.primary,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.favorite, color: Colors.white, size: 24),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Concierge follow-up',
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: isDark ? Colors.white : const Color(0xFF0F172A),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Prefer us to reach out? Share a few details and a specialist will respond with a tailored plan.',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            child: PrimaryButton(
-              label: 'REQUEST A CONCIERGE FOLLOW-UP',
-              onPressed: onRequestFollowUp,
-            ),
-          ),
-          const SizedBox(height: 24),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final isWide = constraints.maxWidth > 500;
-              if (isWide) {
-                return Row(
-                  children: [
-                    Expanded(child: _LinkButton(icon: Icons.shield_outlined, label: 'Privacy commitments', onTap: onShowPrivacy, isDark: isDark)),
-                    const SizedBox(width: 16),
-                    Expanded(child: _LinkButton(icon: Icons.description_outlined, label: 'Terms snapshot', onTap: onShowTerms, isDark: isDark)),
-                  ],
-                );
-              }
-              return Column(
-                children: [
-                  _LinkButton(icon: Icons.shield_outlined, label: 'Privacy commitments', onTap: onShowPrivacy, isDark: isDark),
-                  const SizedBox(height: 12),
-                  _LinkButton(icon: Icons.description_outlined, label: 'Terms snapshot', onTap: onShowTerms, isDark: isDark),
-                ],
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _LinkButton extends StatefulWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final bool isDark;
-
-  const _LinkButton({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    required this.isDark,
-  });
-
-  @override
-  State<_LinkButton> createState() => _LinkButtonState();
-}
-
-class _LinkButtonState extends State<_LinkButton> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final borderColor = widget.isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9);
-    final hoverColor = widget.isDark ? const Color(0xFF334155) : const Color(0xFFF8FAFC);
-
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          decoration: BoxDecoration(
-            color: _isHovered ? hoverColor : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: borderColor),
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(widget.icon, size: 16, color: widget.isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
-              const SizedBox(width: 8),
-              Text(
-                widget.label,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: widget.isDark ? Colors.white : const Color(0xFF0F172A),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _FaqItem {
   final String question;
   final String answer;
@@ -748,10 +509,3 @@ class _FaqCardState extends State<_FaqCard> with SingleTickerProviderStateMixin 
     );
   }
 }
-
-
-const String _privacyCopy =
-    'Your messages, voice sessions, and AI summaries are encrypted at rest and in transit. Only you and verified members of your care team can unlock them. We regularly rotate encryption keys and maintain HIPAA-aligned audit logs. Review the full privacy policy inside the secure web portal.';
-
-const String _termsCopy =
-    'Therapii pairs patients and therapists with intelligent copilots for care. Using the platform means you agree to respect confidentiality, refrain from sharing medical emergencies inside the app, and understand that AI-generated insights are advisory—not a substitute for professional judgment.';

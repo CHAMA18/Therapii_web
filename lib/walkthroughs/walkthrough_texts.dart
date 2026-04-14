@@ -14,7 +14,6 @@ class WalkthroughTexts {
   // Therapist "My Patients" Page Walkthrough
   static const Map<String, String> myPatients = {
     'menu': 'Access Settings, Admin tools (if applicable), and account preferences.',
-    'tabs': 'Switch between "My Patients" to manage your patient list and "Listen" to review voice check-ins.',
     'inviteNew': 'Invite a new patient! Enter their info and we\'ll send them a secure invitation code via email.',
     'activePatients': 'Your active patients are listed here. Click any patient to view their profile and message history.',
     'patientTile': 'Each patient card shows their last message date. Tap "Message History" to open the chat or view their details.',
@@ -24,7 +23,6 @@ class WalkthroughTexts {
   // Therapist "Listen" Page Walkthrough
   static const Map<String, String> listen = {
     'menu': 'Access your settings and account preferences.',
-    'tabs': 'Navigate between "My Patients" and "Listen" tabs.',
     'recordButton': 'Start recording voice notes for a specific patient. Select the patient, then begin recording.',
     'voiceCheckins': 'View all recent voice check-ins from your patients. Tap any recording to play it.',
     'transcripts': 'AI-generated summaries of patient conversations with the AI companion. Review to stay aligned with patient progress.',

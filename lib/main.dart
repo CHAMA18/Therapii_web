@@ -226,7 +226,8 @@ class _RootRouter extends StatelessWidget {
 }
 
 Future<_ProfileContext> _loadUserContext(String uid) async {
-  final user = await UserService().getUser(uid);
+  final userService = UserService();
+  final user = await userService.getUser(uid);
   bool hasTherapistDoc = false;
   bool isTherapist = user?.isTherapist == true;
   try {
@@ -238,6 +239,12 @@ Future<_ProfileContext> _loadUserContext(String uid) async {
   } catch (_) {
     // swallow; fallback to user record
   }
+  
+  if (user != null) {
+    // Update last active time in background
+    userService.updateLastActive(uid);
+  }
+  
   return _ProfileContext(
       user: user, hasTherapistDoc: hasTherapistDoc, isTherapist: isTherapist);
 }

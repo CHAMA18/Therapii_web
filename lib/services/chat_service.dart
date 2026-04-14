@@ -249,6 +249,15 @@ class ChatService {
         });
   }
 
+  Future<void> deleteMessage({
+    required String therapistId,
+    required String patientId,
+    required String messageId,
+  }) async {
+    final messageRef = _messagesRef(therapistId: therapistId, patientId: patientId).doc(messageId);
+    await messageRef.delete();
+  }
+
   Future<void> markConversationRead({
     required String therapistId,
     required String patientId,

@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -11,6 +12,10 @@ import 'package:therapii/pages/edit_profile_page.dart';
 import 'package:therapii/pages/journal_admin_studio_page.dart';
 import 'package:therapii/pages/journal_portal_page.dart';
 import 'package:therapii/pages/landing_page.dart';
+import 'package:therapii/pages/therapist_practice_page.dart';
+import 'package:therapii/pages/therapist_practice_personalization_page.dart';
+import 'package:therapii/pages/therapist_therapeutic_models_page.dart';
+import 'package:therapii/pages/therapist_training_page.dart';
 import 'package:therapii/theme.dart';
 import 'package:therapii/theme_mode_controller.dart';
 import 'package:therapii/utils/admin_access.dart';
@@ -54,14 +59,37 @@ class CommonSettingsPage extends StatefulWidget {
 class _CommonSettingsPageState extends State<CommonSettingsPage> {
   bool _isLoadingSubscription = true;
   bool _isPaidUser = false;
-  String _planName = 'Free Plan';
+  String _planName = 'Trial Period';
   bool _isSwitchingJournal = false;
+  bool _isTherapist = false;
+  bool _isLoadingUser = true;
 
   @override
   void initState() {
     super.initState();
+    _fetchUser();
     if (!widget.hideBilling) {
       _fetchSubscriptionStatus();
+    }
+  }
+
+  Future<void> _fetchUser() async {
+    try {
+      final uid = FirebaseAuthManager().currentUser?.uid;
+      if (uid != null) {
+        final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+        if (mounted) {
+          setState(() {
+            _isTherapist = doc.data()?['is_therapist'] == true;
+            _isLoadingUser = false;
+          });
+        }
+      } else {
+        if (mounted) setState(() => _isLoadingUser = false);
+      }
+    } catch (e) {
+      debugPrint('Error fetching user: $e');
+      if (mounted) setState(() => _isLoadingUser = false);
     }
   }
 
@@ -74,7 +102,7 @@ class _CommonSettingsPageState extends State<CommonSettingsPage> {
       if (mounted) {
         setState(() {
           _isPaidUser = data['isPaidUser'] == true;
-          _planName = data['planName'] as String? ?? 'Free Plan';
+          _planName = data['planName'] as String? ?? 'Trial Period';
           _isLoadingSubscription = false;
         });
       }
@@ -165,11 +193,8 @@ class _CommonSettingsPageState extends State<CommonSettingsPage> {
               ),
             ),
           ),
-          body: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 800),
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 64),
+          body: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 64),
                 children: [
                   // Breathtaking User Profile Header
                   Hero(
@@ -282,6 +307,58 @@ class _CommonSettingsPageState extends State<CommonSettingsPage> {
                         ),
                     ],
                   ),
+
+                  // Therapist Section
+                  if (_isTherapist && !_isLoadingUser)
+                    _SettingsSection(
+                      title: 'Practice Settings',
+                      children: [
+                        _SettingsRow(
+                          icon: Icons.psychology_outlined,
+                          iconColor: const Color(0xFF3B82F6),
+                          title: 'Practice Setup',
+                          subtitle: 'Core approaches for your practice',
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(builder: (_) => const TherapistTherapeuticModelsPage()),
+                            );
+                          },
+                        ),
+                        _SettingsRow(
+                          icon: Icons.badge_outlined,
+                          iconColor: const Color(0xFF3B82F6),
+                          title: 'Profile & Licensure',
+                          subtitle: 'Contact & Licensure, Education, ID v...',
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(builder: (_) => const TherapistPracticePage()),
+                            );
+                          },
+                        ),
+                        _SettingsRow(
+                          icon: Icons.face_retouching_natural_rounded,
+                          iconColor: const Color(0xFF3B82F6),
+                          title: 'Personalization',
+                          subtitle: 'Choose your AI avatar and name',
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(builder: (_) => const TherapistPracticePersonalizationPage()),
+                            );
+                          },
+                        ),
+                        _SettingsRow(
+                          icon: Icons.smart_toy_outlined,
+                          iconColor: const Color(0xFF3B82F6),
+                          title: 'Training Studio',
+                          subtitle: 'Tone, phrases, engagement & concer...',
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(builder: (_) => const TherapistTrainingPage()),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
 
                   // Admin Section
                   if (isAdmin)
@@ -422,8 +499,6 @@ class _CommonSettingsPageState extends State<CommonSettingsPage> {
                   ),
                 ],
               ),
-            ),
-          ),
         );
       },
     );

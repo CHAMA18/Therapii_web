@@ -628,65 +628,6 @@ class _LandingPageState extends State<LandingPage>
     );
   }
 
-  void _navigateToJournalAuth() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const AuthWelcomePage(
-          initialTab: AuthTab.login,
-          openJournalPortalAfterAuth: true,
-        ),
-      ),
-    );
-  }
-
-  Future<void> _openJournalPortal() async {
-    final authUser = firebase_auth.FirebaseAuth.instance.currentUser;
-
-    // User is not authenticated yet: send them to login first.
-    if (authUser == null) {
-      _navigateToJournalAuth();
-      return;
-    }
-
-    try {
-      final profile = await UserService().getUser(authUser.uid);
-      if (!mounted) return;
-
-      if (profile == null) {
-        _navigateToJournalAuth();
-        return;
-      }
-
-      final destination =
-          _buildPortalDestination(authUser: authUser, profile: profile);
-      if (destination == null) {
-        _navigateToJournalAuth();
-        return;
-      }
-
-      Navigator.of(context)
-          .push(MaterialPageRoute(builder: (_) => destination));
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text(
-                'Unable to open Journal portal right now. Please try again.')),
-      );
-    }
-  }
-
-  Widget? _buildPortalDestination({
-    required firebase_auth.User authUser,
-    required app_user.User profile,
-  }) {
-    final email = authUser.email ?? '';
-    if (AdminAccess.isAdminEmail(email)) {
-      return const JournalAdminStudioPage();
-    }
-    return const JournalPortalPage();
-  }
-
   @override
   Widget build(BuildContext context) {
     final kicker = _kickerController.text;
@@ -869,19 +810,11 @@ class _LandingPageState extends State<LandingPage>
               ),
             ),
             _NavBar(
-              onJournalSignIn: _openJournalPortal,
               onSignIn: _navigateToAuth,
-              onNav1Tap: _openJournalPortal,
               onBrandTap: _handleBrandTap,
               brandText: _footerBrandController.text,
-              nav1: nav1,
-              nav2: nav2,
-              nav3: nav3,
               signInLabel: ctaSecondary,
               editMode: _editMode,
-              onEditNav1: () => _openEditDialog('Nav 1', _nav1Controller),
-              onEditNav2: () => _openEditDialog('Nav 2', _nav2Controller),
-              onEditNav3: () => _openEditDialog('Nav 3', _nav3Controller),
             ),
             if (_editMode)
               _EditChip(
@@ -996,33 +929,17 @@ class _EditChip extends StatelessWidget {
 }
 
 class _NavBar extends StatelessWidget {
-  final VoidCallback onJournalSignIn;
   final VoidCallback onSignIn;
-  final VoidCallback onNav1Tap;
   final VoidCallback onBrandTap;
   final String brandText;
-  final String nav1;
-  final String nav2;
-  final String nav3;
   final String signInLabel;
   final bool editMode;
-  final VoidCallback onEditNav1;
-  final VoidCallback onEditNav2;
-  final VoidCallback onEditNav3;
   const _NavBar({
-    required this.onJournalSignIn,
     required this.onSignIn,
-    required this.onNav1Tap,
     required this.onBrandTap,
     required this.brandText,
-    required this.nav1,
-    required this.nav2,
-    required this.nav3,
     required this.signInLabel,
     required this.editMode,
-    required this.onEditNav1,
-    required this.onEditNav2,
-    required this.onEditNav3,
   });
 
   @override
@@ -1081,24 +998,6 @@ class _NavBar extends StatelessWidget {
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    ElevatedButton(
-                      onPressed: onJournalSignIn,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white.withValues(alpha: 0.08),
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(
-                            horizontal: isWide ? 30 : 12, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                          side: const BorderSide(color: Colors.white24),
-                        ),
-                      ),
-                      child: Text(
-                        'Sign In - Journal Portal',
-                        style: GoogleFonts.dmSans(
-                            fontSize: isWide ? 14 : 12, fontWeight: FontWeight.w600),
-                      ),
-                    ),
                     ElevatedButton(
                       onPressed: onSignIn,
                       style: ElevatedButton.styleFrom(

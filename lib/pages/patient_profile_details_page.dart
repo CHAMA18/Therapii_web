@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:therapii/models/ai_conversation_summary.dart';
 import 'package:therapii/models/chat_message.dart';
 import 'package:therapii/models/user.dart' as app_user;
-import 'package:therapii/models/voice_checkin.dart';
 import 'package:therapii/pages/ai_summary_detail_page.dart';
 import 'package:therapii/pages/patient_chat_page.dart';
 import 'package:therapii/services/ai_conversation_service.dart';
 import 'package:therapii/services/chat_service.dart';
-import 'package:therapii/services/voice_checkin_service.dart';
 import 'patient_profile_page.dart';
 
 class PatientProfileDetailsPage extends StatefulWidget {
@@ -30,16 +28,13 @@ class PatientProfileDetailsPage extends StatefulWidget {
 class _PatientProfileDetailsPageState extends State<PatientProfileDetailsPage> {
   final _chatService = ChatService();
   final _aiConversationService = AiConversationService();
-  final _voiceCheckinService = VoiceCheckinService();
 
   final _scrollController = ScrollController();
   final _recentKey = GlobalKey();
   final _summaryKey = GlobalKey();
-  final _voiceKey = GlobalKey();
 
   final Set<String> _contextMessages = {};
   final Set<String> _contextSummaries = {};
-  final Set<String> _contextVoices = {};
 
   @override
   void didChangeDependencies() {
@@ -51,17 +46,11 @@ class _PatientProfileDetailsPageState extends State<PatientProfileDetailsPage> {
   void _jumpToTarget(SectionTarget target) {
     GlobalKey key;
     switch (target) {
-      case SectionTarget.active:
-        key = _recentKey;
-        break;
       case SectionTarget.recent:
         key = _recentKey;
         break;
       case SectionTarget.summaries:
         key = _summaryKey;
-        break;
-      case SectionTarget.voice:
-        key = _voiceKey;
         break;
     }
     final ctx = key.currentContext;
@@ -318,45 +307,6 @@ class _PatientProfileDetailsPageState extends State<PatientProfileDetailsPage> {
                           ),
                         );
                       },
-                    );
-                  }).toList(),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 14),
-          _ContextSection(
-            key: _voiceKey,
-            title: 'Voice Check-ins',
-            description: 'Include voice check-ins as contextual signals.',
-            icon: Icons.mic_rounded,
-            color: scheme.error,
-            child: StreamBuilder<List<VoiceCheckin>>(
-              stream: _voiceCheckinService.streamPatientCheckins(
-                therapistId: widget.therapistId,
-                patientId: patient.id,
-                limit: 10,
-              ),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const LoadingInfo(text: 'Loading voice check-ins…');
-                }
-                final checkins = snapshot.data ?? [];
-                if (checkins.isEmpty) {
-                  return Text('No voice check-ins yet.',
-                      style: theme.textTheme.bodyMedium);
-                }
-                return Column(
-                  children: checkins.map((c) {
-                    final selected = _contextVoices.contains(c.id);
-                    final ts =
-                        '${c.createdAt.month}/${c.createdAt.day} • ${c.durationSeconds}s';
-                    return _ContextTile(
-                      title: 'Voice Check-in • $ts',
-                      body: 'Audio recording (${c.durationSeconds}s)',
-                      selected: selected,
-                      onToggle: () => _toggleContext(
-                          _contextVoices, c.id, 'Voice check-in'),
                     );
                   }).toList(),
                 );
