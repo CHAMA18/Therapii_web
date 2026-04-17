@@ -4,6 +4,8 @@ import 'package:therapii/models/support_message.dart';
 import 'package:therapii/services/support_service.dart';
 import 'package:intl/intl.dart';
 
+import 'package:therapii/openai/openai_config.dart';
+
 class SupportChatPage extends StatefulWidget {
   const SupportChatPage({super.key});
 
@@ -16,6 +18,10 @@ class _SupportChatPageState extends State<SupportChatPage> {
   final _auth = FirebaseAuth.instance;
   final _textController = TextEditingController();
   final _scrollController = ScrollController();
+  
+  bool _isAiMode = true;
+  bool _isAiReplying = false;
+  final AiCompanionClient _aiClient = const AiCompanionClient();
   
   String? _userId;
   String? _userEmail;
@@ -53,6 +59,57 @@ class _SupportChatPageState extends State<SupportChatPage> {
     );
     
     _scrollToBottom();
+    
+    if (_isAiMode) {
+      setState(() {
+        _isAiReplying = true;
+      });
+      
+      try {
+        // Fetch recent messages
+        final messagesStream = await _supportService.streamMessages(_userId!).first;
+        final history = messagesStream.map((m) {
+          return AiChatMessage(
+            role: m.senderId == _userId ? 'user' : 'assistant',
+            content: m.text,
+          );
+        }).toList();
+        
+        // Add system prompt
+        final aiMessages = [
+          AiChatMessage(
+            role: 'system',
+            content: 'You are the official Support AI for Therapii, an app for therapists and clients. Keep answers brief, helpful, and empathetic. If you cannot solve an issue, advise the user to switch to "Talk to Human" so our team can assist them.',
+          ),
+          ...history,
+        ];
+        
+        final responseText = await _aiClient.sendChat(messages: aiMessages);
+        
+        if (responseText.isNotEmpty) {
+          await _supportService.sendMessage(
+            userId: _userId!,
+            userEmail: _userEmail!,
+            senderId: 'support_ai',
+            text: responseText,
+            isAdmin: true,
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('AI Support Error: $e')),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isAiReplying = false;
+          });
+          _scrollToBottom();
+        }
+      }
+    }
   }
 
   void _scrollToBottom() {
@@ -212,52 +269,124 @@ class _SupportChatPageState extends State<SupportChatPage> {
             ),
           ),
           const SizedBox(height: 20),
-          Row(
-            children: [
-              SizedBox(
-                width: 70,
-                height: 36,
-                child: Stack(
-                  children: [
-                    Positioned(
-                      left: 0,
-                      child: CircleAvatar(radius: 16, backgroundColor: scheme.secondaryContainer, child: Icon(Icons.person, color: scheme.onSecondaryContainer, size: 20)),
-                    ),
-                    Positioned(
-                      left: 20,
-                      child: CircleAvatar(radius: 16, backgroundColor: scheme.tertiaryContainer, child: Icon(Icons.person, color: scheme.onTertiaryContainer, size: 20)),
-                    ),
-                    Positioned(
-                      left: 40,
-                      child: CircleAvatar(radius: 16, backgroundColor: scheme.surface, child: Icon(Icons.person, color: scheme.primary, size: 20)),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Our usual reply time',
-                      style: theme.textTheme.labelSmall?.copyWith(color: Colors.white.withValues(alpha: 0.7)),
-                    ),
-                    Row(
-                      children: [
-                        const Icon(Icons.access_time_filled_rounded, color: Colors.white, size: 14),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Under 5 mins',
-                          style: theme.textTheme.labelMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            padding: const EdgeInsets.all(4),
+            child: Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _isAiMode = true),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      decoration: BoxDecoration(
+                        color: _isAiMode ? Colors.white : Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: _isAiMode
+                            ? [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.1),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                )
+                              ]
+                            : [],
+                      ),
+                      child: Text(
+                        'Talk To AI',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: _isAiMode ? scheme.primary : Colors.white,
+                          fontWeight: FontWeight.bold,
                         ),
-                      ],
+                      ),
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ],
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _isAiMode = false),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      decoration: BoxDecoration(
+                        color: !_isAiMode ? Colors.white : Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: !_isAiMode
+                            ? [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.1),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                )
+                              ]
+                            : [],
+                      ),
+                      child: Text(
+                        'Talk To Human',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: !_isAiMode ? scheme.primary : Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
+          if (!_isAiMode) ...[
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                SizedBox(
+                  width: 70,
+                  height: 36,
+                  child: Stack(
+                    children: [
+                      Positioned(
+                        left: 0,
+                        child: CircleAvatar(radius: 16, backgroundColor: scheme.secondaryContainer, child: Icon(Icons.person, color: scheme.onSecondaryContainer, size: 20)),
+                      ),
+                      Positioned(
+                        left: 20,
+                        child: CircleAvatar(radius: 16, backgroundColor: scheme.tertiaryContainer, child: Icon(Icons.person, color: scheme.onTertiaryContainer, size: 20)),
+                      ),
+                      Positioned(
+                        left: 40,
+                        child: CircleAvatar(radius: 16, backgroundColor: scheme.surface, child: Icon(Icons.person, color: scheme.primary, size: 20)),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Our usual reply time',
+                        style: theme.textTheme.labelSmall?.copyWith(color: Colors.white.withValues(alpha: 0.7)),
+                      ),
+                      Row(
+                        children: [
+                          const Icon(Icons.access_time_filled_rounded, color: Colors.white, size: 14),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Under 5 mins',
+                            style: theme.textTheme.labelMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -307,57 +436,88 @@ class _SupportChatPageState extends State<SupportChatPage> {
   }
 
   Widget _buildInputArea(ColorScheme scheme) {
-    return Container(
-      padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: 12,
-        bottom: 12 + MediaQuery.of(context).viewInsets.bottom + MediaQuery.of(context).padding.bottom,
-      ),
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        border: Border(top: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.3))),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _textController,
-              decoration: InputDecoration(
-                hintText: 'Send a message...',
-                hintStyle: TextStyle(color: scheme.onSurfaceVariant.withValues(alpha: 0.6)),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: BorderSide.none,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (_isAiReplying)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 12,
+                  height: 12,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: scheme.primary,
+                  ),
                 ),
-                filled: true,
-                fillColor: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                isDense: true,
+                const SizedBox(width: 8),
+                Text(
+                  'AI is typing...',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: scheme.primary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        Container(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 12,
+            bottom: 12 + MediaQuery.of(context).viewInsets.bottom + MediaQuery.of(context).padding.bottom,
+          ),
+          decoration: BoxDecoration(
+            color: scheme.surface,
+            border: Border(top: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.3))),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _textController,
+                  enabled: !_isAiReplying,
+                  decoration: InputDecoration(
+                    hintText: 'Send a message...',
+                    hintStyle: TextStyle(color: scheme.onSurfaceVariant.withValues(alpha: 0.6)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24),
+                      borderSide: BorderSide.none,
+                    ),
+                    filled: true,
+                    fillColor: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    isDense: true,
+                  ),
+                  textCapitalization: TextCapitalization.sentences,
+                  minLines: 1,
+                  maxLines: 5,
+                  onSubmitted: (_) => _sendMessage(),
+                ),
               ),
-              textCapitalization: TextCapitalization.sentences,
-              minLines: 1,
-              maxLines: 5,
-              onSubmitted: (_) => _sendMessage(),
-            ),
+              const SizedBox(width: 8),
+              Container(
+                margin: const EdgeInsets.only(bottom: 2),
+                decoration: BoxDecoration(
+                  color: scheme.primary,
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  icon: Icon(Icons.send_rounded, color: scheme.onPrimary, size: 20),
+                  onPressed: _isAiReplying ? null : _sendMessage,
+                  padding: const EdgeInsets.all(12),
+                  constraints: const BoxConstraints(),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          Container(
-            margin: const EdgeInsets.only(bottom: 2),
-            decoration: BoxDecoration(
-              color: scheme.primary,
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              icon: Icon(Icons.send_rounded, color: scheme.onPrimary, size: 20),
-              onPressed: _sendMessage,
-              padding: const EdgeInsets.all(12),
-              constraints: const BoxConstraints(),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

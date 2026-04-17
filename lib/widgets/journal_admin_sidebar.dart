@@ -331,7 +331,7 @@ class _JournalAdminSidebarState extends State<JournalAdminSidebar> {
                                       'ADMIN',
                                       style: TextStyle(
                                         fontSize: 9,
-                                        fontWeight: FontWeight.w800,
+                                        fontWeight: FontWeight.w500,
                                         letterSpacing: 0.4,
                                         color: Color(0xFF2B8CEE),
                                       ),

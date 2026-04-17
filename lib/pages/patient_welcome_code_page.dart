@@ -168,14 +168,14 @@ class _PatientWelcomeCodePageState extends State<PatientWelcomeCodePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Welcome', style: theme.textTheme.displaySmall?.copyWith(fontWeight: FontWeight.w800)),
+                  Text('Welcome', style: theme.textTheme.displaySmall?.copyWith(fontWeight: FontWeight.w500)),
                   const SizedBox(height: 12),
                   Text(
                     'Follow these instructions to complete your\nregistration',
                     style: theme.textTheme.titleMedium?.copyWith(color: scheme.onSurface.withValues(alpha: 0.8), height: 1.3),
                   ),
                   const SizedBox(height: 32),
-                  Text('Welcome to Therapii!', style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
+                  Text('Welcome to Therapii!', style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w500)),
                   const SizedBox(height: 12),
                   Text(
                     'To complete your registration as a patient, you need to be\nassociated with a licensed therapist who is seeing you.',

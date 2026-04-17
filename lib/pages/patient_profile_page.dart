@@ -185,7 +185,7 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
                           textAlign: TextAlign.center,
                           style: theme.textTheme.headlineMedium?.copyWith(
                             color: scheme.onSurface,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.normal,
                             letterSpacing: -0.5,
                           ),
                         ),

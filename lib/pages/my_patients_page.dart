@@ -728,10 +728,7 @@ class _MyPatientsPageState extends State<MyPatientsPage> {
   }
 
   String _greeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
+    return 'Greetings 👋';
   }
 }
 
@@ -751,19 +748,25 @@ class _HeaderTextBlock extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '$greeting,',
-          style: theme.textTheme.titleMedium?.copyWith(
-            color: onSurface.withValues(alpha: 0.58),
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          therapistName,
-          style: theme.textTheme.headlineMedium?.copyWith(
-            fontWeight: FontWeight.w800,
-            color: onSurface,
+        RichText(
+          text: TextSpan(
+            style: theme.textTheme.headlineMedium,
+            children: [
+              TextSpan(
+                text: '$greeting, ',
+                style: TextStyle(
+                  color: onSurface.withValues(alpha: 0.58),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              TextSpan(
+                text: therapistName,
+                style: TextStyle(
+                  fontWeight: FontWeight.normal,
+                  color: onSurface,
+                ),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 8),

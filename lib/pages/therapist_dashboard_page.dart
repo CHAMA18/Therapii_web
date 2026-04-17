@@ -9,6 +9,8 @@ import 'package:therapii/widgets/common_settings_drawer.dart';
 import 'package:therapii/pages/my_patients_page.dart';
 import 'package:therapii/pages/therapist_training_page.dart';
 import 'package:therapii/pages/billing_page.dart';
+import 'package:therapii/widgets/announcement_banner.dart';
+import 'package:therapii/models/announcement.dart';
 
 class TherapistDashboardPage extends StatefulWidget {
   const TherapistDashboardPage({super.key});
@@ -80,10 +82,7 @@ class _TherapistDashboardPageState extends State<TherapistDashboardPage> {
   }
 
   String _greeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
+    return 'Greetings 👋';
   }
 
   @override
@@ -186,39 +185,13 @@ class _TherapistDashboardPageState extends State<TherapistDashboardPage> {
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      body: body,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => showDialog(
-          context: context,
-          barrierColor: Colors.transparent,
-          builder: (context) {
-            final size = MediaQuery.of(context).size;
-            return Dialog(
-              alignment: Alignment.bottomRight,
-              insetPadding: EdgeInsets.only(
-                right: 24, 
-                bottom: 80, 
-                top: 24, 
-                left: size.width > 600 ? size.width - 400 - 24 : 24
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
-              ),
-              elevation: 8,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: 400,
-                  maxHeight: size.height * 0.8,
-                ),
-                child: const SupportChatPage(),
-              ),
-            );
-          },
+      body: SafeArea(
+        child: Column(
+          children: [
+            const AnnouncementBanner(target: AnnouncementTarget.therapist),
+            Expanded(child: body),
+          ],
         ),
-        backgroundColor: colorScheme.primary,
-        foregroundColor: colorScheme.onPrimary,
-        elevation: 4,
-        child: const Icon(Icons.support_agent_rounded),
       ),
     );
   }
@@ -304,26 +277,33 @@ class _DashboardGreeting extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '$greeting,',
-          style: theme.textTheme.titleLarge?.copyWith(
-            color: colorScheme.onSurface.withValues(alpha: 0.6),
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          fullName,
-          style: theme.textTheme.displaySmall?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: colorScheme.onSurface,
+        RichText(
+          text: TextSpan(
+            style: theme.textTheme.headlineMedium,
+            children: [
+              TextSpan(
+                text: '$greeting, ',
+                style: TextStyle(
+                  color: colorScheme.onSurface.withValues(alpha: 0.6),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              TextSpan(
+                text: fullName,
+                style: TextStyle(
+                  fontWeight: FontWeight.normal,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 8),
         Text(
-          'How are you feeling today?',
+          'Manage your practice, clients and resources.',
           style: theme.textTheme.bodyLarge?.copyWith(
-            color: colorScheme.onSurface.withValues(alpha: 0.45),
+            color: colorScheme.onSurface.withValues(alpha: 0.5),
+            height: 1.3,
           ),
         ),
       ],

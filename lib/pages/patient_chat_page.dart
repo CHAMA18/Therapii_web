@@ -240,7 +240,7 @@ class _PatientChatPageState extends State<PatientChatPage> {
                 Text(
                   displayName,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.normal,
                         color: scheme.onSurface,
                       ),
                 ),

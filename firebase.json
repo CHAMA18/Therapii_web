@@ -1,14 +1,1 @@
-{
-  "firestore": {
-    "rules": "firestore.rules",
-    "indexes": "firestore.indexes.json"
-  },
-  "storage": {
-    "rules": "storage.rules"
-  },
-  "functions": {
-    "source": "functions",
-    "predeploy": [],
-    "runtime": "nodejs20"
-  }
-}
+{"firestore":{"rules":"firestore.rules","indexes":"firestore.indexes.json"},"storage":{"rules":"storage.rules"},"functions":{"source":"functions","predeploy":[],"runtime":"nodejs20"},"flutter":{"platforms":{"android":{"default":{"projectId":"therapii-qezlke","appId":"1:36222842118:android:c7ee25da13cbb5bf395a87","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"therapii-qezlke","configurations":{"android":"1:36222842118:android:c7ee25da13cbb5bf395a87","ios":"1:36222842118:ios:e6477273c359c09b395a87","web":"1:36222842118:web:92b475a6c16ac9c7395a87"}}}}}}

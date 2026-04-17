@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:therapii/models/ai_conversation_summary.dart';
 import 'package:therapii/models/chat_message.dart';
 import 'package:therapii/models/user.dart' as app_user;
-import 'package:therapii/pages/ai_summary_detail_page.dart';
 import 'package:therapii/pages/patient_chat_page.dart';
-import 'package:therapii/services/ai_conversation_service.dart';
 import 'package:therapii/services/chat_service.dart';
 import 'patient_profile_page.dart';
 
@@ -27,14 +24,28 @@ class PatientProfileDetailsPage extends StatefulWidget {
 
 class _PatientProfileDetailsPageState extends State<PatientProfileDetailsPage> {
   final _chatService = ChatService();
-  final _aiConversationService = AiConversationService();
 
   final _scrollController = ScrollController();
   final _recentKey = GlobalKey();
-  final _summaryKey = GlobalKey();
 
   final Set<String> _contextMessages = {};
-  final Set<String> _contextSummaries = {};
+  final Map<String, TextEditingController> _feedbackControllers = {};
+
+  @override
+  void dispose() {
+    for (var controller in _feedbackControllers.values) {
+      controller.dispose();
+    }
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  TextEditingController _getController(String id) {
+    if (!_feedbackControllers.containsKey(id)) {
+      _feedbackControllers[id] = TextEditingController();
+    }
+    return _feedbackControllers[id]!;
+  }
 
   @override
   void didChangeDependencies() {
@@ -50,7 +61,8 @@ class _PatientProfileDetailsPageState extends State<PatientProfileDetailsPage> {
         key = _recentKey;
         break;
       case SectionTarget.summaries:
-        key = _summaryKey;
+        // summaries is obsolete, default to recent
+        key = _recentKey;
         break;
     }
     final ctx = key.currentContext;
@@ -69,144 +81,6 @@ class _PatientProfileDetailsPageState extends State<PatientProfileDetailsPage> {
         builder: (_) => PatientChatPage(otherUser: widget.patient),
       ),
     );
-  }
-
-  Future<void> _showFeedbackBottomSheet(AiConversationSummary summary) async {
-    final controller =
-        TextEditingController(text: summary.therapistFeedback ?? '');
-    final result = await showModalBottomSheet<String>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        final theme = Theme.of(ctx);
-        final scheme = theme.colorScheme;
-        return Container(
-          decoration: BoxDecoration(
-            color: scheme.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          padding: EdgeInsets.only(
-            left: 24,
-            right: 24,
-            top: 24,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: scheme.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child:
-                        Icon(Icons.rate_review_rounded, color: scheme.primary),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          summary.therapistFeedback != null
-                              ? 'Edit Model Feedback'
-                              : 'Provide Model Feedback',
-                          style: theme.textTheme.titleLarge
-                              ?.copyWith(fontWeight: FontWeight.w700),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'Help improve AI responses',
-                          style: theme.textTheme.bodySmall
-                              ?.copyWith(color: scheme.onSurfaceVariant),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.of(ctx).pop(),
-                    icon: const Icon(Icons.close_rounded),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: controller,
-                maxLines: 5,
-                minLines: 3,
-                decoration: InputDecoration(
-                  hintText:
-                      'E.g., "Use more empathetic language when discussing anxiety..."',
-                  filled: true,
-                  fillColor: scheme.surfaceContainerHighest.withOpacity(0.5),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide.none,
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(color: scheme.primary, width: 1.5),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.of(ctx).pop(),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: const Text('Cancel'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: FilledButton(
-                      onPressed: () =>
-                          Navigator.of(ctx).pop(controller.text.trim()),
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: const Text('Save Feedback'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
-    );
-
-    if (result != null && result.isNotEmpty && mounted) {
-      try {
-        await _aiConversationService.saveTherapistFeedback(
-          summaryId: summary.id,
-          feedback: result,
-        );
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Feedback saved successfully')),
-        );
-      } catch (e) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save feedback: $e')),
-        );
-      }
-    }
   }
 
   @override
@@ -261,52 +135,9 @@ class _PatientProfileDetailsPageState extends State<PatientProfileDetailsPage> {
                       title: '$prefix • $ts',
                       body: m.text.isEmpty ? '(Attachment)' : m.text,
                       selected: selected,
+                      feedbackController: _getController(m.id),
                       onToggle: () =>
                           _toggleContext(_contextMessages, m.id, 'Message'),
-                    );
-                  }).toList(),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 14),
-          _ContextSection(
-            key: _summaryKey,
-            title: 'AI Summaries',
-            description:
-                'Review conversation summaries and open the full transcript detail.',
-            icon: Icons.summarize_rounded,
-            color: scheme.tertiary,
-            child: StreamBuilder<List<AiConversationSummary>>(
-              stream: _aiConversationService.streamPatientSummaries(
-                  patientId: patient.id, limit: 10),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const LoadingInfo(text: 'Loading summaries…');
-                }
-                final summaries = snapshot.data ?? [];
-                if (summaries.isEmpty) {
-                  return Text('No AI summaries yet.',
-                      style: theme.textTheme.bodyMedium);
-                }
-                return Column(
-                  children: summaries.map((s) {
-                    final selected = _contextSummaries.contains(s.id);
-                    final ts = '${s.createdAt.month}/${s.createdAt.day}';
-                    return _ContextTile(
-                      title: 'Summary • $ts',
-                      body: s.summary,
-                      selected: selected,
-                      onToggle: () =>
-                          _toggleContext(_contextSummaries, s.id, 'Summary'),
-                      actionLabel: 'View details',
-                      onAction: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => AiSummaryDetailPage(summary: s),
-                          ),
-                        );
-                      },
                     );
                   }).toList(),
                 );
@@ -459,6 +290,7 @@ class _ContextTile extends StatelessWidget {
   final VoidCallback onToggle;
   final String? actionLabel;
   final VoidCallback? onAction;
+  final TextEditingController? feedbackController;
 
   const _ContextTile({
     required this.title,
@@ -467,13 +299,15 @@ class _ContextTile extends StatelessWidget {
     required this.onToggle,
     this.actionLabel,
     this.onAction,
+    this.feedbackController,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -484,45 +318,75 @@ class _ContextTile extends StatelessWidget {
                 ? scheme.primary.withOpacity(0.3)
                 : scheme.outline.withOpacity(0.08)),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title,
-                    style: theme.textTheme.labelMedium
-                        ?.copyWith(fontWeight: FontWeight.w700)),
-                const SizedBox(height: 4),
-                Text(body,
-                    style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis),
-                if (actionLabel != null && onAction != null) ...[
-                  const SizedBox(height: 10),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton(
-                      onPressed: onAction,
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 0, vertical: 4),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title,
+                        style: theme.textTheme.labelMedium
+                            ?.copyWith(fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 4),
+                    Text(body,
+                        style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis),
+                    if (actionLabel != null && onAction != null) ...[
+                      const SizedBox(height: 10),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton(
+                          onPressed: onAction,
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 0, vertical: 4),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: Text(actionLabel!),
+                        ),
                       ),
-                      child: Text(actionLabel!),
-                    ),
-                  ),
-                ],
-              ],
-            ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Switch.adaptive(
+                  value: selected,
+                  onChanged: (_) => onToggle(),
+                  activeColor: scheme.primary),
+            ],
           ),
-          const SizedBox(width: 8),
-          Switch.adaptive(
-              value: selected,
-              onChanged: (_) => onToggle(),
-              activeColor: scheme.primary),
+          if (selected) ...[
+            const SizedBox(height: 12),
+            TextField(
+              controller: feedbackController,
+              decoration: InputDecoration(
+                hintText: 'Add feedback or notes for the AI model...',
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: scheme.outline.withOpacity(0.2)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: scheme.outline.withOpacity(0.2)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: scheme.primary),
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
+              maxLines: 3,
+              minLines: 1,
+            ),
+          ],
         ],
       ),
     );

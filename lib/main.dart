@@ -27,6 +27,9 @@ import 'package:therapii/services/app_page_state_service.dart';
 import 'package:therapii/utils/admin_access.dart';
 import 'package:therapii/services/user_service.dart';
 import 'package:therapii/services/therapist_service.dart';
+import 'package:therapii/widgets/global_support_bubble.dart';
+
+final GlobalKey<NavigatorState> globalNavigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -61,11 +64,24 @@ class MyApp extends StatelessWidget {
       animation: themeModeController,
       builder: (context, _) {
         return MaterialApp(
+          navigatorKey: globalNavigatorKey,
           title: 'Therapii',
           debugShowCheckedModeBanner: false,
           theme: lightTheme,
           darkTheme: darkTheme,
           themeMode: themeModeController.mode,
+          builder: (context, child) {
+            return Material(
+              type: MaterialType.transparency,
+              child: Stack(
+                textDirection: TextDirection.ltr,
+                children: [
+                  if (child != null) child,
+                  GlobalSupportBubble(navigatorKey: globalNavigatorKey),
+                ],
+              ),
+            );
+          },
           // Decide the first screen based on auth + role.
           home: const _RootRouter(),
         );
@@ -211,6 +227,7 @@ class _RootRouter extends StatelessWidget {
                   );
                 }
 
+                print('CURRENT PAGE: ${lastPageSnap.data}');
                 return _resolveRestoredPage(
                   authUser: authUser,
                   profileCtx: profileCtx,

@@ -18,6 +18,8 @@ import 'package:therapii/services/invitation_service.dart';
 import 'package:therapii/services/user_service.dart';
 import 'package:therapii/services/daily_thought_service.dart';
 import 'package:therapii/widgets/common_settings_drawer.dart';
+import 'package:therapii/widgets/announcement_banner.dart';
+import 'package:therapii/models/announcement.dart';
 
 class PatientDashboardPage extends StatefulWidget {
   final String? therapistId;
@@ -551,15 +553,7 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
     final hasMultipleTherapists = _therapistProfiles.length > 1;
 
     // Greeting logic
-    final hour = DateTime.now().hour;
-    String greeting = 'Hello';
-    if (hour < 12) {
-      greeting = 'Good morning';
-    } else if (hour < 17) {
-      greeting = 'Good afternoon';
-    } else {
-      greeting = 'Good evening';
-    }
+    String greeting = 'Greetings 👋';
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -628,41 +622,11 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
       pageId: AppPageId.patientDashboard,
       child: Scaffold(
         backgroundColor: Theme.of(context).colorScheme.surface,
-        body: _buildContent(context),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            showDialog(
-              context: context,
-              barrierColor: Colors.transparent,
-              builder: (context) {
-                final size = MediaQuery.of(context).size;
-                return Dialog(
-                  alignment: Alignment.bottomRight,
-                  insetPadding: EdgeInsets.only(
-                    right: 24, 
-                    bottom: 80, 
-                    top: 24, 
-                    left: size.width > 600 ? size.width - 400 - 24 : 24
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  elevation: 8,
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxWidth: 400,
-                      maxHeight: size.height * 0.8,
-                    ),
-                    child: const SupportChatPage(),
-                  ),
-                );
-              },
-            );
-          },
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          foregroundColor: Theme.of(context).colorScheme.onPrimary,
-          elevation: 4,
-          child: const Icon(Icons.chat_bubble_rounded),
+        body: Column(
+          children: [
+            const AnnouncementBanner(target: AnnouncementTarget.patient),
+            Expanded(child: _buildContent(context)),
+          ],
         ),
       ),
     );
@@ -797,26 +761,25 @@ class _PatientGreeting extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '$greeting,',
-          style: theme.textTheme.titleLarge?.copyWith(
-            color: colorScheme.onSurface.withValues(alpha: 0.55),
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          displayName,
-          style: theme.textTheme.displaySmall?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: colorScheme.onSurface,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'How are you feeling today?',
-          style: theme.textTheme.bodyLarge?.copyWith(
-            color: colorScheme.onSurface.withValues(alpha: 0.45),
+        RichText(
+          text: TextSpan(
+            style: theme.textTheme.displaySmall,
+            children: [
+              TextSpan(
+                text: '$greeting, ',
+                style: TextStyle(
+                  color: colorScheme.onSurface.withValues(alpha: 0.55),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              TextSpan(
+                text: displayName,
+                style: TextStyle(
+                  fontWeight: FontWeight.normal,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+            ],
           ),
         ),
       ],

@@ -92,7 +92,7 @@ class _HomePageState extends State<HomePage> {
               Text(
                 'Welcome to Therapii!',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.normal,
                       color: Theme.of(context).colorScheme.primary,
                     ),
                 textAlign: TextAlign.center,

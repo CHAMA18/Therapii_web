@@ -8,6 +8,7 @@ import 'package:therapii/pages/admin_settings_page.dart';
 import 'package:therapii/pages/admin_support_hub_page.dart';
 import 'package:therapii/pages/landing_page.dart';
 import 'package:therapii/pages/therapist_approvals_page.dart';
+import 'package:therapii/pages/admin_announcements_page.dart';
 import 'package:therapii/services/app_page_state_service.dart';
 import 'package:therapii/widgets/shimmer_widgets.dart';
 import 'package:therapii/theme_mode_controller.dart';
@@ -600,10 +601,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   }
 
   String _greeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
+    return 'Greetings 👋';
   }
 
   String _adminName() {
@@ -909,7 +907,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 Text(
                   _adminName(),
                   style: theme.textTheme.displayMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.normal,
                     color: isDark ? Colors.white : const Color(0xFF0f172a),
                     letterSpacing: -1.2,
                   ),
@@ -1259,6 +1257,17 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         primaryColor: primaryColor,
         isDark: isDark,
         onTap: _scrollToUserAccessPanel,
+      ),
+      _ActionCard(
+        title: 'Announcements',
+        subtitle: 'Manage dashboard marquees',
+        icon: Icons.campaign_outlined,
+        isPrimary: false,
+        primaryColor: primaryColor,
+        isDark: isDark,
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const AdminAnnouncementsPage()),
+        ),
       ),
       _ActionCard(
         title: 'Edit Text Content',

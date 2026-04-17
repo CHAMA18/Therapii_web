@@ -339,7 +339,6 @@ class _JournalPortalPageState extends State<JournalPortalPage> {
 
     final width = MediaQuery.sizeOf(context).width;
     final showLeftRail = width >= 1100 && !widget.hidePortalSidebar;
-    final showRightRail = width >= 1480;
     final isAdmin =
         AdminAccess.isAdminEmail(FirebaseAuthManager().currentUser?.email);
 
@@ -385,7 +384,6 @@ class _JournalPortalPageState extends State<JournalPortalPage> {
                       onLoadMore: _loadMoreArticles,
                     ),
                   ),
-                  if (showRightRail) const _RightRail(),
                 ],
               ),
               if (!showLeftRail) ...[
@@ -1067,10 +1065,7 @@ class _JournalReflectionPageState extends State<_JournalReflectionPage> {
   }
 
   String _greeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good morning';
-    if (hour < 18) return 'Good afternoon';
-    return 'Good evening';
+    return 'Greetings 👋';
   }
 
   Future<void> _openHome() async {
@@ -3631,142 +3626,6 @@ class _QuoteCard extends StatelessWidget {
             ],
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _RightRail extends StatefulWidget {
-  const _RightRail();
-
-  @override
-  State<_RightRail> createState() => _RightRailState();
-}
-
-class _RightRailState extends State<_RightRail> {
-  @override
-  Widget build(BuildContext context) {
-    final palette = _PortalPalette.of(context);
-
-    return Container(
-      width: 320,
-      decoration: BoxDecoration(
-        color: palette.panel,
-        border: Border(left: BorderSide(color: palette.border)),
-      ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(18, 20, 18, 20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                Text(
-                  'Favorites',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 16,
-                    color: palette.textPrimary,
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {},
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    foregroundColor: const Color(0xFF1754CF),
-                    textStyle: const TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 12,
-                    ),
-                  ),
-                  child: const Text('View All'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: palette.panelStrong,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: palette.border),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Favorites unavailable',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 13,
-                      color: palette.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'We could not load saved articles right now.',
-                    style: TextStyle(
-                      color: palette.textSecondary,
-                      fontWeight: FontWeight.w500,
-                      fontSize: 12,
-                      height: 1.4,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(18),
-                color: palette.isDark
-                    ? const Color(0x331754CF)
-                    : const Color(0x261754CF),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Premium Session',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 16,
-                      color: palette.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Unlock audio guided meditations for deeper focus.',
-                    style: TextStyle(
-                      color: palette.textSecondary,
-                      fontWeight: FontWeight.w500,
-                      fontSize: 13,
-                      height: 1.4,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  FilledButton(
-                    onPressed: () {},
-                    style: FilledButton.styleFrom(
-                      backgroundColor: palette.panelStrong,
-                      foregroundColor: const Color(0xFF1754CF),
-                      textStyle: const TextStyle(fontWeight: FontWeight.w800),
-                    ),
-                    child: const Text('Start Trial'),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

@@ -146,7 +146,7 @@ class _Header extends StatelessWidget {
                       title,
                       style: theme.textTheme.titleLarge?.copyWith(
                         color: scheme.onPrimary,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],

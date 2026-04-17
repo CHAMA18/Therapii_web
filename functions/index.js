@@ -1376,3 +1376,57 @@ exports.getStripeInvoices = functions
     );
   }
 });
+
+/**
+ * Cloud Function to send an email notification when a user sends a message in the support chat.
+ */
+exports.notifySupportMessage = functions.firestore
+  .document('support_conversations/{userId}/messages/{messageId}')
+  .onCreate(async (snap, context) => {
+    const data = snap.data();
+    const userId = context.params.userId;
+
+    // Do not notify if the message was sent by an admin
+    if (data.is_admin === true) {
+      return null;
+    }
+
+    try {
+      const convoRef = admin.firestore().collection('support_conversations').doc(userId);
+      const convoSnap = await convoRef.get();
+      const convoData = convoSnap.data() || {};
+      const userEmail = convoData.user_email || 'Unknown User';
+
+      const text = data.text || '';
+      
+      const emailHtml = `
+        <h3>New Support Message</h3>
+        <p><strong>From:</strong> ${userEmail}</p>
+        <p><strong>Message:</strong></p>
+        <blockquote style="background: #f5f5f5; padding: 10px; border-left: 5px solid #ccc;">
+          ${text}
+        </blockquote>
+      `;
+
+      const emailText = `New Support Message\nFrom: ${userEmail}\nMessage:\n${text}`;
+
+      const resend = new Resend(RESEND_API_KEY);
+      const resendResponse = await resend.emails.send({
+        from: `Therapii Support <${RESEND_FROM_EMAIL}>`,
+        to: ['chungu424@gmail.com'],
+        subject: `New Support Message from ${userEmail}`,
+        html: emailHtml,
+        text: emailText,
+      });
+
+      if (resendResponse.error) {
+        console.error('Resend API error (support notify):', JSON.stringify(resendResponse.error, null, 2));
+      } else {
+        console.log(`Support notification email sent for message from ${userEmail}`);
+      }
+    } catch (error) {
+      console.error('Failed to send support notification email:', error);
+    }
+
+    return null;
+  });

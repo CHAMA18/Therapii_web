@@ -156,6 +156,24 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    // Announcements
+    match /announcements/{announcementId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Support Conversations
+    match /support_conversations/{userId} {
+      allow read: if isSelf(userId) || isAdmin();
+      allow create: if isSelf(userId);
+      allow update: if isSelf(userId) || isAdmin();
+      
+      match /messages/{messageId} {
+        allow read: if isSelf(userId) || isAdmin();
+        allow create: if isSelf(userId) || isAdmin();
+      }
+    }
+
     // Deny everything else by default
     match /{document=**} {
       allow read, write: if false;

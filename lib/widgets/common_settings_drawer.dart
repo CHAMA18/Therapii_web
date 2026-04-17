@@ -167,8 +167,6 @@ class _CommonSettingsPageState extends State<CommonSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
     final isAdmin = _isAdmin();
     final name = _displayName();
     final email = _email();
@@ -177,9 +175,11 @@ class _CommonSettingsPageState extends State<CommonSettingsPage> {
     return AnimatedBuilder(
       animation: themeModeController,
       builder: (context, _) {
+        final theme = Theme.of(context);
+        final scheme = theme.colorScheme;
         final isDark = _isDarkMode(context);
         return Scaffold(
-          backgroundColor: scheme.surfaceContainerHighest.withValues(alpha: 0.3),
+          backgroundColor: scheme.surfaceContainerHighest,
           appBar: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
@@ -245,7 +245,7 @@ class _CommonSettingsPageState extends State<CommonSettingsPage> {
                                     name,
                                     style: theme.textTheme.headlineMedium?.copyWith(
                                       color: scheme.onPrimary,
-                                      fontWeight: FontWeight.w800,
+                                      fontWeight: FontWeight.w500,
                                       letterSpacing: -0.5,
                                     ),
                                   ),
